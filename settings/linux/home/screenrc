@@ -1,0 +1,6 @@
+defscrollback 100000
+term screen-256color
+termcapinfo * ti@:te@
+logfile "/home/idachev/storage/screen_logs/$STY.log"
+deflog on
+

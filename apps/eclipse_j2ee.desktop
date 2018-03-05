@@ -1,0 +1,21 @@
+#!/usr/bin/env xdg-open
+
+[Desktop Entry]
+Categories=Development;IDE;Java;
+Comment[en_US]=Eclipse Integrated Development Environment
+Comment=Eclipse Integrated Development Environment
+Exec=/home/idachev/bin/eclipse_j2ee.sh
+GenericName[en_US]=
+GenericName=
+Icon=/home/idachev/lib/eclipse_j2ee/icon.xpm
+MimeType=
+Name=Eclipse J2EE
+Path=
+StartupNotify=true
+Terminal=false
+TerminalOptions=
+Type=Application
+X-DBUS-ServiceName=
+X-DBUS-StartupType=
+X-KDE-SubstituteUID=false
+X-KDE-Username=

@@ -1,0 +1,38 @@
+<?xml version="1.0"?>
+<gconf>
+	<entry name="history-gedit2_replace_with_entry" mtime="1500903917" type="list" ltype="string">
+		<li type="string">
+			<stringvalue>
+&lt;category</stringvalue>
+		</li>
+	</entry>
+	<entry name="history-gedit2_search_for_entry" mtime="1503583214" type="list" ltype="string">
+		<li type="string">
+			<stringvalue>New Ar</stringvalue>
+		</li>
+		<li type="string">
+			<stringvalue>&lt;parent&gt;root&lt;/parent&gt;</stringvalue>
+		</li>
+		<li type="string">
+			<stringvalue>parent</stringvalue>
+		</li>
+		<li type="string">
+			<stringvalue>parent = &quot;root&quot;</stringvalue>
+		</li>
+		<li type="string">
+			<stringvalue>parent=&quot;root&quot;</stringvalue>
+		</li>
+		<li type="string">
+			<stringvalue>uomo-scarpe</stringvalue>
+		</li>
+		<li type="string">
+			<stringvalue>101.170824</stringvalue>
+		</li>
+		<li type="string">
+			<stringvalue>image-group</stringvalue>
+		</li>
+		<li type="string">
+			<stringvalue>ERROR</stringvalue>
+		</li>
+	</entry>
+</gconf>

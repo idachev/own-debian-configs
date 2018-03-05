@@ -1,0 +1,171 @@
+[global_config]
+  enabled_plugins = CustomCommandsMenu, LaunchpadCodeURLHandler, APTURLHandler, LaunchpadBugURLHandler
+  handle_size = 5
+  suppress_multiple_term_dialog = True
+[keybindings]
+[profiles]
+  [[default]]
+    palette = "#7e7e7e:#ff6c60:#a8ff60:#ffffb6:#96cbfe:#ff73fd:#c6c5fe:#eeeeee:#9c9c9c:#ffb6b0:#ceffab:#ffffcb:#b5dcfe:#ff9cfe:#dfdffe:#ffffff"
+    font = Monospace 11
+    visible_bell = True
+    background_image = None
+    urgent_bell = True
+    use_system_font = False
+    scroll_on_output = False
+    copy_on_selection = True
+    allow_bold = False
+    scrollback_infinite = True
+[layouts]
+  [[default]]
+    [[[child1]]]
+      type = Terminal
+      parent = window0
+      profile = default
+      command = ""
+    [[[window0]]]
+      type = Window
+      parent = ""
+  [[dev-2]]
+    [[[child0]]]
+      position = 1920:178
+      type = Window
+      order = 0
+      parent = ""
+      size = 1600, 873
+    [[[child1]]]
+      position = 436
+      type = VPaned
+      order = 0
+      parent = child0
+    [[[child2]]]
+      position = 800
+      type = HPaned
+      order = 0
+      parent = child1
+    [[[child5]]]
+      position = 800
+      type = HPaned
+      order = 1
+      parent = child1
+    [[[terminal3]]]
+      profile = default
+      command = screen -d -R -S dev-2-1
+      type = Terminal
+      order = 0
+      parent = child2
+    [[[terminal4]]]
+      profile = default
+      command = htop
+      type = Terminal
+      order = 1
+      parent = child2
+    [[[terminal7]]]
+      profile = default
+      command = screen -d -R -S dev-2-3
+      type = Terminal
+      order = 1
+      parent = child5
+    [[[terminal6]]]
+      profile = default
+      command = screen -d -R -S dev-2-2
+      type = Terminal
+      order = 0
+      parent = child5
+  [[dev-1]]
+    [[[child0]]]
+      position = 0:0
+      type = Window
+      order = 0
+      parent = ""
+      size = 1600, 1104
+    [[[child1]]]
+      position = 552
+      type = VPaned
+      order = 0
+      parent = child0
+    [[[child2]]]
+      position = 800
+      type = HPaned
+      order = 0
+      parent = child1
+    [[[child5]]]
+      position = 800
+      type = HPaned
+      order = 1
+      parent = child1
+    [[[terminal3]]]
+      profile = default
+      command = screen -d -R -S dev-1-1
+      type = Terminal
+      order = 0
+      parent = child2
+    [[[terminal4]]]
+      profile = default
+      command = screen -d -R -S dev-1-2
+      type = Terminal
+      order = 1
+      parent = child2
+    [[[terminal7]]]
+      profile = default
+      command = screen -d -R -S dev-1-4
+      type = Terminal
+      order = 1
+      parent = child5
+    [[[terminal6]]]
+      profile = default
+      command = screen -d -R -S dev-1-3
+      type = Terminal
+      order = 0
+      parent = child5
+  [[dev-3]]
+    [[[child0]]]
+      position = 0:0
+      type = Window
+      order = 0
+      parent = ""
+      size = 1600, 1104
+    [[[child1]]]
+      position = 552
+      type = VPaned
+      order = 0
+      parent = child0
+    [[[child2]]]
+      position = 800
+      type = HPaned
+      order = 0
+      parent = child1
+    [[[child5]]]
+      position = 800
+      type = HPaned
+      order = 1
+      parent = child1
+    [[[terminal3]]]
+      profile = default
+      command = screen -d -R -S dev-3-1
+      type = Terminal
+      order = 0
+      parent = child2
+    [[[terminal4]]]
+      profile = default
+      command = screen -d -R -S dev-3-2
+      type = Terminal
+      order = 1
+      parent = child2
+    [[[terminal7]]]
+      profile = default
+      command = screen -d -R -S dev-3-4
+      type = Terminal
+      order = 1
+      parent = child5
+    [[[terminal6]]]
+      profile = default
+      command = screen -d -R -S dev-3-3
+      type = Terminal
+      order = 0
+      parent = child5
+[plugins]
+  [[CustomCommandsMenu]]
+    [[[terminator dev-1]]]
+      command = terminator -l dev-1
+      enabled = True
+      name = terminator dev-1

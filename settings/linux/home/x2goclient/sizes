@@ -1,0 +1,4 @@
+[mainwindow]
+size=@Size(1040 600)
+pos=@Point(-9 -8)
+maximized=false

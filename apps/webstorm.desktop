@@ -1,0 +1,9 @@
+
+[Desktop Entry]
+Type=Application
+Name=Web Storm
+Comment=Web Storm
+Icon=/home/idachev/lib/WebStorm/bin/webide.png
+Exec=/home/idachev/lib/WebStorm/bin/webstorm.sh
+Terminal=false
+Categories=Development;IDE;JavaScript;

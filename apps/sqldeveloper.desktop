@@ -1,0 +1,10 @@
+
+[Desktop Entry]
+Type=Application
+Name=SQL Developer
+Comment=SQL Developer
+Icon=/home/idachev/lib/sqldeveloper/icon.png
+Exec=/home/idachev/lib/sqldeveloper/sqldeveloper.sh
+Terminal=false
+Categories=Development;SQL;Oracle;Database;DB
+Name[en_US]=DB SQL Developer

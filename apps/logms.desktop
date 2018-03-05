@@ -1,0 +1,20 @@
+
+[Desktop Entry]
+Categories=Development;
+Comment[en_US]=Log MX
+Comment=Log MX
+Exec=/home/idachev/lib/LogMX_v2.0.2/logmx.sh
+GenericName[en_US]=
+GenericName=
+Icon=/home/idachev/lib/LogMX_v2.0.2/pics/logmx_logo_32x32.png
+MimeType=
+Name=Log MX
+Path=/home/idachev/lib/LogMX_v2.0.2
+StartupNotify=false
+Terminal=false
+TerminalOptions=
+Type=Application
+X-DBUS-ServiceName=
+X-DBUS-StartupType=
+X-KDE-SubstituteUID=false
+X-KDE-Username=

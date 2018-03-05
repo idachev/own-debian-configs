@@ -1,0 +1,14 @@
+#!/usr/bin/env xdg-open
+[Desktop Entry]
+Encoding=UTF-8
+Name=Firefox
+GenericName=Browser
+Comment=Web Browser
+Exec=firefox %u
+Icon=firefox-mozilla-build
+Terminal=false
+X-MultipleArgs=false
+StartupNotify=true
+StartupWMClass=Firefox
+Type=Application
+Categories=Network;WebBrowser;

@@ -1,0 +1,75 @@
+<?xml version="1.0"?>
+<data grt_format="2.0">
+  <value _ptr_="0x14b9a60" type="list" content-type="object" content-struct-name="db.mgmt.Connection">
+    <value type="object" struct-name="db.mgmt.Connection" id="2a22cce0-8967-11e6-8b34-24770327cc64" struct-checksum="0x96ba47d8">
+      <link type="object" struct-name="db.mgmt.Driver" key="driver">com.mysql.rdbms.mysql.driver.native</link>
+      <value type="string" key="hostIdentifier">Mysql@localhost:3306</value>
+      <value type="int" key="isDefault">1</value>
+      <value _ptr_="0x11111b0" type="dict" key="modules"/>
+      <value _ptr_="0x1707550" type="dict" key="parameterValues">
+        <value type="string" key="DbSqlEditor:LastDefaultSchema">magento_e1_14</value>
+        <value type="string" key="SQL_MODE"></value>
+        <value type="string" key="hostName">localhost</value>
+        <value type="int" key="lastConnected">1495905101</value>
+        <value type="string" key="password"></value>
+        <value type="int" key="port">3306</value>
+        <value type="string" key="schema">nililotan</value>
+        <value type="string" key="serverVersion">5.6.33-0ubuntu0.14.04.1</value>
+        <value type="string" key="sslCA"></value>
+        <value type="string" key="sslCert"></value>
+        <value type="string" key="sslCipher"></value>
+        <value type="string" key="sslKey"></value>
+        <value type="int" key="useSSL">1</value>
+        <value type="string" key="userName">root</value>
+      </value>
+      <value type="string" key="name">Local instance 3306</value>
+      <link type="object" struct-name="GrtObject" key="owner">8c3259a8-42ff-11e7-958a-24770327cc64</link>
+    </value>
+    <value type="object" struct-name="db.mgmt.Connection" id="afbe7d00-dc6d-11e6-894c-24770327cc64" struct-checksum="0x96ba47d8">
+      <link type="object" struct-name="db.mgmt.Driver" key="driver">com.mysql.rdbms.mysql.driver.native</link>
+      <value type="string" key="hostIdentifier">Mysql@127.0.0.1:3306</value>
+      <value type="int" key="isDefault">0</value>
+      <value _ptr_="0x170b6f0" type="dict" key="modules"/>
+      <value _ptr_="0x1112660" type="dict" key="parameterValues">
+        <value type="string" key="SQL_MODE"></value>
+        <value type="string" key="hostName">127.0.0.1</value>
+        <value type="int" key="lastConnected">1484627458</value>
+        <value type="string" key="password"></value>
+        <value type="int" key="port">3306</value>
+        <value type="string" key="schema">magento_t1</value>
+        <value type="string" key="serverVersion">5.6.33-0ubuntu0.14.04.1</value>
+        <value type="string" key="sslCA"></value>
+        <value type="string" key="sslCert"></value>
+        <value type="string" key="sslCipher"></value>
+        <value type="string" key="sslKey"></value>
+        <value type="int" key="useSSL">1</value>
+        <value type="string" key="userName">magento</value>
+      </value>
+      <value type="string" key="name">magento_t1</value>
+      <link type="object" struct-name="GrtObject" key="owner">8c3259a8-42ff-11e7-958a-24770327cc64</link>
+    </value>
+    <value type="object" struct-name="db.mgmt.Connection" id="a57c013e-f507-11e6-a771-24770327cc64" struct-checksum="0x96ba47d8">
+      <link type="object" struct-name="db.mgmt.Driver" key="driver">com.mysql.rdbms.mysql.driver.native</link>
+      <value type="string" key="hostIdentifier">Mysql@127.0.0.1:19001</value>
+      <value type="int" key="isDefault">0</value>
+      <value _ptr_="0x1112c20" type="dict" key="modules"/>
+      <value _ptr_="0x1112c90" type="dict" key="parameterValues">
+        <value type="string" key="SQL_MODE"></value>
+        <value type="string" key="hostName">127.0.0.1</value>
+        <value type="int" key="lastConnected">1493092568</value>
+        <value type="string" key="password"></value>
+        <value type="int" key="port">19001</value>
+        <value type="string" key="schema"></value>
+        <value type="string" key="serverVersion"></value>
+        <value type="string" key="sslCA"></value>
+        <value type="string" key="sslCert"></value>
+        <value type="string" key="sslCipher"></value>
+        <value type="string" key="sslKey"></value>
+        <value type="int" key="useSSL">1</value>
+        <value type="string" key="userName">root</value>
+      </value>
+      <value type="string" key="name">rb.dev.datastork.io</value>
+      <link type="object" struct-name="GrtObject" key="owner">8c3259a8-42ff-11e7-958a-24770327cc64</link>
+    </value>
+  </value>
+</data>

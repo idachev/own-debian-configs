@@ -1,0 +1,73 @@
+# Normal aliases
+alias f='find |grep'
+alias c="clear"
+alias gvim='gvim -geom 82x35'
+alias ..='cd ..'
+alias ppp-on='sudo /usr/sbin/ppp-on'
+alias ppp-off='sudo /usr/sbin/ppp-off'
+alias firestarter='sudo su -c firestarter'
+alias hist="grep '$1' /home/idachev/.histfile"
+alias irssi="irssi -c irc.freenode.net -n yyz"
+alias mem="free -m"
+alias psg="ps ax | grep"
+alias gvim="gvim -geom 132x42"
+alias rh='echo '\''cleanup from hist:'\'';sed -n -e '\''${x;1!p;};h'\'' ~/.histfile;sed -i '\''$d'\'' ~/.histfile'
+
+# Interactive operation...
+alias rm='rm -i'
+alias cp='cp -i'
+alias mv='mv -i'
+
+# Default to human readable figures
+alias df='df -h'
+alias du='du -h'
+alias ncdu='ncdu -q'
+
+# Misc :)
+alias less='less -r'                          # raw control characters
+alias whence='type -a'                        # where, of a sort
+alias grep='grep --color'
+alias egrep='egrep --color'
+alias fgrep='fgrep --color'
+
+# Different directory listings
+alias ls='ls -hF --color=tty --group-directories-first'
+alias ll='ls -l'
+alias la='ls -a'
+alias lc='ls -C'
+alias l='ls -al'
+alias lla='l'
+alias lsd='ls -ld *(-/DN)'
+alias lsa='ls -ld .*'
+alias ltr='l -tr'
+alias lt='l -t'
+
+# Git related
+alias gitka='gitk --all'
+alias gitga='gitg --all'
+alias g='git'
+alias gk='gitk'
+alias gka='gitk --all'
+
+# Extended man viewer
+#alias man='pinfo -m'
+
+# For easy start with nice/ionice
+alias n19='nice -n 19'
+alias n10='nice -n 10'
+alias in7='ionice -c2 -n7'
+alias in4='ionice -c2 -n4'
+alias in0='ionice -c2 -n0'
+
+alias tail='tail -f -n +0'
+
+alias exit='echo "Please confirm with(y/n): ";read ans;if [ "$ans" = "y" ];then exit;fi'
+
+# Quick working with screens
+alias s1open='screen -d -R -S s1'
+alias s2open='screen -d -R -S s2'
+alias s3open='screen -d -R -S s3'
+
+alias tmux="tmux -2"
+
+alias prettyjson='python -m json.tool'

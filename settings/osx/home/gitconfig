@@ -1,0 +1,47 @@
+[user]
+	name = Ivan Dachev
+	email = idachev@vmware.com
+[alias]
+	chs = changeset
+	ci = commit
+	st = status
+	co = checkout
+	df = diff
+	br = branch
+	bra = branch -a
+	info = remote -v
+	who = shortlog -s --
+	changes = diff --name-status -r
+	diffstat = diff --stat -r
+	gitkconflict = !gitk --left-right HEAD...MERGE_HEAD
+	hist = log --pretty=format:\"%h %ad | %s%d [%an]\" --graph --date=short
+	type = cat-file -t
+	dump = cat-file -p
+	lla = log --all --pretty=oneline --abbrev-commit --graph --decorate=full
+[color]
+	ui = auto
+[color "branch"]
+	current = yellow reverse
+	local = yellow
+	remote = green
+[color "diff"]
+	meta = yellow bold
+	frag = magenta bold
+	old = red bold
+	new = green bold
+	whitespace = red reverse
+[color "status"]
+	added = yellow
+	changed = green
+	untracked = cyan
+[merge]
+	tool = kdiff3
+[core]
+	autocrlf = false
+	safecrlf = warn
+[http]
+	postBuffer = 524288000
+[credential]
+	helper = cache
+[push]
+	default = simple

@@ -1,0 +1,49 @@
+#echo -e "\n\nExecuting ~/.zshenv\n\n"
+
+###########################################################
+# Setting local sqlplus
+export SQLPATH=/opt/sqlplus/instantclient_11_1
+if [ -d $SQLPATH ]; then
+  export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$SQLPATH
+  export PATH=$SQLPATH:${PATH}
+  export NLS_LANG=AMERICAN_AMERICA.UTF8
+fi
+
+###########################################################
+# Setting local gtest
+export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/lib
+
+###########################################################
+# Export vars
+#export JAVA_HOME=/usr/lib/jvm/java-6-sun
+export JAVA_HOME=/usr/lib/jvm/java-1.6.0-openjdk
+export MAVEN_OPTS="-Xmx1024m -XX:MaxPermSize=256m"
+
+export LOCAL_JAVA_HOME_32=/home/idachev/lib/java/jre1.6.0_34
+export LOCAL_JAVA_HOME_64=/home/idachev/lib/java/jre1.6.0_34_x64
+
+#pycharm java
+export PYCHARM_JDK=$LOCAL_JAVA_HOME_32
+
+# Add custom scripts to bin
+export PATH=/usr/local/bin:$PATH:/usr/share/fslint/fslint:$HOME/bin
+
+# Perforce custom envs
+export P4CONFIG=.p4config
+export P4EDITOR=vim
+export P4MERGE=kdiff3
+
+export PYTHONPATH=$PYTHONPATH:~/lib/pywikipedia/
+
+export GTEST_DIR=/home/idachev/develop/private/gtest/gtest-1.6.0
+
+export RSYNC_PARTIAL_DIR=/home/idachev/.rsync-tmp
+
+# Add local PC shell settings
+# Disable this if you use rsync and ssh or scp
+if [ -f ~/.localenv ]; then
+  # Do not use source instead of . in env files
+  # it does not work for desktop managers env load
+  . ~/.localenv
+fi
+

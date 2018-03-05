@@ -1,0 +1,11 @@
+include "/usr/share/themes/oxygen-gtk/gtk-2.0/gtkrc"
+
+#idachev used to disable menu popup in terminals on F10
+binding "NoKeyboardNavigation" {
+    unbind "<shift>F10"
+}
+
+class "*" binding "NoKeyboardNavigation"
+
+gtk-font-name="Sans Serif 9"
+

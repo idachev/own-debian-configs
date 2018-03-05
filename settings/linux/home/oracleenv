@@ -1,0 +1,7 @@
+export ORACLE_HOME=/usr/lib/oracle/12.1
+export PATH=${PATH}:${ORACLE_HOME}/client64/bin
+export LD_LIBRARY_PATH=${ORACLE_HOME}/client64/lib
+export SQLPATH=${ORACLE_HOME}/sqlplus/admin
+export TNS_ADMIN=${ORACLE_HOME}
+export NLS_LANG=AMERICAN_AMERICA.UTF8
+

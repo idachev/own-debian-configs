@@ -1,0 +1,13 @@
+<?xml version="1.0"?>
+<gconf>
+	<entry name="search_window_monitor_num" mtime="1499405240" type="int" value="0"/>
+	<entry name="search_window_splitter_pos" mtime="1499405240" type="int" value="150"/>
+	<entry name="search_window_height" mtime="1499405240" type="int" value="400"/>
+	<entry name="search_window_width" mtime="1499405240" type="int" value="450"/>
+	<entry name="search_window_y_pos" mtime="1499405240" type="int" value="428"/>
+	<entry name="search_window_x_pos" mtime="1499405240" type="int" value="500"/>
+	<entry name="note_rename_behavior" mtime="1499405062" type="int" value="2"/>
+	<entry name="start_note" mtime="1499404852" type="string">
+		<stringvalue>note://tomboy/b021e016-5cbc-4d09-ac0a-5f01b1312561</stringvalue>
+	</entry>
+</gconf>

@@ -1,0 +1,104 @@
+#!/usr/bin/env bash
+
+# for zsh startup files order see:
+# http://shreevatsa.wordpress.com/2008/03/30/zshbash-startup-files-loading-order-bashrc-zshrc-etc/
+
+if [ -z "$PS1" ]; then
+  echo -e "${COLOR_RED}You should source this, not run it, for example: source ./link${COLOR_NC}"
+else
+
+  SOURCE=${BASH_SOURCE[0]}
+  if [ -z $SOURCE ]; then
+    SOURCE=$0
+  fi
+  BASEDIR=$(cd "$(dirname "$SOURCE")"; pwd)
+  echo "BASEDIR: $BASEDIR"
+
+  link () {
+    echo -e "\nDo link\n$1\n$2\n"
+    ls -l $2
+    echo
+
+    if [ -L $2 ]; then
+      DSTLINK=$(readlink $2)
+      if [ "$DSTLINK" = "$1" ]; then
+        echo -e "Link already done!\n"
+        return
+      fi
+    fi
+
+    if [ -e $1 ]; then
+      if [ -d $2 ]; then        
+        rm -i -r $2
+      fi
+      if [ -e $2 ]; then
+        rm -i $2
+      fi
+      if [ -L $2 ]; then
+        rm -i $2
+      fi
+
+      if [ -e $2 ]; then
+        echo -e "\nDestination was not removed!"
+      else
+        ln -s $1 $2
+      fi
+    else
+      echo -e "Source does not exist!"
+    fi
+
+    echo
+  }
+
+  # bash
+  link $BASEDIR/bash_profile $HOME/.bash_profile
+  link $BASEDIR/bashrc $HOME/.bashrc
+  link $BASEDIR/profile $HOME/.profile
+  link $BASEDIR/bash_logout $HOME/.bash_logout
+#  link $BASEDIR/bashrc_help $HOME/.bashrc_help
+#  link $BASEDIR/bashrc_app_specific $HOME/.bashrc_app_specific
+
+  # zsh
+  link $BASEDIR/zsh $HOME/.zsh
+  link $BASEDIR/zshenv $HOME/.zshenv
+  link $BASEDIR/zprofile $HOME/.zprofile
+  link $BASEDIR/zshprompt $HOME/.zshprompt
+  link $BASEDIR/zshrc $HOME/.zshrc
+
+  # vim
+  link $BASEDIR/vim/vimrc $HOME/.vimrc
+  link $BASEDIR/vim/gvimrc $HOME/.gvimrc
+  link $BASEDIR/vim $HOME/.vim
+
+  # git
+  link $BASEDIR/gitconfig $HOME/.gitconfig
+  link $BASEDIR/gitk $HOME/.gitk
+  link $BASEDIR/git-prompt.sh $HOME/.git-prompt.sh
+#  link $BASEDIR/gitignore $HOME/.gitignore
+#  link $BASEDIR/gitattributes $HOME/.gitattributes
+
+# OLD for ubuntu 10.10 for debian wheezy moved to ~/.config
+#  link $BASEDIR/htoprc $HOME/.htoprc
+#  link $BASEDIR/mc $HOME/.mc
+
+  # config
+#  link $BASEDIR/config/glogg $HOME/.config/glogg
+#  link $BASEDIR/config/hotkeys $HOME/.config/hotkeys
+#  link $BASEDIR/config/htop $HOME/.config/htop
+#  link $BASEDIR/config/mc $HOME/.config/mc
+#  link $BASEDIR/config/synapse $HOME/.config/synapse
+#  link $BASEDIR/config/terminator $HOME/.config/terminator
+#  link $BASEDIR/config/awesome $HOME/.config/awesome
+
+  # misc
+  link $BASEDIR/aliases $HOME/.aliases
+#  link $BASEDIR/kderc $HOME/.kderc
+  link $BASEDIR/inputrc $HOME/.inputrc
+  link $BASEDIR/toprc $HOME/.toprc
+#  link $BASEDIR/fonts $HOME/.fonts
+#  link $BASEDIR/fonts.conf $HOME/.fonts.conf
+#  link $BASEDIR/shell_set_colors $HOME/.shell_set_colors
+#  link $BASEDIR/gtkrc-2.0 $HOME/.gtkrc-2.0
+
+fi
+

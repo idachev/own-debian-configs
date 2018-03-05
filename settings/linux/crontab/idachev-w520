@@ -1,0 +1,7 @@
+*/10 * * * * env DISPLAY=:0 /home/idachev/bin/dbus_crontab_exec.sh dbus-daemon /home/idachev/bin/battery_status_notify.sh > /dev/null 2>&1
+
+*/2 * * * * env DISPLAY=:0 /home/idachev/bin/dbus_crontab_exec.sh dbus-daemon /home/idachev/bin/wallpaper.sh ~/Dropbox/pics/Astronomy > /dev/null 2>&1
+
+5 */4 * * * /home/idachev/Dropbox/sync/sync.sh doit >> /tmp/cron_dropbox_sync.log 2>&1
+
+35 1 * * * /home/idachev/Dropbox/sync/sync_manual.sh doit >> /tmp/cron_dropbox_sync.log 2>&1

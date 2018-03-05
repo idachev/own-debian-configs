@@ -1,0 +1,10 @@
+
+[Desktop Entry]
+Type=Application
+Name=PHP Storm
+Comment=PHP Storm
+Icon=/home/idachev/lib/phpstorm/bin/phpstorm.png
+Exec=/home/idachev/lib/phpstorm/bin/phpstorm.sh
+Terminal=false
+Categories=Development;IDE;PHP;
+Name[en_US]=Dev J PHP Storm

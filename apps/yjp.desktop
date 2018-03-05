@@ -1,0 +1,10 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=YourKitJProfiler
+Exec="/home/idachev/lib/yjp/bin/yjp.sh"
+Icon=/home/idachev/lib/yjp/bin/yjp.ico
+Comment=Java profiling
+Categories=Development;Profiling;Java
+Terminal=false
+StartupNotify=true

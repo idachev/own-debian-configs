@@ -1,0 +1,37 @@
+# /etc/fstab: static file system information.
+#
+# Use 'blkid' to print the universally unique identifier for a
+# device; this may be used with UUID= as a more robust way to name devices
+# that works even if disks are added and removed. See fstab(5).
+#
+# <file system> <mount point>   <type>  <options>       <dump>  <pass>
+
+# / was on /dev/sda1 during installation
+UUID=95800673-7959-4f20-bf36-f53c0804655a /               ext4    noatime,nodiratime,discard,errors=remount-ro 0       1
+
+# /home/idachev/storage was on /dev/sdb1 during installation
+UUID=a438c593-a597-445d-b534-f29382b4f117 /home/idachev/storage        ext4    defaults        0       2
+
+UUID=401d70ea-4782-4a72-acb5-b0f1bbbb9f28 /home/idachev/storage_home        ext4    defaults        0       2
+
+/dev/sr0        /media/cdrom0   udf,iso9660 user,noauto     0       0
+
+/dev/fd0        /media/floppy0  auto    rw,user,noauto  0       0
+
+/swap/swap.dat	none	swap	sw	0	0
+
+tmpfs	/tmp	tmpfs	defaults,noatime,mode=1777	0	0
+
+tmpfs	/var/tmp	tmpfs	defaults,noatime,mode=1777	0	0 
+
+# VMware build mounts
+build-apps.eng.vmware.com:/apps /bldmnt/apps nfs hard,intr,rsize=8192,wsize=8192,bg,tcp
+
+build-toolchain.eng.vmware.com:/toolchain /bldmnt/toolchain nfs hard,intr,rsize=8192,wsize=8192,bg,tcp
+
+scm-trees.eng.vmware.com:/trees /bldmnt/trees nfs hard,intr,rsize=32768,wsize=32768,bg,tcp
+
+sof2-dbc103.eng.vmware.com:/dbc/sof2-dbc103 /dbc/sof2-dbc103 nfs tcp,rw,async,vers=3
+
+sof-home.eng.vmware.com:/home /mts-sof/home nfs hard,intr,rsize=32768,wsize=32768,bg,tcp
+

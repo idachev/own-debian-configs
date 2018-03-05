@@ -1,0 +1,18 @@
+#echo -e "\n\nExecuting ~/.bash_profile\n\n"
+
+# Load .profile, containing login, non-bash related initializations.
+PROFILE=~/.profile
+if [ -f $PROFILE ]; then
+  # Do not use source instead of . in env files
+  # it does not work for desktop managers env load
+  . $PROFILE
+fi
+
+# Load .bashrc, containing non-login related bash initializations.
+BASHRC=~/.bashrc
+if [ -f $BASHRC ]; then
+  # Do not use source instead of . in env files
+  # it does not work for desktop managers env load
+  . $BASHRC
+fi
+

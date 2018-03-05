@@ -1,0 +1,20 @@
+
+[Desktop Entry]
+Categories=Development;UML;
+Comment[en_US]=Visual Paradigm
+Comment=Visual Paradigm
+Exec=/home/idachev/lib/VP_Suite5.0/launcher/run_vpuml
+GenericName[en_US]=
+GenericName=
+Icon=/home/idachev/lib/VP_Suite5.0/resources/vpuml.png
+MimeType=
+Name=Visual Paradigm
+Path=
+StartupNotify=true
+Terminal=false
+TerminalOptions=
+Type=Application
+X-DBUS-ServiceName=
+X-DBUS-StartupType=
+X-KDE-SubstituteUID=false
+X-KDE-Username=

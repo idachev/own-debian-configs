@@ -1,0 +1,32 @@
+#! /bin/sh
+# /etc/init.d/wpai-connect-service
+#
+
+# Some things that run always
+touch /var/lock/blah
+
+WPA2_CONF=/root/wlan/wlan-kiti-wpa2.conf
+INTERFACE=eth1
+
+# To install the script copy it in /etc/init.d and execute
+# update-rc.d wpa-connect-service defaults
+# To uninstall it execute this:
+# update-rc.d -f wpa-connect-service remove
+
+# Carry out specific functions when asked to by the system
+case "$1" in
+  start)
+    echo "Starting script wpa2 connect with conf: $WPA2_CONF interface: $INTERFACE...";
+    /root/wlan/wpa_connect.sh $WPA2_CONF $INTERFACE;
+    ;;
+  stop)
+    echo "Stopping script wpa2 interface: $INTERFACE...";
+    /root/wlan/wpa_connect.sh -stop $INTERFACE;
+    ;;
+  *)
+    echo "Usage: /etc/init.d/wpa_connect_service {start|stop}"
+    exit 1
+    ;;
+esac
+
+exit 0

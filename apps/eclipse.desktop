@@ -1,0 +1,11 @@
+
+[Desktop Entry]
+Type=Application
+Name=Eclipse Neon
+Comment=Eclipse Integrated Development Environment
+Icon=/home/idachev/lib/eclipse/javascript-neon/eclipse/icon.xpm
+Exec=/home/idachev/lib/eclipse/javascript-neon/eclipse/eclipse
+Terminal=false
+Categories=Development;IDE;Java;
+Name[en_US]=Dev Eclipse Neon
+Comment[en_US]=Eclipse Integrated Development Environment

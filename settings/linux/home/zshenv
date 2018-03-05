@@ -1,0 +1,63 @@
+#echo -e "\n\nExecuting ~/.zshenv\n\n"
+
+###########################################################
+# Setting local gtest
+LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/lib
+export LD_LIBRARY_PATH
+
+###########################################################
+# Export vars
+export MAVEN_OPTS="-Xmx1024m -XX:MaxPermSize=256m"
+
+export LOCAL_JAVA_HOME_32=/home/idachev/lib/java/jre1.6.0_34
+export LOCAL_JAVA_HOME_64=/home/idachev/lib/java/jre1.6.0_34_x64
+
+export SYS_JAVA_HOME_7=/usr/lib/jvm/java-7-oracle
+export SYS_JAVA_HOME_8=/usr/lib/jvm/java-8-oracle
+
+#export SYS_JAVA_HOME=${SYS_JAVA_HOME_7}
+export SYS_JAVA_HOME=${SYS_JAVA_HOME_8}
+
+export JAVA_HOME=${SYS_JAVA_HOME}
+
+# PyCharm
+#export PYCHARM_JDK=$LOCAL_JAVA_HOME_32
+#export PYCHARM_JDK=${SYS_JAVA_HOME_7}
+export PYCHARM_JDK=${SYS_JAVA_HOME_8}
+
+# IDEA
+export IDEA_JDK=${SYS_JAVA_HOME_8}
+
+# PhpStorm
+export WEBIDE_JDK=${SYS_JAVA_HOME_7}
+
+# ThisnkOrSwim
+export INSTALL4J_JAVA_HOME=${SYS_JAVA_HOME_8}
+
+# Add custom scripts to bin
+export PATH=$PATH:/usr/share/fslint/fslint:$HOME/bin
+
+# Perforce custom envs
+export P4CONFIG=.p4config
+export P4EDITOR=vim
+export P4MERGE=kdiff3
+
+export PYTHONPATH=$PYTHONPATH:~/lib/pywikipedia/
+
+export GTEST_DIR=/home/idachev/develop/private/gtest/gtest-1.6.0
+
+export RSYNC_PARTIAL_DIR=/home/idachev/.rsync-tmp
+
+if [ -f ~/.oracleenv ]; then
+  . ~/.oracleenv
+fi
+
+
+# Add local PC shell settings
+# Disable this if you use rsync and ssh or scp
+if [ -f ~/.localenv ]; then
+  # Do not use source instead of . in env files
+  # it does not work for desktop managers env load
+  . ~/.localenv
+fi
+

@@ -1,0 +1,8 @@
+<?xml version="1.0"?>
+<gconf>
+	<entry name="enabled" mtime="1431615758" type="bool" value="true"/>
+	<entry name="needs_terminal" mtime="1431615758" type="bool" value="false"/>
+	<entry name="command" mtime="1431615758" type="string">
+		<stringvalue>/opt/google/chrome-beta/google-chrome-beta %s</stringvalue>
+	</entry>
+</gconf>

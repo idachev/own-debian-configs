@@ -1,0 +1,22 @@
+#!/usr/bin/env xdg-open
+
+[Desktop Entry]
+Categories=Development;Java;
+Comment[en_US]=JD-GUI Java Decompiler
+Comment=jEdit
+Exec=/home/idachev/bin/jd-gui
+GenericName[en_US]=
+GenericName=
+Icon=/home/idachev/bin/jd-gui.png
+MimeType=
+Name=JD-GUI
+Path=
+StartupNotify=true
+Terminal=false
+TerminalOptions=
+Type=Application
+X-DBUS-ServiceName=
+X-DBUS-StartupType=
+X-KDE-SubstituteUID=false
+X-KDE-Username=
+Name[en_US]=Dev JD-GUI

@@ -1,0 +1,7 @@
+<?xml version="1.0"?>
+<gconf>
+	<entry name="expanded" mtime="1438740331" type="bool" value="true"/>
+	<entry name="library-location" mtime="1438740277" type="string">
+		<stringvalue>/home/idachev/Podcasts</stringvalue>
+	</entry>
+</gconf>

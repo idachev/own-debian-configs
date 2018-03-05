@@ -1,0 +1,135 @@
+[global_config]
+  enabled_plugins = CustomCommandsMenu, LaunchpadCodeURLHandler, APTURLHandler, LaunchpadBugURLHandler
+  handle_size = 5
+[keybindings]
+[profiles]
+  [[default]]
+    palette = "#7e7e7e:#ff6c60:#a8ff60:#ffffb6:#96cbfe:#ff73fd:#c6c5fe:#eeeeee:#9c9c9c:#ffb6b0:#ceffab:#ffffcb:#b5dcfe:#ff9cfe:#dfdffe:#ffffff"
+    font = Monospace 11
+    visible_bell = True
+    urgent_bell = True
+    use_system_font = False
+    scroll_on_output = False
+    copy_on_selection = True
+    scrollback_infinite = True
+[layouts]
+  [[default]]
+    [[[child1]]]
+      type = Terminal
+      parent = window0
+      profile = default
+    [[[window0]]]
+      type = Window
+      parent = ""
+  [[dev-2]]
+    [[[child0]]]
+      position = 0:0
+      type = Window
+      order = 0
+      parent = ""
+      size = 1600, 1122
+    [[[child1]]]
+      position = 762
+      type = HPaned
+      order = 0
+      parent = child0
+    [[[child2]]]
+      position = 561
+      type = VPaned
+      order = 0
+      parent = child1
+    [[[child5]]]
+      position = 561
+      type = VPaned
+      order = 1
+      parent = child1
+    [[[terminal3]]]
+      profile = default
+      type = Terminal
+      order = 0
+      parent = child2
+    [[[terminal4]]]
+      profile = default
+      type = Terminal
+      order = 1
+      parent = child2
+    [[[terminal7]]]
+      profile = default
+      type = Terminal
+      order = 1
+      parent = child5
+    [[[terminal6]]]
+      profile = default
+      type = Terminal
+      order = 0
+      parent = child5
+  [[dev-1]]
+    [[[child0]]]
+      position = 1600:0
+      type = Window
+      order = 0
+      parent = ""
+      size = 1600, 1175
+    [[[child1]]]
+      position = 587
+      type = VPaned
+      order = 0
+      parent = child0
+    [[[child2]]]
+      position = 800
+      type = HPaned
+      order = 0
+      parent = child1
+    [[[child4]]]
+      position = 293
+      type = VPaned
+      order = 1
+      parent = child2
+    [[[child5]]]
+      position = 397
+      type = HPaned
+      order = 0
+      parent = child4
+    [[[child9]]]
+      position = 800
+      type = HPaned
+      order = 1
+      parent = child1
+    [[[terminal11]]]
+      profile = default
+      type = Terminal
+      order = 1
+      parent = child9
+    [[[terminal10]]]
+      profile = default
+      type = Terminal
+      order = 0
+      parent = child9
+    [[[terminal3]]]
+      profile = default
+      type = Terminal
+      order = 0
+      parent = child2
+      command = ""
+    [[[terminal7]]]
+      profile = default
+      type = Terminal
+      order = 1
+      parent = child5
+    [[[terminal6]]]
+      profile = default
+      type = Terminal
+      order = 0
+      parent = child5
+    [[[terminal8]]]
+      profile = default
+      type = Terminal
+      order = 1
+      parent = child4
+      command = htop
+[plugins]
+  [[CustomCommandsMenu]]
+    [[[terminator dev-1]]]
+      command = terminator -l dev-1
+      enabled = True
+      name = terminator dev-1

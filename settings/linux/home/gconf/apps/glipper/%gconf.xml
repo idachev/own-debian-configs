@@ -1,0 +1,11 @@
+<?xml version="1.0"?>
+<gconf>
+	<entry name="key_combination" mtime="1428324393" type="string">
+		<stringvalue>Ctrl+Alt+V</stringvalue>
+	</entry>
+	<entry name="max_elements" mtime="1428323483" type="int" value="99"/>
+	<entry name="save_history" mtime="1428323476" type="bool" value="true"/>
+	<entry name="mark_default_entry" mtime="1428323473" type="bool" value="true"/>
+	<entry name="use_default_clipboard" mtime="1428323468" type="bool" value="true"/>
+	<entry name="use_primary_clipboard" mtime="1428323468" type="bool" value="true"/>
+</gconf>

@@ -1,0 +1,11 @@
+#!/bin/zsh
+
+sort=-k1rn
+if [ "$1" = "-rss" ]; then
+	sort=-k3rn;
+elif [ "$1" = "-vsize" ]; then
+	sort=-k4rn;
+fi
+
+echo " $(print '\e[1;34m')\tpmem(%)\trss+vsize(MB)\trss(MB)\t\tvsize(MB)\tpid\tuser\tprocess$(print '\e[0m')"; ps -eo pmem,pid,rss,vsize,user,comm | sort $sort | awk '{print ($1)"\t"($3+$4)/1024"\t\t"($3)/1024"\t\t"($4)/1024"\t\t"$2"\t"$5"\t"$NF}' | head -n 20 |nl
+

@@ -1,0 +1,10 @@
+#echo -e "\n\nExecuting ~/.profile\n\n"
+
+# Add zsh env variables in case we use bash.
+ZSHENV=~/.zshenv
+if [ -f $ZSHENV ]; then
+  # Do not use source instead of . in env files
+  # it does not work for desktop managers env load
+  . $ZSHENV
+fi
+

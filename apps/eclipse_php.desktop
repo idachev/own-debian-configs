@@ -1,0 +1,9 @@
+
+[Desktop Entry]
+Type=Application
+Name=Eclipse PHP
+Comment=Eclipse Integrated Development Environment
+Icon=/home/idachev/lib/eclipse_php/icon.xpm
+Exec=/home/idachev/bin/eclipse_php.sh
+Terminal=false
+Categories=Development;IDE;PHP;

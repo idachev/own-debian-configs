@@ -1,0 +1,167 @@
+
+function precmd {
+	###
+	# Configure here vcs info
+	vcs_info
+	if [[ "$vcs_info_msg_0_" != "" ]]; then
+		PR_VCS_INFO=$PR_NO_COLOUR'['$PR_DIM_YELLOW$vcs_info_msg_0_$PR_NO_COLOUR']'$PR_NO_COLOUR
+	else
+		PR_VCS_INFO=''
+	fi
+
+
+	local TERMWIDTH
+	(( TERMWIDTH = ${COLUMNS} - 1 ))
+
+
+	###
+	# Truncate the path if it's too long.
+	
+	PR_FILLBAR=""
+
+	local pwdsize=${#${(%):-%~}}
+	local vcssize=${#vcs_info_msg_0_}
+	# add len of [..]
+	if [[ "$vcssize" -gt 0 ]]; then
+		(( vcssize += 2 ))
+	fi
+
+	if [[ "$pwdsize + $vcssize" -gt $TERMWIDTH ]]; then
+		((PR_PWDLEN=$TERMWIDTH - $vcssize))
+	fi
+
+
+	###
+	# Get APM info.
+
+	if which acpi > /dev/null 2>&1; then
+		PR_APM_RESULT=`acpi -b 2> /dev/null`
+	elif which ibam > /dev/null 2>&1; then
+		PR_APM_RESULT=`ibam --percentbattery 2> /dev/null`
+	elif which apm > /dev/null 2>&1; then
+		PR_APM_RESULT=`apmi 2> /dev/null`
+	fi
+}
+
+
+setopt extended_glob
+preexec () {
+	if [[ "$TERM" == "screen" ]]; then
+	local CMD=${1[(wr)^(*=*|sudo|-*)]}
+	echo -n "\ek$CMD\e\\"
+	fi
+}
+
+
+dumpcolors () {
+	echo $(print '\e[0m')
+	for (( i = 0; i <= 7; i++ )); do
+		echo $(print '\e[0;3'$i'm') 'Color 0;3'$i $(print '\e[0m')
+		echo $(print '\e[1;3'$i'm') 'Color 1;3'$i $(print '\e[0m')
+	done
+}
+
+
+###
+# Used to set the prompt
+
+setprompt () {
+	###
+	# Need this so the prompt will work.
+
+	setopt prompt_subst
+
+
+	###
+	# Setting vcs_info used to the prompt
+
+	autoload -Uz vcs_info
+
+	zstyle ':vcs_info:*' stagedstr $(print '\e[0;31m')'●'
+	zstyle ':vcs_info:*' unstagedstr $(print '\e[1;31m')'●'
+	zstyle ':vcs_info:*' check-for-changes true
+	zstyle ':vcs_info:(sv[nk]|bzr):*' branchformat '%b:%r'
+	zstyle ':vcs_info:*' enable git svn cvs
+	zstyle ':vcs_info:*' formats '%b%c%u'
+
+
+	###
+	# See if we can use colors.
+
+	autoload colors zsh/terminfo
+	if [[ "$terminfo[colors]" -ge 8 ]]; then
+		colors
+	fi
+	for color in RED GREEN YELLOW BLUE MAGENTA CYAN WHITE; do
+		eval PR_$color='%{$terminfo[bold]$fg[${(L)color}]%}'
+		eval PR_DIM_$color='%{$terminfo[dim]$fg[${(L)color}]%}'
+		eval PR_LIGHT_$color='%{$fg[${(L)color}]%}'
+		(( count = $count + 1 ))
+	done
+	PR_NO_COLOUR="%{$terminfo[sgr0]%}"
+
+
+	###
+	# Decide if we need to set titlebar text.
+	
+	case $TERM in
+	xterm*)
+		PR_TITLEBAR=$'%{\e]0;%(!.-=*[ROOT]*=- | .)%n@%m:%~ | ${COLUMNS}x${LINES} | %y\a%}'
+		;;
+	screen)
+		PR_TITLEBAR=$'%{\e_screen \005 (\005t) | %(!.-=[ROOT]=- | .)%n@%m:%~ | ${COLUMNS}x${LINES} | %y\e\\%}'
+		;;
+	*)
+		PR_TITLEBAR=''
+		;;
+	esac
+	
+	
+	###
+	# Decide whether to set a screen title
+
+	if [[ "$TERM" == "screen" ]]; then
+		PR_STITLE=$'%{\ekzsh\e\\%}'
+	else
+		PR_STITLE=''
+	fi
+	
+	
+	###
+	# APM detection used for battery status if available
+	
+	if which acpi > /dev/null 2>&1; then
+		PR_APM='$PR_RED${${PR_APM_RESULT[(f)1]}[(w)+4]}%% '
+	elif which ibam > /dev/null 2>&1; then
+		PR_APM='$PR_RED${${PR_APM_RESULT[(f)1]}[(w)-2]}%%(${${PR_APM_RESULT[(f)3]}[(w)-1]}) '
+	elif which apm > /dev/null 2>&1; then
+		PR_APM='$PR_RED${PR_APM_RESULT[(w)5,(w)6]/\% /%%} '
+	else
+		PR_APM=''
+	fi
+
+
+	###
+	# Finally, the prompt.
+PR_DIM_YELLOW=$(print '%{\e[0;33m%}')
+
+	PROMPT='$PR_STITLE${(e)PR_TITLEBAR}\
+$PR_DIM_YELLOW%D{%H:%M} %D{%d/%m/%Y} \
+$PR_DIM_GREEN%(!.%SROOT%s.%n)$PR_DIM_GREEN@%m:%l \
+$PR_DIM_RED%(?..ERRNO:$PR_RED%?) \
+${(e)PR_APM}\
+
+$PR_BLUE%$PR_PWDLEN<...<%~%<< \
+$PR_VCS_INFO\
+
+%(!.$PR_RED.$PR_WHITE)%#\
+$PR_NO_COLOUR '
+
+#	RPROMPT=''
+
+	PS2='$PR_NO_COLOUR>'
+}
+
+#dumpcolors
+setprompt
+

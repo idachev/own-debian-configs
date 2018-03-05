@@ -1,0 +1,9 @@
+<?xml version="1.0"?>
+<gconf>
+	<entry name="open_start_here" mtime="1499405170" type="string">
+		<stringvalue>&lt;Alt&gt;G</stringvalue>
+	</entry>
+	<entry name="show_note_menu" mtime="1499405163" type="string">
+		<stringvalue>&lt;Alt&gt;F</stringvalue>
+	</entry>
+</gconf>

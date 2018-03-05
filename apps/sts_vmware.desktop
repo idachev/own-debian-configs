@@ -1,0 +1,21 @@
+#!/usr/bin/env xdg-open
+
+[Desktop Entry]
+Categories=Development;IDE;Java;STS;
+Comment[en_US]=STS
+Comment=STS
+Exec=/home/idachev/bin/sts_vmware.sh
+GenericName[en_US]=
+GenericName=
+Icon=/home/idachev/lib/springsource/sts-2.9.1.RELEASE/icon.xpm
+MimeType=
+Name=STS VMware
+Path=
+StartupNotify=true
+Terminal=false
+TerminalOptions=
+Type=Application
+X-DBUS-ServiceName=
+X-DBUS-StartupType=
+X-KDE-SubstituteUID=false
+X-KDE-Username=

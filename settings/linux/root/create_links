@@ -1,0 +1,45 @@
+#!/usr/bin/env bash
+
+# for zsh startup files order see:
+# http://shreevatsa.wordpress.com/2008/03/30/zshbash-startup-files-loading-order-bashrc-zshrc-etc/
+
+if [ -z "$PS1" ]; then
+  echo -e "${COLOR_RED}You should source this, not run it, for example: source ./link${COLOR_NC}"
+else
+
+  SOURCE=${BASH_SOURCE[0]}
+  if [ -z $SOURCE ]; then
+    SOURCE=$0
+  fi
+  BASEDIR=$(readlink -f $SOURCE)
+  BASEDIR=$(dirname $BASEDIR)
+  echo "BASEDIR: $BASEDIR"
+
+  link () {
+    if [ -e $1 ]; then
+      echo "Do link from $1 to $2"
+      if [ -e $2 ]; then
+        rm -i $2
+      fi
+      if [ -L $2 ]; then
+        rm -i $2
+      fi
+
+      ln -s $1 $2
+    else
+      echo "File does not exist: $1"
+    fi
+  }
+
+  # bash
+  link $BASEDIR/bash_profile /root/.bash_profile
+  link $BASEDIR/bashrc /root/.bashrc
+  link $BASEDIR/profile /root/.profile
+
+  # misc
+  link $BASEDIR/htoprc /root/.htoprc
+
+  link $BASEDIR/../home/aliases /root/.aliases
+  link $BASEDIR/../home/inputrc /root/.inputrc
+
+fi

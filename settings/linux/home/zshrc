@@ -1,0 +1,226 @@
+###########################################################        
+# Options for Zsh
+
+eval `dircolors -b`
+
+autoload -U compinit promptinit colors
+compinit
+promptinit
+colors
+
+unsetopt beep
+
+setopt appendhistory extendedglob
+setopt autopushd pushdminus pushdsilent pushdtohome
+setopt autocd
+# setopt cdablevars #Cause cd ... to freez
+setopt ignoreeof
+setopt interactivecomments
+setopt nobanghist
+setopt noclobber
+setopt SH_WORD_SPLIT
+setopt nohup
+
+#disable xon/xoff to use ctrl-s for reverse history
+stty -ixon
+
+export LC_CTYPE=en_US.UTF-8
+export LC_ALL=en_US.UTF-8
+
+##################################################################
+# History options
+
+HISTFILE=~/.histfile
+HISTSIZE=9999999
+SAVEHIST=9999999
+
+# Remove superfluous blanks from each command line being
+# added to the history list. 
+setopt HIST_REDUCE_BLANKS
+
+# When searching for history entries in the line editor, 
+# do not display duplicates of a line previously found, 
+# even if the duplicates are not contiguous.
+setopt HIST_FIND_NO_DUPS
+
+# If a new command line being added to the history list 
+# duplicates an older one, the older command is removed 
+# from the list (even if it is not the previous event).
+setopt HIST_IGNORE_ALL_DUPS
+
+# Do not enter command lines into the history list if 
+# they are duplicates of the previous event. 
+setopt HIST_IGNORE_DUPS
+
+# Remove command lines from the history list when the 
+# first character on the line is a space, or when one 
+# of the expanded aliases contains a leading space. 
+# Note that the command lingers in the internal history 
+# until the next command is entered before it vanishes,
+# allowing you to briefly reuse or edit the line.
+# If you want to make it vanish right away without
+# entering another command, type a space and press return. 
+setopt HIST_IGNORE_SPACE
+
+# This options works like APPEND_HISTORY except that new
+# history lines are added to the $HISTFILE incrementally
+# (as soon as they are entered), rather than waiting until
+# the shell is killed. The file is periodically trimmed
+# to the number of lines specified by $SAVEHIST,
+# but can exceed this value between trimmings. 
+setopt INC_APPEND_HISTORY
+
+##################################################################
+# PS1 and PS2
+
+. ~/.zshprompt
+
+# Disable username lookp = don't look up NIS users
+zmodload -i zsh/parameter
+_comp_setup+=$'\ntypeset -a userdirs'
+
+##################################################################
+# Stuff to make my life easier
+zstyle :compinstall filename '/home/idachev/.zshrc'
+
+# allow approximate
+zstyle ':completion:*' completer _complete _match _approximate
+zstyle ':completion:*:match:*' original only
+zstyle ':completion:*:approximate:*' max-errors 1 numeric
+
+# tab completion for PID :D
+zstyle ':completion:*:*:kill:*' menu yes select
+zstyle ':completion:*:kill:*' force-list always
+
+# cd not select parent dir
+zstyle ':completion:*:cd:*' ignore-parents parent pwd
+
+##################################################################
+# Key bindings
+# http://mundy.yazzy.org/unix/zsh.php
+# http://www.zsh.org/mla/users/2000/msg00727.html
+
+typeset -g -A key
+bindkey '^?' backward-delete-char
+bindkey '^[[1~' beginning-of-line
+bindkey '^[[5~' up-line-or-history
+bindkey '^[[3~' delete-char
+bindkey '^[[4~' end-of-line
+bindkey '^[[6~' down-line-or-history
+bindkey '^[[A' up-line-or-search
+bindkey '^[[D' backward-char
+bindkey '^[[B' down-line-or-search
+bindkey '^[[C' forward-char 
+bindkey '^[[1;5C' emacs-forward-word
+bindkey '^[[1;5D' emacs-backward-word
+bindkey '^R' history-incremental-search-backward
+bindkey '^S' history-incremental-search-forward
+
+##################################################################
+# Aliases
+
+# Used for alias auto extension
+export EDITOR="vim"
+
+#export BROWSER="elinks"
+export BROWSER="konqueror"
+
+export XTERM="aterm +sb -geometry 80x29 -fg black -bg lightgoldenrodyellow -fn -xos4-terminus-medium-*-normal-*-14-*-*-*-*-*-iso8859-15"
+
+#export VIDEO_PLAYER="totem"
+export VIDEO_PLAYER="vlc"
+
+export IMAGE_VIEW="gwenview"
+
+export OFFICE_VIEW="soffice"
+
+export PDF_VIEW="okular"
+
+export ARCHIVE_VIEW="ark"
+
+export LOG_VIEW="glogg"
+
+export FONT_VIEW="gnome-font-viewer"
+
+# Set up auto extension stuff
+alias -s html=$BROWSER
+alias -s org=$BROWSER
+alias -s php=$BROWSER
+alias -s com=$BROWSER
+alias -s net=$BROWSER
+alias -s PNG=$IMAGE_VIEW
+alias -s png=$IMAGE_VIEW
+alias -s JPG=$IMAGE_VIEW
+alias -s jpg=$IMAGE_VIEW
+alias -s jpeg=$IMAGE_VIEW
+alias -s GIF=$IMAGE_VIEW
+alias -s gif=$IMAGE_VIEW
+alias -s sxw=$OFFICE_VIEW
+alias -s doc=$OFFICE_VIEW
+alias -s docx=$OFFICE_VIEW
+alias -s ods=$OFFICE_VIEW
+alias -s xls=$OFFICE_VIEW
+alias -s xlsx=$OFFICE_VIEW
+alias -s tgz=$ARCHIVE_VIEW
+alias -s gz=$ARCHIVE_VIEW
+alias -s bz2=$ARCHIVE_VIEW
+alias -s zip=$ARCHIVE_VIEW
+alias -s java=$EDITOR
+alias -s txt=$EDITOR
+alias -s PKGBUILD=$EDITOR
+alias -s pdf=$PDF_VIEW
+alias -s mov=$VIDEO_PLAYER
+alias -s mk4=$VIDEO_PLAYER
+alias -s m4v=$VIDEO_PLAYER
+alias -s mpg=$VIDEO_PLAYER
+alias -s mvi=$VIDEO_PLAYER
+alias -s avi=$VIDEO_PLAYER
+alias -s 3gp=$VIDEO_PLAYER
+alias -s 3GP=$VIDEO_PLAYER
+alias -s log=$LOG_VIEW
+alias -s ttf=$FONT_VIEW
+
+# command L equivalent to command |less
+alias -g L='|less' 
+
+# command S equivalent to command &> /dev/null &
+alias -g S='&> /dev/null &'
+
+##################################################################
+# Plugins
+source ~/.zsh/zsh-syntax-highlighting.zsh
+source ~/.zsh/zsh-history-substring-search.zsh
+
+##################################################################
+# Misc
+
+fpath=(~/develop/private/zsh-completions $fpath)
+
+# type a directory's name to cd to it
+compctl -/ cd
+
+# add common aliases
+if [ -f ~/.aliases ]; then
+  . ~/.aliases
+fi
+
+if [ -f ~/.shell_set_colors ]; then
+  . ~/.shell_set_colors
+fi
+
+if [ -f ~/.localrc ]; then
+  . ~/.localrc
+fi
+
+# add keychain ssh-agent variables
+keychain -q ~/.local_ssh_key
+if [ -f ~/.keychain/$HOST-sh ]; then
+  . ~/.keychain/$HOST-sh
+fi
+if [ -f ~/.keychain/$HOST-sh-gpg ]; then
+  . ~/.keychain/$HOST-sh-gpg
+fi
+
+# jump zsh completion
+#source `jump-bin --zsh-integration`
+

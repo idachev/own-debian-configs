@@ -1,0 +1,11 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Idea
+Exec="/home/idachev/lib/idea/bin/idea.sh" %f
+Icon=/home/idachev/lib/idea/bin/idea.png
+Comment=Develop with pleasure!
+Categories=Development;IDE;
+Terminal=false
+StartupNotify=true
+Name[en_US]=Dev J Idea

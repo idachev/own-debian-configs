@@ -1,0 +1,14 @@
+
+[Desktop Entry]
+Encoding=UTF-8
+Name=Thunderbird
+GenericName=Mail Client
+Comment=Read/Write Mail/News with Mozilla Thunderbird
+Exec=thunderbird_custom.sh %u
+Icon=thunderbird-mozilla-build
+Terminal=false
+X-MultipleArgs=false
+StartupNotify=true
+StartupWMClass=Thunderbird-bin
+Type=Application
+Categories=Network;Email;
