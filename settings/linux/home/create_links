@@ -104,8 +104,8 @@ else
   link $BASEDIR/kderc $HOME/.kderc
   link $BASEDIR/inputrc $HOME/.inputrc
   link $BASEDIR/toprc $HOME/.toprc
-  link $BASEDIR/../../fonts $HOME/.fonts
   link $BASEDIR/fonts.conf $HOME/.fonts.conf
+  link $BASEDIR/Fontmatrix $HOME/.Fontmatrix
   link $BASEDIR/shell_set_colors $HOME/.shell_set_colors
   link $BASEDIR/gtkrc-2.0 $HOME/.gtkrc-2.0
   link $BASEDIR/screenrc $HOME/.screenrc
@@ -124,6 +124,8 @@ else
   link $BASEDIR/tmux.conf $HOME/.tmux.conf
 
   link $BASEDIR/gconf $HOME/.gconf
+
+  link ~/Dropbox/fonts $HOME/.fonts
 
 fi
 
