@@ -1,4 +1,4 @@
 #!/bin/bash
 
-inxi -FxZ
+sudo inxi -FxZm
 
