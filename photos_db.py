@@ -1,33 +1,38 @@
 #!/usr/bin/env python
 
-import sys
-import time
-import os
 import argparse
 import hashlib
-import pickle
-import stat
-from os import path
-
 # ========================================
 # Settings
+import multiprocessing
+import numpy as np
+import os
+import pickle
+import stat
+import sys
+import time
+from multiprocessing import Queue, Process
+from os import path
 
 DRY_RUN = True
 
 PHOTOS_DB = "photos.db"
 PHOTOS_ROOT = "photos"
 
-# Used to store cache of file hashes
 FILE_CACHE = ".file_cache"
 
 UPDATE_DB = False
 
 UPDATE_ROOT = False
 
+DEFAULT_THREADS = multiprocessing.cpu_count() - 2
+if DEFAULT_THREADS == 0:
+    DEFAULT_THREADS = 1
+
 # ========================================
 # Defines
 
-BUFF_FILE = 512*1024
+BUFF_FILE = 512 * 1024
 
 CHECK_DIR = ".check"
 RECYCLE_DIR = ".recycle"
@@ -35,35 +40,43 @@ RECYCLE_DIR = ".recycle"
 # ========================================
 # Debugging
 
-VERBOSE=False
-DEBUG=False
+VERBOSE = False
+DEBUG = False
+
 
 def stdout_msg(msg):
     print(msg)
     sys.stdout.flush()
     sys.stderr.flush()
 
+
 def stdout_msg_noln(msg):
     sys.stdout.write(msg)
     sys.stdout.flush()
     sys.stderr.flush()
 
+
 def verbose(msg):
     if VERBOSE:
         stdout_msg("[INF] %s" % (msg))
+
 
 def verbose_nhdr(msg):
     if VERBOSE:
         stdout_msg_noln(msg)
 
+
 def debug(msg):
     if DEBUG:
         stdout_msg("[DBG] %s" % (msg))
 
+
 def error(msg):
     stdout_msg("[ERR] %s" % (msg))
 
+
 # ========================================
+
 class PhotosDbItem:
     name = None
     size = 0
@@ -78,6 +91,7 @@ class PhotosDbItem:
         self.hash = _hash
         self.duplicate = []
 
+
 class CacheItem:
     path = None
     size = 0
@@ -89,6 +103,93 @@ class CacheItem:
         self.size = _size
         self.mtime = _mtime
         self.hash = _hash
+
+
+def _calculate_hash_int(file_path):
+    """
+    Calculate hash of a file, using internal python methods sha1 + md5
+    """
+    s = hashlib.sha1()
+    m = hashlib.md5()
+
+    with open(file_path, 'rb') as rfile:
+        buf = rfile.read(BUFF_FILE)
+        while len(buf) > 0:
+            s.update(buf)
+            m.update(buf)
+            buf = rfile.read(BUFF_FILE)
+
+    return s.hexdigest() + m.hexdigest()
+
+
+def _calculate_hash(file_path, file_cache_map):
+    """
+    Calculate hash of a file
+
+    I thought that the internal checksum is slower then this
+    but actually it is USB mass storage buffer which when is
+    freed then is starts really slow to read the files.
+    But this is actually more reliable then coping files by hand.
+
+    Use here only internal calculation and change to use sha1 plus md5.
+    """
+    debug('CH: %s' % file_path)
+
+    size = path.getsize(file_path)
+    mtime = os.stat(file_path)[stat.ST_MTIME]
+    hash = None
+
+    if file_cache_map.has_key(file_path):
+        cache_item = file_cache_map[file_path]
+        if cache_item.size == size and cache_item.mtime == mtime:
+            hash = cache_item.hash
+
+    if hash is None:
+        hash = _calculate_hash_int(file_path)
+        file_cache_map[file_path] = CacheItem(file_path, size, mtime, hash)
+
+    return hash
+
+
+def part_multiprocess_hashes(queue, part_name, files_part, file_cache_map):
+    verbose("Start processing part: %s files: %d" % (part_name, len(files_part)))
+
+    hashes = {}
+    for file_path in files_part:
+        hashes[file_path] = _calculate_hash(file_path, file_cache_map)
+        for i in range(1, 5):
+            if len(hashes) == (i * len(files_part) / 4):
+                verbose('Processed part: %s progress: %d%%' % (part_name, (25 * i)))
+    queue.put(hashes)
+
+
+def parts_multiprocess_hashes(files_parts, file_cache_map):
+    processes = []
+
+    part_i = 0
+    for files_part in files_parts:
+        queue = Queue()
+
+        process = Process(
+            target=part_multiprocess_hashes,
+            args=(queue, part_i, files_part, file_cache_map))
+
+        proc_data = [files_part, queue, process]
+        processes.append(proc_data)
+
+        process.start()
+
+        part_i += 1
+
+    for proc_data in processes:
+        proc_data[2].join()
+
+    files_parts_hashes = []
+    for proc_data in processes:
+        files_parts_hashes.append(proc_data[1].get())
+
+    return files_parts_hashes
+
 
 class PhotosManage:
     _db_map = None
@@ -112,10 +213,10 @@ class PhotosManage:
         self._db_map = self._read_db()
         self._file_cache_map = self._read_cache()
 
-    '''
-    Parse our DB file.
-    '''
     def _read_db(self):
+        """
+        Parse our DB file.
+        """
         db_map = {}
         if path.exists(self._photos_db):
             with open(self._photos_db, 'rb') as rfile:
@@ -127,33 +228,33 @@ class PhotosManage:
 
         return db_map
 
-    '''
-    Write db file.
-    '''
-    def _write_db(self, db_map, file):
-        verbose("Writing DB file: %s" % (file))
-        self._write_pickle(db_map.values(), file)
+    def _write_db(self, db_map, file_path):
+        """
+        Write db file.
+        """
+        verbose("Writing DB file: %s" % (file_path))
+        self._write_pickle(db_map.values(), file_path)
 
-    '''
-    Write pickle to file with backup DB file.
-    '''
-    def _write_pickle(self, data, file):
+    def _write_pickle(self, data, file_path):
+        """
+        Write pickle to file with backup DB file.
+        """
         if not self._dry_run:
-            if path.exists(file):
+            if path.exists(file_path):
                 bak_p = "_bak"
                 i = 0
-                while path.exists(file + bak_p):
+                while path.exists(file_path + bak_p):
                     bak_p = "_bak_" + str(i)
                     i += 1
-                os.rename(file, file + bak_p)
+                os.rename(file_path, file_path + bak_p)
 
-            with open(file, 'wb') as wfile:
+            with open(file_path, 'wb') as wfile:
                 pickle.dump(data, wfile)
 
-    '''
-    Parse our cache file.
-    '''
     def _read_cache(self):
+        """
+        Parse our cache file.
+        """
         file_cache_map = {}
         if path.exists(self._file_cache):
             with open(self._file_cache, 'rb') as rfile:
@@ -165,72 +266,53 @@ class PhotosManage:
 
         return file_cache_map
 
-    '''
-    Write file cache.
-    '''
-    def _write_cache(self, file_cache_map, file):
-        verbose("Writing file cache: %s" % (file))
-        self._write_pickle(file_cache_map.values(), file)
-
-    '''
-    Calculate hash of a file
-
-    I thought that the internal checksum is slower then this
-    but actually it is USB mass storage buffer which when is
-    freed then is starts really slow to read the files.
-    But this is actually more reliable then coping files by hand.
-
-    Use here only internal calculation and change to use sha1 plus md5.
-    '''
-    def _calculate_hash(self, file):
-        size = path.getsize(file)
-        mtime = os.stat(file)[stat.ST_MTIME]
-        hash = None
-
-        if self._file_cache_map.has_key(file):
-            cache_item = self._file_cache_map[file]
-            if cache_item.size == size and cache_item.mtime == mtime:
-                hash = cache_item.hash
-
-        if hash is None:
-            hash = self._calculate_hash_int(file)
-            self._file_cache_map[file] = CacheItem(file, size, mtime, hash)
-
-        return hash
-
-    def _calculate_hash_int(self, file):
+    def _write_cache(self, file_cache_map, file_path):
         """
-        Calculate hash of a file, using internal python methods sha1 + md5
+        Write file cache.
         """
-        s = hashlib.sha1()
-        m = hashlib.md5()
-
-        with open(file, 'rb') as rfile:
-            buf = rfile.read(BUFF_FILE)
-            while len(buf) > 0:
-                s.update(buf)
-                m.update(buf)
-                buf = rfile.read(BUFF_FILE)
-
-        return s.hexdigest() + m.hexdigest()
+        verbose("Writing file cache: %s" % (file_path))
+        self._write_pickle(file_cache_map.values(), file_path)
 
     def _fill_db(self, dir, db_map):
         """
         Fill DB from directory.
         """
         verbose("Fill db from: %s" % dir)
-        for root,dirs,files in os.walk(dir):
+        all_files = []
+        for root, dirs, files in os.walk(dir):
             files = (path.join(root, x) for x in files)
-            for file in files:
-                name = file[len(dir) + 1:]
+            for file_path in files:
+                name = file_path[len(dir) + 1:]
                 if (os.sep + '.') in name or name.startswith('.'):
                     continue
-                size = path.getsize(file)
-                mtime = os.stat(file)[stat.ST_MTIME]
-                hash = self._calculate_hash(file)
+                all_files.append(file_path)
+
+        parts = np.array_split(all_files, DEFAULT_THREADS)
+        parts_res = parts_multiprocess_hashes(parts, self._file_cache_map)
+
+        for hashes in parts_res:
+            assert isinstance(hashes, dict)
+            for file_path, hash in hashes.items():
+                name = file_path[len(dir) + 1:]
+                size = path.getsize(file_path)
+                mtime = os.stat(file_path)[stat.ST_MTIME]
+                self._add_to_file_cache_map(file_path, hash)
                 self._add_to_db(db_map, dir, PhotosDbItem(name, size, mtime, hash))
                 verbose_nhdr("\rfiles: %d" % len(db_map))
+
         verbose_nhdr("\n")
+
+    def _add_to_file_cache_map(self, file_path, hash):
+        size = path.getsize(file_path)
+        mtime = os.stat(file_path)[stat.ST_MTIME]
+
+        if self._file_cache_map.has_key(file_path):
+            cache_item = self._file_cache_map[file_path]
+            if cache_item.size == size and cache_item.mtime == mtime \
+                    and cache_item.hash == hash:
+                return
+
+        self._file_cache_map[file_path] = CacheItem(file_path, size, mtime, hash)
 
     def update_db(self):
         """
@@ -248,10 +330,10 @@ class PhotosManage:
         if self._dry_run:
             verbose("DRY RUN")
 
-    '''
-    Add item to db
-    '''
     def _add_to_db(self, db_map, root_dir, db_item):
+        """
+        Add item to db
+        """
         debug("Add to db\n  name: %s\n  size: %d\n  hash: %s" %
               (db_item.name, db_item.size, db_item.hash))
         # check if we have this file in the db by hash
@@ -270,10 +352,10 @@ class PhotosManage:
         else:
             db_map[db_item.hash] = db_item
 
-    '''
-    Find files which are not in the right position and move them.
-    '''
     def update_root(self):
+        """
+        Find files which are not in the right position and move them.
+        """
         verbose("Update root")
 
         # first create current root directory db
@@ -293,14 +375,15 @@ class PhotosManage:
             if ritem.hash in self._db_map:
                 ditem = self._db_map[ritem.hash]
                 if ditem.size != ritem.size:
-                    verbose("Size mismatch:\n  old name: %s\n  old size: %d\n  new name: %s\n  new size: %d" % (ritem.name, ritem.size, ditem.name, ditem.size))
+                    verbose("Size mismatch:\n  old name: %s\n  old size: %d\n  new name: %s\n  new size: %d" % (
+                        ritem.name, ritem.size, ditem.name, ditem.size))
                     continue
                 if ditem.name != ritem.name:
                     f1 = self._photos_root + os.sep + ritem.name
                     f2 = self._photos_root + os.sep + ditem.name
                     verbose("Move files:\n  old name: %s\n  new name: %s" % (f1, f2))
                     if path.exists(f2):
-                        if self._calculate_hash(f2) == ritem.hash:
+                        if _calculate_hash(f2, self._file_cache_map) == ritem.hash:
                             verbose("Found duplicate:\n  name: %s" % (ritem.name))
                             self._recycle(ritem.name)
                         else:
@@ -324,10 +407,10 @@ class PhotosManage:
         if self._dry_run:
             verbose("DRY RUN")
 
-    '''
-    Move file to local .recycle
-    '''
     def _recycle(self, name):
+        """
+        Move file to local .recycle
+        """
         f1 = self._photos_root + os.sep + name
         f2 = self._photos_root + os.sep + RECYCLE_DIR + os.sep + name
         i = 0
@@ -338,12 +421,14 @@ class PhotosManage:
         if not self._dry_run:
             os.renames(f1, f2)
 
+
 # ========================================
 
-'''
-Parse arguments and print help message if requested.
-'''
+
 def parse_args():
+    """
+    Parse arguments and print help message if requested.
+    """
     global DRY_RUN
     global DEBUG
     global VERBOSE

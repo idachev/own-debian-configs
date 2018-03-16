@@ -1,15 +1,7 @@
 #!/bin/zsh
 #set -v
 
-# ubuntu old 2012
-#MODULE=/usr/lib/onepin-opensc-pkcs11.so
-
-# debian wheezy 7
-#MODULE=/usr/lib/x86_64-linux-gnu/onepin-opensc-pkcs11.so
-
-# ubuntu new 2015 and mint
-#MODULE=/usr/lib/x86_64-linux-gnu/opensc-pkcs11.so
-MODULE=/usr/lib/pcsc/drivers/ifd-acsccid.bundle/Contents/Linux/libacsccid.so
+MODULE=/usr/lib/x86_64-linux-gnu/opensc-pkcs11.so
 
 pkcs11-tool -I --module $MODULE
 
