@@ -181,12 +181,12 @@ def parts_multiprocess_hashes(files_parts, file_cache_map):
 
         part_i += 1
 
-    for proc_data in processes:
-        proc_data[2].join()
-
     files_parts_hashes = []
     for proc_data in processes:
         files_parts_hashes.append(proc_data[1].get())
+
+    for proc_data in processes:
+        proc_data[2].join()
 
     return files_parts_hashes
 

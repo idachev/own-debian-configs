@@ -130,7 +130,7 @@ export XTERM="aterm +sb -geometry 80x29 -fg black -bg lightgoldenrodyellow -fn -
 #export VIDEO_PLAYER="totem"
 export VIDEO_PLAYER="vlc"
 
-export IMAGE_VIEW="gwenview"
+export IMAGE_VIEW="gthumb"
 
 export OFFICE_VIEW="soffice"
 

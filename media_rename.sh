@@ -12,11 +12,11 @@ EXT_UPPER=$(echo $EXT | tr '[:lower:]' '[:upper:]')
 # first do all lower case
 echo
 echo "Rename files .$EXT_UPPER to lower case .$EXT"
-rename -vf 'y/A-Z/a-z/' *.$EXT_UPPER
-rename -vf 'y/A-Z/a-z/' *.$EXT
+rename -v -f 'y/A-Z/a-z/' *.$EXT_UPPER
+rename -v -f 'y/A-Z/a-z/' *.$EXT
 
 echo "Remove spaces from file names replace with: '_'"
-rename -vf 'y/ /_/' *.$EXT
+rename -v -f 'y/ /_/' *.$EXT
 
 # add date taken to the file modify
 echo
