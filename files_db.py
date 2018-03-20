@@ -1,9 +1,10 @@
 #!/usr/bin/env python
 
+# ========================================
+# Imports
+
 import argparse
 import hashlib
-# ========================================
-# Settings
 import multiprocessing
 import numpy as np
 import os
@@ -14,10 +15,13 @@ import time
 from multiprocessing import Queue, Process
 from os import path
 
+# ========================================
+# Settings
+
 DRY_RUN = True
 
-PHOTOS_DB = "photos.db"
-PHOTOS_ROOT = "photos"
+FILES_DB = "files.db"
+FILES_ROOT = "files"
 
 FILE_CACHE = ".file_cache"
 
@@ -77,7 +81,7 @@ def error(msg):
 
 # ========================================
 
-class PhotosDbItem:
+class FilesDbItem:
     name = None
     size = 0
     mtime = 0
@@ -191,22 +195,22 @@ def parts_multiprocess_hashes(files_parts, file_cache_map):
     return files_parts_hashes
 
 
-class PhotosManage:
+class FilesManage:
     _db_map = None
-    _photos_db = None
-    _photos_root = None
+    _files_db = None
+    _files_root = None
     _dry_run = True
     _file_cache = None
     _file_cache_map = None
 
-    def __init__(self, photos_db, photos_root, file_cache, dry_run=True):
-        self._photos_db = photos_db
-        self._photos_root = photos_root
+    def __init__(self, files_db, files_root, file_cache, dry_run=True):
+        self._files_db = files_db
+        self._files_root = files_root
         self._file_cache = file_cache
         self._dry_run = dry_run
 
-        verbose("photos db: %s" % (self._photos_db))
-        verbose("photos root dir: %s" % (self._photos_root))
+        verbose("files db: %s" % (self._files_db))
+        verbose("files root dir: %s" % (self._files_root))
         verbose("file cache: %s" % (self._file_cache))
         verbose("dry run: %d" % (self._dry_run))
 
@@ -218,13 +222,13 @@ class PhotosManage:
         Parse our DB file.
         """
         db_map = {}
-        if path.exists(self._photos_db):
-            with open(self._photos_db, 'rb') as rfile:
+        if path.exists(self._files_db):
+            with open(self._files_db, 'rb') as rfile:
                 db_data = pickle.load(rfile)
             for dbitem in db_data:
                 db_map[dbitem.hash] = dbitem
         else:
-            verbose("Photos DB file does no exist will be created: %s" % (self._photos_db))
+            verbose("Files DB file does no exist will be created: %s" % (self._files_db))
 
         return db_map
 
@@ -297,7 +301,7 @@ class PhotosManage:
                 size = path.getsize(file_path)
                 mtime = os.stat(file_path)[stat.ST_MTIME]
                 self._add_to_file_cache_map(file_path, hash)
-                self._add_to_db(db_map, dir, PhotosDbItem(name, size, mtime, hash))
+                self._add_to_db(db_map, dir, FilesDbItem(name, size, mtime, hash))
                 verbose_nhdr("\rfiles: %d" % len(db_map))
 
         verbose_nhdr("\n")
@@ -316,14 +320,14 @@ class PhotosManage:
 
     def update_db(self):
         """
-        Update db with the photos root content.
+        Update db with the files root content.
         Do not cleanup old data in db.
         If there is existing file with same cache it is replaced.
         """
         verbose("Update DB")
-        self._fill_db(self._photos_root, self._db_map)
+        self._fill_db(self._files_root, self._db_map)
 
-        self._write_db(self._db_map, self._photos_db)
+        self._write_db(self._db_map, self._files_db)
 
         self._write_cache(self._file_cache_map, self._file_cache)
 
@@ -360,7 +364,7 @@ class PhotosManage:
 
         # first create current root directory db
         rmap = {}
-        self._fill_db(self._photos_root, rmap)
+        self._fill_db(self._files_root, rmap)
 
         values = rmap.values()
         # next remove duplicate move files
@@ -370,7 +374,7 @@ class PhotosManage:
                 self._recycle(dupitem)
             ritem.duplicate = []
 
-        # next move files to right location according the photos root
+        # next move files to right location according the files root
         for ritem in values:
             if ritem.hash in self._db_map:
                 ditem = self._db_map[ritem.hash]
@@ -379,8 +383,8 @@ class PhotosManage:
                         ritem.name, ritem.size, ditem.name, ditem.size))
                     continue
                 if ditem.name != ritem.name:
-                    f1 = self._photos_root + os.sep + ritem.name
-                    f2 = self._photos_root + os.sep + ditem.name
+                    f1 = self._files_root + os.sep + ritem.name
+                    f2 = self._files_root + os.sep + ditem.name
                     verbose("Move files:\n  old name: %s\n  new name: %s" % (f1, f2))
                     if path.exists(f2):
                         if _calculate_hash(f2, self._file_cache_map) == ritem.hash:
@@ -393,8 +397,8 @@ class PhotosManage:
                             os.renames(f1, f2)
                             os.utime(f2, (ditem.mtime, ditem.mtime))
             else:
-                f1 = self._photos_root + os.sep + ritem.name
-                f2 = self._photos_root + os.sep + CHECK_DIR + os.sep + ritem.name
+                f1 = self._files_root + os.sep + ritem.name
+                f2 = self._files_root + os.sep + CHECK_DIR + os.sep + ritem.name
                 verbose("Not in DB move to:\n  name: %s" % (f2))
                 if path.exists(f2):
                     error("Destination already exist skip move:\n  file: %s:" % (f2))
@@ -411,11 +415,11 @@ class PhotosManage:
         """
         Move file to local .recycle
         """
-        f1 = self._photos_root + os.sep + name
-        f2 = self._photos_root + os.sep + RECYCLE_DIR + os.sep + name
+        f1 = self._files_root + os.sep + name
+        f2 = self._files_root + os.sep + RECYCLE_DIR + os.sep + name
         i = 0
         while path.exists(f2):
-            f2 = self._photos_root + os.sep + RECYCLE_DIR + os.sep + name + '_' + str(i)
+            f2 = self._files_root + os.sep + RECYCLE_DIR + os.sep + name + '_' + str(i)
             i += 1
         verbose("Recycle:\n  file: %s" % (f2))
         if not self._dry_run:
@@ -432,13 +436,13 @@ def parse_args():
     global DRY_RUN
     global DEBUG
     global VERBOSE
-    global PHOTOS_DB
-    global PHOTOS_ROOT
+    global FILES_DB
+    global FILES_ROOT
     global UPDATE_DB
     global UPDATE_ROOT
     global FILE_CACHE
 
-    parser = argparse.ArgumentParser(description='Script to manage photos names and directory places')
+    parser = argparse.ArgumentParser(description='Script to manage files names and directory places')
     parser.add_argument('-v', '--verbose',
                         dest="verbose",
                         action='store_true',
@@ -451,16 +455,16 @@ def parse_args():
                         dest="dry_run",
                         action='store_true',
                         help='dry run')
-    parser.add_argument('--photos-db',
-                        dest='photos_db',
-                        default=PHOTOS_DB,
+    parser.add_argument('--files-db',
+                        dest='files_db',
+                        default=FILES_DB,
                         required=True,
-                        help='point to a db file to use, default is "%s"' % (PHOTOS_DB))
-    parser.add_argument('--photos-root',
-                        dest='photos_root',
-                        default=PHOTOS_ROOT,
+                        help='point to a db file to use, default is "%s"' % (FILES_DB))
+    parser.add_argument('--files-root',
+                        dest='files_root',
+                        default=FILES_ROOT,
                         required=True,
-                        help='point to photos root dir, default is "%s"' % (PHOTOS_ROOT))
+                        help='point to files root dir, default is "%s"' % (FILES_ROOT))
     parser.add_argument('--file-cache',
                         dest='file_cache',
                         default=FILE_CACHE,
@@ -469,34 +473,34 @@ def parse_args():
     parser.add_argument('--update-db',
                         dest='update_db',
                         action='store_true',
-                        help='update the db with data from photos root')
+                        help='update the db with data from files root')
     parser.add_argument('--update-root',
                         dest='update_root',
                         action='store_true',
-                        help='update the photos root with data from db')
+                        help='update the files root with data from db')
 
     args = parser.parse_args()
 
     DRY_RUN = args.dry_run
     DEBUG = args.debug
     VERBOSE = args.verbose or DEBUG
-    PHOTOS_DB = args.photos_db
-    PHOTOS_ROOT = args.photos_root
+    FILES_DB = args.files_db
+    FILES_ROOT = args.files_root
     UPDATE_DB = args.update_db
     UPDATE_ROOT = args.update_root
     FILE_CACHE = args.file_cache
 
     basedir = path.dirname(sys.argv[0])
 
-    if len(path.dirname(PHOTOS_ROOT)) == 0:
-        PHOTOS_ROOT = "%s%s%s" % (basedir, os.sep, PHOTOS_ROOT)
-    if len(path.dirname(PHOTOS_DB)) == 0:
-        PHOTOS_DB = "%s%s%s" % (basedir, os.sep, PHOTOS_DB)
+    if len(path.dirname(FILES_ROOT)) == 0:
+        FILES_ROOT = "%s%s%s" % (basedir, os.sep, FILES_ROOT)
+    if len(path.dirname(FILES_DB)) == 0:
+        FILES_DB = "%s%s%s" % (basedir, os.sep, FILES_DB)
     if len(path.dirname(FILE_CACHE)) == 0:
         FILE_CACHE = "%s%s%s" % (basedir, os.sep, FILE_CACHE)
 
-    PHOTOS_ROOT = path.abspath(PHOTOS_ROOT)
-    PHOTOS_DB = path.abspath(PHOTOS_DB)
+    FILES_ROOT = path.abspath(FILES_ROOT)
+    FILES_DB = path.abspath(FILES_DB)
     FILE_CACHE = path.abspath(FILE_CACHE)
 
     if UPDATE_DB and UPDATE_ROOT:
@@ -512,7 +516,7 @@ def main():
     parse_args()
 
     t0 = time.time()
-    inst = PhotosManage(PHOTOS_DB, PHOTOS_ROOT, FILE_CACHE, DRY_RUN)
+    inst = FilesManage(FILES_DB, FILES_ROOT, FILE_CACHE, DRY_RUN)
     verbose("Load DB for: %d seconds" % (time.time() - t0))
 
     if UPDATE_DB:
