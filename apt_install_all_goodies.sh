@@ -1,20 +1,21 @@
 #!/bin/bash
 
-sudo add-apt-repository -y ppa:webupd8team/sublime-text-3
-sudo add-apt-repository -y ppa:ricotz/experimental
-sudo add-apt-repository -y ppa:webupd8team/java
+sudo -H add-apt-repository -y ppa:webupd8team/sublime-text-3
+sudo -H add-apt-repository -y ppa:ricotz/experimental
+sudo -H add-apt-repository -y ppa:webupd8team/java
 
-sudo dpkg --add-architecture i386
+sudo -H dpkg --add-architecture i386
 
-sudo apt-get update
+sudo -H apt-get update
 
-sudo apt-get -y install htop ncdu vim tmux zsh git gitk zip aspell ttf-dejavu-core \
+sudo -H apt-get -y install htop ncdu vim tmux zsh git gitk zip aspell ttf-dejavu-core \
  glogg aptitude keychain xbacklight gparted sublime-text-installer kate smartmontools \
  handbrake build-essential nvme-cli psensor oracle-java8-installer oracle-java8-set-default \
  google-chrome-beta python-pip exuberant-ctags parcellite skype slack-desktop gwenview \
  cpulimit kdiff3 shutter libgoo-canvas-perl pgadmin3 pgadmin4 pcsc-tools pcscd opensc \
  libnss3-tools libreoffice sshpass nmap python-pyqtgraph socat pyqt4-dev-tools gpick \
- pdftk ia32-libs lrzip p7zip p7zip-full libimage-exiftool-perl ffmpeg user_doc_stats_status
+ pdftk ia32-libs lrzip p7zip p7zip-full libimage-exiftool-perl ffmpeg postgresql-client \
+ python-dev fdupes spotify-client fslint gthumb mc
 
 sudo -H pip install -U pip
 sudo -H pip install setuptools jump docker-compose pbkdf2 bcrypt RBTools natsort
