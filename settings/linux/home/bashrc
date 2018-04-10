@@ -127,3 +127,7 @@ keychain -q ~/.local_ssh_key
 # jump zsh completion
 #source `jump-bin --bash-integration`
 
+
+#THIS MUST BE AT THE END OF THE FILE FOR SDKMAN TO WORK!!!
+export SDKMAN_DIR="/home/idachev/.sdkman"
+[[ -s "/home/idachev/.sdkman/bin/sdkman-init.sh" ]] && source "/home/idachev/.sdkman/bin/sdkman-init.sh"

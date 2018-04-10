@@ -154,7 +154,7 @@ setprompt () {
 PR_DIM_YELLOW=$(print '%{\e[0;33m%}')
 
 	PROMPT='$PR_STITLE${(e)PR_TITLEBAR}\
-$PR_DIM_YELLOW%D{%H:%M} %D{%d/%m/%Y} \
+$PR_DIM_YELLOW%D{%H:%M:%S} %D{%d/%m/%Y} \
 $PR_DIM_GREEN%(!.%SROOT%s.%n)$PR_DIM_GREEN@%m:%l$PR_STY \
 $PR_DIM_RED%(?..ERRNO:$PR_RED%?) \
 ${(e)PR_APM}\
