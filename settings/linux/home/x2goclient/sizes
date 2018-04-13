@@ -1,4 +1,4 @@
 [mainwindow]
-size=@Size(1040 600)
-pos=@Point(-9 -8)
-maximized=false
+size=@Size(1920 1027)
+pos=@Point(0 0)
+maximized=true

@@ -1,0 +1,58 @@
+#!/bin/bash
+CMD_DIR=~/Dropbox/remote
+CMD_FILE=${CMD_DIR}/in
+OUT_FILE=${CMD_DIR}/out
+
+mkdir -p ${CMD_DIR}
+
+server()
+{
+    > ${OUT_FILE}
+ 
+    inotifywait -m -q -e close_write,moved_to --format "%w%f" ${CMD_DIR} | while read file
+    do
+        [[ ${file} = ${CMD_FILE} ]] || continue
+        cat ${file}
+    done | /bin/bash -i >> ${OUT_FILE} 2>&1
+}
+ 
+client()
+{
+    local lastSize=$(stat -c %s ${OUT_FILE})
+    local size=${lastSize}
+    local wheel=("|" "/" "-" "\\\\")
+
+    # Force a prompt at start to confirm connection
+    local line=": ${RANDOM}"
+ 
+    while [[ -n ${line} ]] || read line; do
+        echo "${line}" > ${CMD_FILE}
+ 
+        echo -n "Waiting...."
+        let i=0
+        while [[ ${size} -eq ${lastSize} ]]; do
+            sleep 0.5
+            echo -n -e "${wheel[${i}]}\b"
+            let i=(i+1)%4
+            size=$(stat -c %s ${OUT_FILE})
+        done
+ 
+        if [[ ${size} -lt ${lastSize} ]]; then
+            echo "Error; please try again"
+        else
+            echo -n -e "\r            \r"
+            tail -c $((size - lastSize)) ${OUT_FILE}
+        fi
+ 
+        lastSize=${size}
+        line=
+    done
+}
+ 
+if [[ $1 = "-s" ]]
+then
+    server
+else
+    client
+fi
+
