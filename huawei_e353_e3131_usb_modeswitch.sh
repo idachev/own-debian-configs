@@ -13,3 +13,5 @@ sleep 5s
 
 lsusb
 
+ping -w 15 google.com
+

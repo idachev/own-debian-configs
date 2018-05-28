@@ -19,3 +19,7 @@ sleep 5
 
 nmcli dev
 
+sleep 5
+
+ping -w 15 google.com
+

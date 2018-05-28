@@ -9,3 +9,7 @@ sleep ${PCI_SCAN_DELAY}
 
 (~/bin/kernel_mod_reload.sh tg3)
 
+sleep 5
+
+ping -w 15 google.com
+
