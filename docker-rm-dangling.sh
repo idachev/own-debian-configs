@@ -2,6 +2,7 @@
 
 DOCKER_LIB=/var/lib/docker
 
+ONE_MB=1024
 ONE_GB=1048576
 
 function getAvailableSize() {
@@ -28,4 +29,4 @@ echo `expr ${SIZE_AFTER} / ${ONE_GB}`G
 FREED=`expr ${SIZE_AFTER} - ${SIZE_BEFORE}`
 
 echo -e "\nFreed:"
-echo `expr ${FREED} / ${ONE_GB}`G
+echo `expr ${FREED} / ${ONE_MB}`MB / `expr ${FREED} / ${ONE_GB}`G
