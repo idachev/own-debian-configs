@@ -9,7 +9,8 @@ sleep ${PCI_SCAN_DELAY}
 
 (~/bin/kernel_mod_reload.sh tg3)
 
-sleep 5
+echo -e "Sleep 15s after rescan..."
+sleep 15
 
 ping -w 15 google.com
 
