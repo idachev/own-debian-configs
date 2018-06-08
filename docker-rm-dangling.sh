@@ -1,5 +1,7 @@
 #!/bin/bash
 
+echo -e "\nStarted at `date`"
+
 DOCKER_LIB=/var/lib/docker
 
 ONE_MB=1024

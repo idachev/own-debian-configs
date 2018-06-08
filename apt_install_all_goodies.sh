@@ -15,7 +15,7 @@ sudo -H apt-get -y install htop ncdu vim tmux zsh git gitk zip aspell ttf-dejavu
  cpulimit kdiff3 shutter libgoo-canvas-perl pgadmin3 pgadmin4 pcsc-tools pcscd opensc \
  libnss3-tools libreoffice sshpass nmap python-pyqtgraph socat pyqt4-dev-tools gpick \
  pdftk ia32-libs lrzip p7zip p7zip-full libimage-exiftool-perl ffmpeg postgresql-client \
- python-dev fdupes spotify-client fslint gthumb mc font-manager
+ python-dev fdupes spotify-client fslint gthumb mc font-manager archivemount
 
 sudo -H pip install -U pip
 sudo -H pip install setuptools jump docker-compose pbkdf2 bcrypt RBTools natsort
