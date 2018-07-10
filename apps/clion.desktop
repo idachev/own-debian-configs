@@ -1,0 +1,10 @@
+
+[Desktop Entry]
+Type=Application
+Name=CLion
+Comment=CLion
+Icon=/home/idachev/lib/clion/bin/clion.png
+Exec=/home/idachev/lib/clion/bin/clion.sh
+Terminal=false
+Categories=Development;IDE;C;C++;
+Name[en_US]=Dev A4 CLion

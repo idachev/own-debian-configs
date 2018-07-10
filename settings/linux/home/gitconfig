@@ -28,6 +28,7 @@
 	fap = fetch --all --prune
 	sha = log --pretty=format:'%h' -n 1
 	rescue = !git fsck --full --no-reflogs --unreachable --lost-found | grep commit | cut -d\\  -f3 | xargs -n 1 git log -n 1 --pretty=oneline > .git/lost-found.txt
+	gc-all = !git -c gc.reflogExpire=0 -c gc.reflogExpireUnreachable=0 -c gc.rerereresolved=0 -c gc.rerereunresolved=0 -c gc.pruneExpire=now gc
 	repush = "!f() { \
       git push origin :`git rev-parse --abbrev-ref HEAD`; \
       git push; \
