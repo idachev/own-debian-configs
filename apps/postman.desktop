@@ -2,7 +2,7 @@
 Name=Postman
 Comment=Postman
 Exec=/home/idachev/lib/Postman/Postman
-Icon=/home/idachev/lib/Postman/resources/app/assets/icon.png
+Icon=/home/idachev/lib/Postman/app/resources/app/assets/icon.png
 Terminal=false
 Type=Application
 Categories=Development;HTTP;
