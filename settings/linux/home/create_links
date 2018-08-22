@@ -113,7 +113,6 @@ else
   link $BASEDIR/jumprc $HOME/.jumprc
   link $BASEDIR/vnc $HOME/.vnc
 
-  link $BASEDIR/pgadmin_histoqueries $HOME/.pgadmin_histoqueries
   link $BASEDIR/pgadmin3 $HOME/.pgadmin3
 
   link $BASEDIR/mysql $HOME/.mysql
