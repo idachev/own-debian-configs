@@ -50,7 +50,7 @@ sudo -H apt-get -y install htop ncdu vim tmux zsh git gitk zip aspell aptitude \
  pcsc-tools pcscd opensc libnss3-tools sshpass nmap python-pyqtgraph socat \
  pyqt4-dev-tools pdftk lrzip p7zip p7zip-full libimage-exiftool-perl \
  ffmpeg postgresql-client python-dev fdupes fslint gthumb mc archivemount \
- openssh-server maven libcurl4-openssl-dev gcc g++ make
+ openssh-server maven libcurl4-openssl-dev gcc g++ make pv
 
 # Mongo shell and tools 3.6/4.0
 sudo -H apt-get -y install mongodb-org-shell mongodb-org-tools
