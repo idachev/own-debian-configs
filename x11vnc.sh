@@ -18,4 +18,5 @@ fi
 
 # access raw display
 echo auth: $1
-x11vnc -rfbauth /home/idachev/.vnc/passwd -bg -rfbport 5900 -forever -noxdamage -solid darkblue -auth $1 -display :0 &
+x11vnc -rfbauth ${HOME}/.vnc/passwd -bg -rfbport 5900 -forever -noxdamage -solid darkblue -auth $1 -display :0 &
+

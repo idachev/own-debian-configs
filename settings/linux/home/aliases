@@ -71,3 +71,6 @@ alias s3open='screen -d -R -S s3'
 alias tmux="tmux -2"
 
 alias prettyjson='python -m json.tool'
+
+alias pssh='psg ssh'
+

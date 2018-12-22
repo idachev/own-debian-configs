@@ -17,4 +17,5 @@ fi
 #RESOLUTION=1280x800
 RESOLUTION=1420x800
 
-vncserver :1 -geometry $RESOLUTION -depth 16 -fp /usr/share/fonts/X11/misc,/usr/share/fonts/X11/cyrillic,/usr/share/fonts/X11/Type1,/usr/share/fonts/X11/75dpi,/usr/share/fonts/X11/100dpi -DisconnectClients=0 -NeverShared passwordFile=/home/idachev/.vnc/passwd
+vncserver :1 -geometry $RESOLUTION -depth 16 -fp /usr/share/fonts/X11/misc,/usr/share/fonts/X11/cyrillic,/usr/share/fonts/X11/Type1,/usr/share/fonts/X11/75dpi,/usr/share/fonts/X11/100dpi -DisconnectClients=0 -NeverShared passwordFile=${HOME}/.vnc/passwd
+

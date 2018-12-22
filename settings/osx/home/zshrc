@@ -84,7 +84,7 @@ _comp_setup+=$'\ntypeset -a userdirs'
 
 ##################################################################
 # Stuff to make my life easier
-zstyle :compinstall filename '/home/idachev/.zshrc'
+zstyle :compinstall filename "${HOME}/.zshrc"
 
 # allow approximate
 zstyle ':completion:*' completer _complete _match _approximate

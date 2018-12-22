@@ -14,7 +14,7 @@ cd ${TARGET_DIR}
 
 git clone https://github.com/idachev/own-debian-configs.git .
 
-find . -type f -not -path "./.git/*" -print0 | xargs -0 sed -i "s/\/home\/idachev/\/home\/${USER}/g"
+find . -type f -not -path "./.git/*" -print0 | xargs -0 sed -i "s/\/home\/idachev/${HOME}/g"
 
 ./apt_install_no_gui.sh
 
@@ -25,3 +25,4 @@ cd ${TARGET_DIR}
 
 echo -e "\nTrasnform completed please relogin"
 echo -e "\n\nFor desktop mint/ubuntu with GUI check ~/bin/apt_install_all_goodies.sh\n"
+

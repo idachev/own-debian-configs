@@ -24,4 +24,5 @@ sudo service kdm restart
 # Also enable XDMP from kde
 
 
-vncserver :1 -geometry 1280x800 -depth 16 -query localhost -fp /usr/share/fonts/X11/misc,/usr/share/fonts/X11/cyrillic,/usr/share/fonts/X11/Type1,/usr/share/fonts/X11/75dpi,/usr/share/fonts/X11/100dpi -DisconnectClients=0 -NeverShared passwordFile=/home/idachev/.vnc/passwd
+vncserver :1 -geometry 1280x800 -depth 16 -query localhost -fp /usr/share/fonts/X11/misc,/usr/share/fonts/X11/cyrillic,/usr/share/fonts/X11/Type1,/usr/share/fonts/X11/75dpi,/usr/share/fonts/X11/100dpi -DisconnectClients=0 -NeverShared passwordFile=${HOME}/.vnc/passwd
+

@@ -37,6 +37,9 @@ export INSTALL4J_JAVA_HOME=${SYS_JAVA_HOME_8}
 # Add custom scripts to bin
 export PATH=$PATH:/usr/share/fslint/fslint:$HOME/bin
 
+# Add pip local bin
+export PATH=$PATH:$HOME/.local/bin
+
 # Perforce custom envs
 export P4CONFIG=.p4config
 export P4EDITOR=vim

@@ -32,7 +32,7 @@ To do this for the root home:
 ```
 sudo -i
 
-cd /home/<username>/settings/linux/root
+cd /home/<username>/bin/settings/linux/root
 
 source create_links
 ```
