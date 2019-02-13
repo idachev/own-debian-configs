@@ -68,6 +68,19 @@ alias s1open='screen -d -R -S s1'
 alias s2open='screen -d -R -S s2'
 alias s3open='screen -d -R -S s3'
 
+# Docker
+
+dkre() {
+  docker exec -it $*
+}
+
+dkrb() {
+  local cid=$1
+  shift
+  docker exec -it ${cid} bash
+}
+
+# Misc
 alias tmux="tmux -2"
 
 alias prettyjson='python -m json.tool'
