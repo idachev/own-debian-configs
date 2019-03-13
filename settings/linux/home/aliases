@@ -70,15 +70,25 @@ alias s3open='screen -d -R -S s3'
 
 # Docker
 
+dkrl() {
+  docker logs -f $1
+}
+
 dkre() {
   docker exec -it $*
 }
 
 dkrb() {
-  local cid=$1
-  shift
-  docker exec -it ${cid} bash
+  docker exec -it $1 bash
 }
+
+dkrm() {
+  for i in $*; do
+    docker stop $i; docker rm $i
+  done
+}
+
+alias dkrm-old='docker ps --filter "status=exited" | awk '\''{print $1}'\'' | xargs --no-run-if-empty docker rm'
 
 # Misc
 alias tmux="tmux -2"
