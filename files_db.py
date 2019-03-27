@@ -6,7 +6,6 @@
 import argparse
 import hashlib
 import multiprocessing
-import numpy as np
 import os
 import pickle
 import stat
@@ -14,6 +13,8 @@ import sys
 import time
 from multiprocessing import Queue, Process
 from os import path
+
+import numpy as np
 
 # ========================================
 # Settings
@@ -514,6 +515,10 @@ def parse_args():
 
 def main():
     parse_args()
+
+    if not os.path.exists(FILES_ROOT) or not os.path.isdir(FILES_ROOT):
+        error("Expecting existing files root directory: %s" % FILES_ROOT)
+        sys.exit(5)
 
     t0 = time.time()
     inst = FilesManage(FILES_DB, FILES_ROOT, FILE_CACHE, DRY_RUN)

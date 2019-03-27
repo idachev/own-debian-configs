@@ -66,6 +66,7 @@ sudo -H pip install pbkdf2
 sudo -H pip install bcrypt
 sudo -H pip install RBTools
 sudo -H pip install natsort
+sudo -H pip install numpy
 
 ################################################################################
 # Setup for nodejs and angular/cli
