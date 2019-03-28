@@ -199,7 +199,6 @@ fpath=(~/develop/private/zsh-completions $fpath)
 # type a directory's name to cd to it
 compctl -/ cd
 
-# add common aliases
 if [ -f ~/.aliases ]; then
   . ~/.aliases
 fi
@@ -212,19 +211,25 @@ if [ -f ~/.localrc ]; then
   . ~/.localrc
 fi
 
-# add keychain ssh-agent variables
+##################################################################
+# Keychain
+
 keychain -q ~/.local_ssh_key
-if [ -f ~/.keychain/$HOST-sh ]; then
-  . ~/.keychain/$HOST-sh
+
+if [ -f "~/.keychain/${HOST}-sh" ]; then
+  . "~/.keychain/${HOST}-sh"
 fi
-if [ -f ~/.keychain/$HOST-sh-gpg ]; then
-  . ~/.keychain/$HOST-sh-gpg
+
+if [ -f "~/.keychain/${HOST}-sh-gpg" ]; then
+  . "~/.keychain/${HOST}-sh-gpg"
 fi
+
+##################################################################
+# Others
 
 # jump zsh completion
 #source `jump-bin --zsh-integration`
 
-
 #THIS MUST BE AT THE END OF THE FILE FOR SDKMAN TO WORK!!!
-export SDKMAN_DIR="/home/idachev/.sdkman"
-[[ -s "/home/idachev/.sdkman/bin/sdkman-init.sh" ]] && source "/home/idachev/.sdkman/bin/sdkman-init.sh"
+export SDKMAN_DIR="${HOME}/.sdkman"
+[[ -s "${HOME}/.sdkman/bin/sdkman-init.sh" ]] && source "${HOME}/.sdkman/bin/sdkman-init.sh"
