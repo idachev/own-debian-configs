@@ -71,7 +71,11 @@ alias s3open='screen -d -R -S s3'
 # Docker
 
 dkrp() {
-  docker ps -a
+  docker ps -a $*
+}
+
+dkrn() {
+  docker ps --format "{{.Names}}" $*
 }
 
 dkrr() {
