@@ -41,12 +41,11 @@ sudo -H dpkg --add-architecture i386
 
 sudo -H apt-get update
 
-echo "oracle-java8-installer shared/accepted-oracle-license-v1-1 select true" \
- | sudo -H debconf-set-selections
+sudo -H apt-get -y install openjdk-8-jdk openjdk-8-dbg openjdk-8-source
 
 sudo -H apt-get -y install htop ncdu vim tmux zsh git gitk zip aspell aptitude \
- keychain gparted smartmontools build-essential nvme-cli oracle-java8-installer \
- oracle-java8-set-default python-pip exuberant-ctags cpulimit libgoo-canvas-perl \
+ keychain gparted smartmontools build-essential nvme-cli python-pip exuberant-ctags \
+ cpulimit libgoo-canvas-perl \
  pcsc-tools pcscd opensc libnss3-tools sshpass nmap python-pyqtgraph socat \
  pyqt4-dev-tools pdftk lrzip p7zip p7zip-full libimage-exiftool-perl \
  ffmpeg postgresql-client python-dev fdupes fslint gthumb mc archivemount \
