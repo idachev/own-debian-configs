@@ -12,8 +12,9 @@ sudo -H apt-key fingerprint 0EBFCD88
 
 UBUNTU_RELEASE=xenial
 
-sudo -H add-apt-repository \
- "deb [arch=amd64] https://download.docker.com/linux/ubuntu ${UBUNTU_RELEASE} stable"
+sudo rm /etc/apt/sources.list.d/docker.list
+echo "deb [arch=amd64] https://download.docker.com/linux/ubuntu ${UBUNTU_RELEASE} stable" | \
+  sudo -H tee /etc/apt/sources.list.d/docker.list
 
 ################################################################################
 # Setup for latest Mongo 4.0
@@ -21,7 +22,8 @@ sudo -H add-apt-repository \
 # sudo -H apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 \
 # --recv 9DA31620334BD75D9DCB49F368818C72E52529D4
 
-#echo "deb [ arch=amd64,arm64 ] https://repo.mongodb.org/apt/ubuntu $(lsb_release -cs)/mongodb-org/4.0 multiverse" \
+#sudo rm /etc/apt/sources.list.d/mongodb-org-4.0.list
+#echo "deb [ arch=amd64,arm64 ] https://repo.mongodb.org/apt/ubuntu ${UBUNTU_RELEASE}/mongodb-org/4.0 multiverse" \
 # | sudo -H tee /etc/apt/sources.list.d/mongodb-org-4.0.list
 
 ################################################################################
@@ -30,6 +32,7 @@ sudo -H add-apt-repository \
 sudo -H apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 \
  --recv 2930ADAE8CAF5059EE73BB4B58712A2291FA4AD5
 
+sudo rm /etc/apt/sources.list.d/mongodb-org-3.6.list
 echo "deb [ arch=amd64,arm64 ] https://repo.mongodb.org/apt/ubuntu ${UBUNTU_RELEASE}/mongodb-org/3.6 multiverse" \
  | sudo tee /etc/apt/sources.list.d/mongodb-org-3.6.list
 
@@ -86,4 +89,4 @@ sudo -H apt-get -y install docker-ce
 # sudo -H apt-cache madison docker-ce
 
 sudo groupadd docker
-sudo gpasswd -a $USER docker
+sudo gpasswd -a "${USER}" docker
