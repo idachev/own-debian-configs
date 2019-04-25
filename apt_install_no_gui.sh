@@ -10,8 +10,10 @@ curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo -H apt-key add -
 
 sudo -H apt-key fingerprint 0EBFCD88
 
+UBUNTU_RELEASE=xenial
+
 sudo -H add-apt-repository \
- "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable"
+ "deb [arch=amd64] https://download.docker.com/linux/ubuntu ${UBUNTU_RELEASE} stable"
 
 ################################################################################
 # Setup for latest Mongo 4.0
@@ -28,7 +30,7 @@ sudo -H add-apt-repository \
 sudo -H apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 \
  --recv 2930ADAE8CAF5059EE73BB4B58712A2291FA4AD5
 
-echo "deb [ arch=amd64,arm64 ] https://repo.mongodb.org/apt/ubuntu $(lsb_release -cs)/mongodb-org/3.6 multiverse" \
+echo "deb [ arch=amd64,arm64 ] https://repo.mongodb.org/apt/ubuntu ${UBUNTU_RELEASE}/mongodb-org/3.6 multiverse" \
  | sudo tee /etc/apt/sources.list.d/mongodb-org-3.6.list
 
 ################################################################################
