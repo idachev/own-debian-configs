@@ -1,0 +1,11 @@
+[Desktop Entry]
+Name=ICQ
+Comment=ICQ
+Exec=/home/idachev/lib/icq/icq
+Icon=icq
+Terminal=false
+Type=Application
+StartupNotify=true
+Encoding=UTF-8
+Categories=Network;Application;ICQ
+Name[en_US]=ICQ
