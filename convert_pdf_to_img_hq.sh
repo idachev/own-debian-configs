@@ -24,7 +24,7 @@ fi
 
 convert \
   -verbose \
-  -density 150 \
+  -density 300 \
   -trim \
   "${IN_PDF}" \
   -quality 95 \
