@@ -1,0 +1,11 @@
+[Unit]
+Description=AutoSSH tunnel service 
+After=network.target
+
+[Service]
+Environment="AUTOSSH_GATETIME=0"
+ExecStart=/usr/bin/autossh -M 0 -o ConnectTimeout=10 -o LogLevel=quiet -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -o ServerAliveInterval=30 -o ServerAliveCountMax=3 -N -R 5522:localhost:22 -i /home/idachev/.ssh/id_rsa_auto ubuntu@rb.dev.datastork.io 
+
+[Install]
+WantedBy=multi-user.target
+
