@@ -2,5 +2,5 @@
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
-gconftool-2 --load "${DIR}/gnome-terminal-conf.xml"
+dconf load /org/gnome/terminal/legacy/profiles:/ < "${DIR}/gnome-terminal-profiles.dconf"
 
