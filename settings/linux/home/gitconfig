@@ -1,6 +1,5 @@
 [user]
 	name = Ivan Dachev
-	email = i_dachev@yahoo.co.uk
 [alias]
 	m = merge
 	ci = commit
