@@ -56,6 +56,8 @@ sudo -H apt-get -y install htop ncdu vim tmux zsh git gitk zip aspell aptitude \
  ffmpeg postgresql-client python-dev fdupes fslint gthumb mc archivemount \
  openssh-server maven libcurl4-openssl-dev gcc g++ make pv
 
+sudo -H apt-get -y install snapd
+
 # Mongo shell and tools 3.6/4.0
 sudo -H apt-get -y install mongodb-org-shell mongodb-org-tools
 
