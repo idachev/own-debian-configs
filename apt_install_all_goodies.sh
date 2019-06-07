@@ -17,15 +17,18 @@ rm /etc/apt/sources.list.d/google-chrome.list
 echo "deb http://dl.google.com/linux/chrome/deb/ stable main" | \
   sudo tee /etc/apt/sources.list.d/google-chrome.list
 
+sudo apt-add-repository -y ppa:jtaylor/keepass
+
 sudo apt-get update
 
 sudo -H apt-get -y install dconf-cli dconf-editor dconf-tools
 sudo -H apt-get -y install sublime-text-installer
 sudo -H apt-get -y install google-chrome-beta
 sudo -H apt-get -y install slack-desktop
+sudo -H apt-get -y install keepass2 xdotool
 
 sudo -H apt-get -y install ttf-dejavu-core glogg xbacklight kate \
- handbrake psensor parcellite gwenview kdiff3 \
+ handbrake psensor parcellite gwenview kdiff3 x2goclient \
  shutter pgadmin3 libreoffice gpick spotify-client font-manager
 
 "${DIR}/gnome_terminal_profile.sh" import "${DIR}/gnome_terminal_profile_default.conf"
