@@ -1,0 +1,1 @@
+crypt-btrfs /dev/disk/by-uuid/08a70067-5d19-40ad-b0b0-bd802ca5e772 none luks
