@@ -3,6 +3,8 @@
 sudo -H apt-get -y install python-software-properties debconf-utils apt-transport-https \
  ca-certificates curl software-properties-common
 
+sudo -H apt-get -y install curl apt-transport-https lsb-release gnupg
+
 ################################################################################
 # Setup for latest Docker CE
 
@@ -37,6 +39,16 @@ echo "deb [ arch=amd64,arm64 ] https://repo.mongodb.org/apt/ubuntu ${UBUNTU_RELE
  | sudo tee /etc/apt/sources.list.d/mongodb-org-3.6.list
 
 ################################################################################
+# Setup for Azure cli
+
+curl -sL https://packages.microsoft.com/keys/microsoft.asc | \
+    gpg --dearmor | \
+    sudo tee /etc/apt/trusted.gpg.d/microsoft.asc.gpg > /dev/null
+ 
+echo "deb [arch=amd64] https://packages.microsoft.com/repos/azure-cli/ ${UBUNTU_RELEASE} main" | \
+    sudo tee /etc/apt/sources.list.d/azure-cli.list
+
+################################################################################
 # Setup for Java and others
 
 sudo -H add-apt-repository -y ppa:ricotz/experimental
@@ -54,9 +66,11 @@ sudo -H apt-get -y install htop ncdu vim tmux zsh git gitk zip aspell aptitude \
  pcsc-tools pcscd opensc libnss3-tools sshpass nmap python-pyqtgraph socat \
  pyqt4-dev-tools pdftk lrzip p7zip p7zip-full libimage-exiftool-perl \
  ffmpeg postgresql-client python-dev fdupes fslint gthumb mc archivemount \
- openssh-server maven libcurl4-openssl-dev gcc g++ make pv
+ openssh-server maven libcurl4-openssl-dev gcc g++ make pv acpitool
 
 sudo -H apt-get -y install snapd
+
+sudo apt-get install azure-cli
 
 # Mongo shell and tools 3.6/4.0
 sudo -H apt-get -y install mongodb-org-shell mongodb-org-tools

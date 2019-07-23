@@ -26,6 +26,7 @@ sudo -H apt-get -y install sublime-text-installer
 sudo -H apt-get -y install google-chrome-beta
 sudo -H apt-get -y install slack-desktop
 sudo -H apt-get -y install keepass2 xdotool
+sudo -H apt-get -y install okular
 
 sudo -H apt-get -y install ttf-dejavu-core glogg xbacklight kate \
  handbrake psensor parcellite gwenview kdiff3 x2goclient \

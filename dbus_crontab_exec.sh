@@ -7,7 +7,10 @@
 DBUS_APP_GREP=$1
 shift
 
-dbus_pid=$(pgrep -u $LOGNAME -n $DBUS_APP_GREP)
+USER_SEARCH=$1
+shift
+
+dbus_pid=$(pgrep -u "${USER_SEARCH}" -n "${DBUS_APP_GREP}")
 
 if [ -z "$dbus_pid" ]; then
 	echo "No DBUS app $DBUS_APP_GREP, exit!" >&2
@@ -34,8 +37,14 @@ if [ -z "$DBUS_SESSION_BUS_ADDRESS" ]; then
 	exit 2
 fi
 
+echo -e "\nDBUS_SESSION_BUS_ADDRESS=${DBUS_SESSION_BUS_ADDRESS}"
+
 # export it so that child processes will inherit it
 export DBUS_SESSION_BUS_ADDRESS
+
+export XAUTHORITY=/home/${USER_SEARCH}/.Xauthority
+
+export DISPLAY=:0
 
 # ==================================================
 
