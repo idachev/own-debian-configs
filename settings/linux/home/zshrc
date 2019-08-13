@@ -123,7 +123,8 @@ bindkey '^S' history-incremental-search-forward
 export EDITOR="vim"
 
 #export BROWSER="elinks"
-export BROWSER="konqueror"
+#export BROWSER="konqueror"
+export BROWSER="google-chrome-beta"
 
 export XTERM="aterm +sb -geometry 80x29 -fg black -bg lightgoldenrodyellow -fn -xos4-terminus-medium-*-normal-*-14-*-*-*-*-*-iso8859-15"
 
