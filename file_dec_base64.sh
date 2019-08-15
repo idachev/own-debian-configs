@@ -8,5 +8,5 @@ if [[ "${OUT_FILE}" == *.enc.dec ]]; then
   OUT_FILE=${OUT_FILE:0:${len}-8}
 fi
 
-openssl enc -aes-256-cbc -d -in "${IN_FILE}" -out "${OUT_FILE}"
+openssl enc -aes-256-cbc -d -a -in "${IN_FILE}" -out "${OUT_FILE}"
 
