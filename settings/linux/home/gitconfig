@@ -1,5 +1,5 @@
 [user]
-  name = Ivan Dachev
+	name = Ivan Dachev
 [alias]
   m = merge
   ci = commit

@@ -46,6 +46,7 @@ alias lt='l -t'
 alias gitka='gitk --all'
 alias gitga='gitg --all'
 alias g='git'
+alias gcam='git ci -am'
 alias gk='gitk'
 alias gka='gitk --all'
 
