@@ -1,62 +1,69 @@
 [user]
 	name = Ivan Dachev
 [alias]
-	m = merge
-	ci = commit
-	st = status
-	s = status
-	co = checkout
-	df = diff
-	br = branch
-	bra = branch -a
-	brm = branch --merged
-	brnm = branch --no-merged
-	bram = branch -a --merged
-	brnam = branch -a --no-merged
-	info = remote -v
-	who = shortlog -s --
-	ch = diff --name-status -r
-	diffstat = diff --stat -r
-	gitkconflict = !gitk --left-right HEAD...MERGE_HEAD
-	hist = log --pretty=format:\"%h %ad | %s%d [%an]\" --graph --date=short
-	type = cat-file -t
-	dump = cat-file -p
-	l = log --all --pretty=oneline --abbrev-commit --graph --decorate=full
-	lp = log --all --pretty=format:'%C(auto,yellow)%h%Creset %cn %ce %C(auto,red)%cI%Creset %s'
-	quick-stats = ! /usr/local/bin/git-quick-stats
-	fap = fetch --all --prune
-	sha = log --pretty=format:'%h' -n 1
-	rescue = !git fsck --full --no-reflogs --unreachable --lost-found | grep commit | cut -d\\  -f3 | xargs -n 1 git log -n 1 --pretty=oneline > .git/lost-found.txt
-	gc-all = !git -c gc.reflogExpire=0 -c gc.reflogExpireUnreachable=0 -c gc.rerereresolved=0 -c gc.rerereunresolved=0 -c gc.pruneExpire=now gc
-	repush = "!f() { \
+  m = merge
+  ci = commit
+  st = status
+  s = status
+  co = checkout
+  df = diff
+  br = branch
+  bra = branch -a
+  brm = branch --merged
+  brnm = branch --no-merged
+  bram = branch -a --merged
+  brnam = branch -a --no-merged
+  info = remote -v
+  who = shortlog -s --
+  ch = diff --name-status -r
+  diffstat = diff --stat -r
+  gitkconflict = !gitk --left-right HEAD...MERGE_HEAD
+  hist = log --pretty=format:\"%h %ad | %s%d [%an]\" --graph --date=short
+  type = cat-file -t
+  dump = cat-file -p
+  l = log --all --pretty=oneline --abbrev-commit --graph --decorate=full
+  lp = log --all --pretty=format:'%C(auto,yellow)%h%Creset %cn %ce %C(auto,red)%cI%Creset %s'
+  quick-stats = ! /usr/local/bin/git-quick-stats
+  fap = fetch --all --prune
+  sha = log --pretty=format:'%h' -n 1
+  rescue = "!f() { \
+      git fsck --full --no-reflogs --unreachable --lost-found | \
+      grep commit | \
+      cut -d\\  -f3 | \
+      xargs -n 1 git log -n 1 --date=iso --pretty=tformat:'%ad%x09%h%x09%an%x09%s' | \
+      sort -r; \
+    }; \
+    f" 
+  gc-all = !git -c gc.reflogExpire=0 -c gc.reflogExpireUnreachable=0 -c gc.rerereresolved=0 -c gc.rerereunresolved=0 -c gc.pruneExpire=now gc
+  repush = "!f() { \
       git push origin :`git rev-parse --abbrev-ref HEAD`; \
       git push; \
     }; \
     f"
 [color]
-	ui = auto
+  ui = auto
 [color "branch"]
-	current = yellow reverse
-	local = yellow
-	remote = green
+  current = yellow reverse
+  local = yellow
+  remote = green
 [color "diff"]
-	meta = yellow bold
-	frag = magenta bold
-	old = red bold
-	new = green bold
-	whitespace = red reverse
+  meta = yellow bold
+  frag = magenta bold
+  old = red bold
+  new = green bold
+  whitespace = red reverse
 [color "status"]
-	added = yellow
-	changed = green
-	untracked = cyan
+  added = yellow
+  changed = green
+  untracked = cyan
 [merge]
-	tool = kdiff3
+  tool = kdiff3
 [core]
-	autocrlf = false
-	safecrlf = warn
+  autocrlf = false
+  safecrlf = warn
 [http]
-	postBuffer = 524288000
+  postBuffer = 524288000
 [credential]
-	helper = cache
+  helper = cache
 [push]
-	default = simple
+  default = simple
