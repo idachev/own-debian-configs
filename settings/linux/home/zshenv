@@ -40,6 +40,9 @@ export PATH=$PATH:/usr/share/fslint/fslint:$HOME/bin
 # Add pip local bin
 export PATH=$PATH:$HOME/.local/bin
 
+# Add go bin
+export PATH=$PATH:$HOME/go/bin
+
 # Perforce custom envs
 export P4CONFIG=.p4config
 export P4EDITOR=vim
