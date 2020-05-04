@@ -1,11 +1,7 @@
 ###########################################################        
 # Options for Zsh
 
-if whence dircolors >/dev/null; then
-  eval `dircolors -b`
-else
-  export CLICOLOR=1
-fi
+eval `dircolors -b`
 
 autoload -U compinit promptinit colors
 compinit
@@ -27,6 +23,9 @@ setopt nohup
 
 #disable xon/xoff to use ctrl-s for reverse history
 stty -ixon
+
+export LC_CTYPE=en_US.UTF-8
+export LC_ALL=en_US.UTF-8
 
 ##################################################################
 # History options
@@ -51,7 +50,7 @@ setopt HIST_IGNORE_ALL_DUPS
 
 # Do not enter command lines into the history list if 
 # they are duplicates of the previous event. 
-#setopt HIST_IGNORE_DUPS
+setopt HIST_IGNORE_DUPS
 
 # Remove command lines from the history list when the 
 # first character on the line is a space, or when one 
@@ -75,8 +74,6 @@ setopt INC_APPEND_HISTORY
 # PS1 and PS2
 
 . ~/.zshprompt
-#. ~/.zshprompt_ver1
-#. ~/.zshprompt_old
 
 # Disable username lookp = don't look up NIS users
 zmodload -i zsh/parameter
@@ -116,6 +113,8 @@ bindkey '^[[B' down-line-or-search
 bindkey '^[[C' forward-char 
 bindkey '^[[1;5C' emacs-forward-word
 bindkey '^[[1;5D' emacs-backward-word
+bindkey '^R' history-incremental-search-backward
+bindkey '^S' history-incremental-search-forward
 
 ##################################################################
 # Aliases
@@ -124,14 +123,15 @@ bindkey '^[[1;5D' emacs-backward-word
 export EDITOR="vim"
 
 #export BROWSER="elinks"
-export BROWSER="konqueror"
+#export BROWSER="konqueror"
+export BROWSER="google-chrome"
 
 export XTERM="aterm +sb -geometry 80x29 -fg black -bg lightgoldenrodyellow -fn -xos4-terminus-medium-*-normal-*-14-*-*-*-*-*-iso8859-15"
 
 #export VIDEO_PLAYER="totem"
 export VIDEO_PLAYER="vlc"
 
-export IMAGE_VIEW="gwenview"
+export IMAGE_VIEW="gthumb"
 
 export OFFICE_VIEW="soffice"
 
@@ -153,6 +153,7 @@ alias -s PNG=$IMAGE_VIEW
 alias -s png=$IMAGE_VIEW
 alias -s JPG=$IMAGE_VIEW
 alias -s jpg=$IMAGE_VIEW
+alias -s jpeg=$IMAGE_VIEW
 alias -s GIF=$IMAGE_VIEW
 alias -s gif=$IMAGE_VIEW
 alias -s sxw=$OFFICE_VIEW
@@ -174,6 +175,9 @@ alias -s mk4=$VIDEO_PLAYER
 alias -s m4v=$VIDEO_PLAYER
 alias -s mpg=$VIDEO_PLAYER
 alias -s mvi=$VIDEO_PLAYER
+alias -s avi=$VIDEO_PLAYER
+alias -s 3gp=$VIDEO_PLAYER
+alias -s 3GP=$VIDEO_PLAYER
 alias -s log=$LOG_VIEW
 alias -s ttf=$FONT_VIEW
 
@@ -196,7 +200,6 @@ fpath=(~/develop/private/zsh-completions $fpath)
 # type a directory's name to cd to it
 compctl -/ cd
 
-# add common aliases
 if [ -f ~/.aliases ]; then
   . ~/.aliases
 fi
@@ -209,13 +212,24 @@ if [ -f ~/.localrc ]; then
   . ~/.localrc
 fi
 
-# add keychain ssh-agent variables
-keychain -q ~/.ssh/id_dsa_a
-. ~/.keychain/$HOST-sh
-. ~/.keychain/$HOST-sh-gpg
+##################################################################
+# Keychain
+
+keychain -q ~/.local_ssh_key
+
+if [ -f "~/.keychain/${HOST}-sh" ]; then
+  . "~/.keychain/${HOST}-sh"
+fi
+
+if [ -f "~/.keychain/${HOST}-sh-gpg" ]; then
+  . "~/.keychain/${HOST}-sh-gpg"
+fi
+
+##################################################################
+# Others
 
 # jump zsh completion
-source `jump-bin --zsh-integration`
+#source `jump-bin --zsh-integration`
 
 # need for new git versions
 if [ -f ~/.git-prompt.sh ]; then

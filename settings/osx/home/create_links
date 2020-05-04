@@ -72,6 +72,7 @@ else
 
   # git
   link $BASEDIR/gitconfig $HOME/.gitconfig
+  link $BASEDIR/gitattributes $HOME/.gitattributes
   link $BASEDIR/gitk $HOME/.gitk
   link $BASEDIR/git-prompt.sh $HOME/.git-prompt.sh
 #  link $BASEDIR/gitignore $HOME/.gitignore

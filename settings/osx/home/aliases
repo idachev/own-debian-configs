@@ -11,6 +11,7 @@ alias irssi="irssi -c irc.freenode.net -n yyz"
 alias mem="free -m"
 alias psg="ps ax | grep"
 alias gvim="gvim -geom 132x42"
+alias rh='echo '\''cleanup from hist:'\'';sed -n -e '\''${x;1!p;};h'\'' ~/.histfile;sed -i '\''$d'\'' ~/.histfile'
 
 # Interactive operation...
 alias rm='rm -i'
@@ -20,6 +21,7 @@ alias mv='mv -i'
 # Default to human readable figures
 alias df='df -h'
 alias du='du -h'
+alias ncdu='ncdu -q'
 
 # Misc :)
 alias less='less -r'                          # raw control characters
@@ -32,14 +34,21 @@ alias fgrep='fgrep --color'
 alias ls='ls -hF -G'
 alias ll='ls -l'
 alias la='ls -a'
-alias l='ls -CF'
-alias lla='ls -al'
+alias lc='ls -C'
+alias l='ls -al'
+alias lla='l'
 alias lsd='ls -ld *(-/DN)'
 alias lsa='ls -ld .*'
+alias ltr='l -tr'
+alias lt='l -t'
 
-# Used for gitk start
+# Git related
 alias gitka='gitk --all'
 alias gitga='gitg --all'
+alias g='git'
+alias gcam='git ci -am'
+alias gk='gitk'
+alias gka='gitk --all'
 
 # Extended man viewer
 #alias man='pinfo -m'
@@ -52,3 +61,83 @@ alias in4='ionice -c2 -n4'
 alias in0='ionice -c2 -n0'
 
 alias tail='tail -f -n +0'
+
+alias exit='echo "Please confirm with(y/n): ";read ans;if [ "$ans" = "y" ];then exit;fi'
+
+# Quick working with screens
+alias s1open='screen -d -R -S s1'
+alias s2open='screen -d -R -S s2'
+alias s3open='screen -d -R -S s3'
+
+# Docker
+
+dkrp() {
+  docker ps -a $*
+}
+
+dkrn() {
+  docker ps --format "{{.Names}}" $*
+}
+
+dkrr() {
+  docker ps
+}
+
+dkrl() {
+  docker logs -f $1
+}
+
+dkre() {
+  docker exec -it $*
+}
+
+dkrb() {
+  docker exec -it $1 bash
+}
+
+dkrm() {
+  for i in $*; do
+    docker stop $i; docker rm $i
+  done
+}
+
+dkrmi() {
+  docker images --format "{{.Repository}}:{{.Tag}}" --filter=reference="${1}" | xargs docker rmi -f
+  docker images
+}
+
+alias dkrm-old='docker ps --filter "status=exited" | awk '\''{print $1}'\'' | xargs --no-run-if-empty docker rm'
+
+# Misc
+alias tmux="tmux -2"
+
+alias prettyjson='python -m json.tool'
+
+alias pssh='psg ssh'
+
+#alias assume-role='function(){eval $(command assume-role $@);}'
+
+
+aws_profiles () {
+    [[ -r "${AWS_CONFIG_FILE:-$HOME/.aws/config}" ]] || return 1
+    grep --color=auto --exclude-dir={.bzr,CVS,.git,.hg,.svn} '\[profile' "${AWS_CONFIG_FILE:-$HOME/.aws/config}" | sed -e 's/.*profile \([a-zA-Z0-9_\.-]*\).*/\1/'
+}
+
+asp () {
+    if [[ -z "$1" ]]
+    then
+        unset AWS_DEFAULT_PROFILE AWS_PROFILE AWS_EB_PROFILE
+        echo AWS profile cleared.
+        return
+    fi
+    local available_profiles=($(aws_profiles))
+    if [[ -z "${available_profiles[(r)$1]}" ]]
+    then
+        echo "${fg[red]}Profile '$1' not found in '${AWS_CONFIG_FILE:-$HOME/.aws/config}'" >&2
+        echo "Available profiles: ${(j:, :)available_profiles:-no profiles found}${reset_color}" >&2
+        return 1
+    fi
+    export AWS_DEFAULT_PROFILE=$1
+    export AWS_PROFILE=$1
+    export AWS_EB_PROFILE=$1
+}

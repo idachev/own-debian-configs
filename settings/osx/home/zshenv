@@ -1,32 +1,30 @@
 #echo -e "\n\nExecuting ~/.zshenv\n\n"
 
 ###########################################################
-# Setting local sqlplus
-export SQLPATH=/opt/sqlplus/instantclient_11_1
-if [ -d $SQLPATH ]; then
-  export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$SQLPATH
-  export PATH=$SQLPATH:${PATH}
-  export NLS_LANG=AMERICAN_AMERICA.UTF8
-fi
-
-###########################################################
 # Setting local gtest
-export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/lib
+LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/lib
+export LD_LIBRARY_PATH
 
 ###########################################################
 # Export vars
 #export JAVA_HOME=/usr/lib/jvm/java-6-sun
-export JAVA_HOME=/usr/lib/jvm/java-1.6.0-openjdk
+#export JAVA_HOME=/usr/lib/jvm/java-1.6.0-openjdk
 export MAVEN_OPTS="-Xmx1024m -XX:MaxPermSize=256m"
 
-export LOCAL_JAVA_HOME_32=/home/idachev/lib/java/jre1.6.0_34
-export LOCAL_JAVA_HOME_64=/home/idachev/lib/java/jre1.6.0_34_x64
+#export LOCAL_JAVA_HOME_32=/home/idachev/lib/java/jre1.6.0_34
+#export LOCAL_JAVA_HOME_64=/home/idachev/lib/java/jre1.6.0_34_x64
 
 #pycharm java
-export PYCHARM_JDK=$LOCAL_JAVA_HOME_32
+#export PYCHARM_JDK=$LOCAL_JAVA_HOME_32
 
 # Add custom scripts to bin
-export PATH=/usr/local/bin:$PATH:/usr/share/fslint/fslint:$HOME/bin
+export PATH=$PATH:/usr/share/fslint/fslint:$HOME/bin
+
+# Add pip local bin
+export PATH=$PATH:$HOME/.local/bin
+
+# Add go bin
+export PATH=$PATH:$HOME/go/bin
 
 # Perforce custom envs
 export P4CONFIG=.p4config
