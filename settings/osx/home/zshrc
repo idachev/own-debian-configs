@@ -1,7 +1,7 @@
 ###########################################################        
 # Options for Zsh
 
-eval `dircolors -b`
+#eval `dircolors -b`
 
 autoload -U compinit promptinit colors
 compinit
@@ -124,24 +124,24 @@ export EDITOR="vim"
 
 #export BROWSER="elinks"
 #export BROWSER="konqueror"
-export BROWSER="google-chrome"
+export BROWSER="open"
 
 export XTERM="aterm +sb -geometry 80x29 -fg black -bg lightgoldenrodyellow -fn -xos4-terminus-medium-*-normal-*-14-*-*-*-*-*-iso8859-15"
 
 #export VIDEO_PLAYER="totem"
-export VIDEO_PLAYER="vlc"
+export VIDEO_PLAYER="open"
 
-export IMAGE_VIEW="gthumb"
+export IMAGE_VIEW="open"
 
-export OFFICE_VIEW="soffice"
+export OFFICE_VIEW="open"
 
-export PDF_VIEW="okular"
+export PDF_VIEW="open"
 
 export ARCHIVE_VIEW="ark"
 
 export LOG_VIEW="glogg"
 
-export FONT_VIEW="gnome-font-viewer"
+export FONT_VIEW="open"
 
 # Set up auto extension stuff
 alias -s html=$BROWSER
