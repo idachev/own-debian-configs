@@ -109,6 +109,7 @@ dkrmi() {
 alias dkrm-old='docker ps --filter "status=exited" | awk '\''{print $1}'\'' | xargs --no-run-if-empty docker rm'
 
 # Misc
+
 alias tmux="tmux -2"
 
 alias prettyjson='python -m json.tool'
@@ -117,22 +118,23 @@ alias pssh='psg ssh'
 
 #alias assume-role='function(){eval $(command assume-role $@);}'
 
+# AWS Profiles
 
-aws_profiles () {
+aws_profiles() {
     [[ -r "${AWS_CONFIG_FILE:-$HOME/.aws/config}" ]] || return 1
-    grep --color=auto --exclude-dir={.bzr,CVS,.git,.hg,.svn} '\[profile' "${AWS_CONFIG_FILE:-$HOME/.aws/config}" | sed -e 's/.*profile \([a-zA-Z0-9_\.-]*\).*/\1/'
+    grep --color=auto --exclude-dir={.bzr,CVS,.git,.hg,.svn} \
+      '\[profile' "${AWS_CONFIG_FILE:-$HOME/.aws/config}" | \
+      sed -e 's/.*profile \([a-zA-Z0-9_\.-]*\).*/\1/'
 }
 
-asp () {
-    if [[ -z "$1" ]]
-    then
+asp() {
+    if [[ -z "$1" ]]; then
         unset AWS_DEFAULT_PROFILE AWS_PROFILE AWS_EB_PROFILE
-        echo AWS profile cleared.
+        echo -e "AWS profile cleared."
         return
     fi
     local available_profiles=($(aws_profiles))
-    if [[ -z "${available_profiles[(r)$1]}" ]]
-    then
+    if [[ -z "${available_profiles[(r)$1]}" ]]; then
         echo "${fg[red]}Profile '$1' not found in '${AWS_CONFIG_FILE:-$HOME/.aws/config}'" >&2
         echo "Available profiles: ${(j:, :)available_profiles:-no profiles found}${reset_color}" >&2
         return 1
@@ -141,3 +143,12 @@ asp () {
     export AWS_PROFILE=$1
     export AWS_EB_PROFILE=$1
 }
+
+alias aws-unset-session='unset AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY AWS_SESSION_TOKEN'
+
+# Kubectl
+
+kube-namespace() {
+  kubectl config set-context --current --namespace=$1
+}
+

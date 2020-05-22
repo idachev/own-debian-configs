@@ -41,6 +41,19 @@ function precmd {
 	elif which apm > /dev/null 2>&1; then
 		PR_APM_RESULT=`apmi 2> /dev/null`
 	fi
+
+  if which kubectl > /dev/null 2>&1; then
+    KUBE_NAMESPACE=$(kubectl config view --minify --output 'jsonpath={..namespace}')
+    PR_KUBE_NAMESPACE='${PR_YELLOW}[kube ${KUBE_NAMESPACE}]'
+  else
+    PR_KUBE_NAMESPACE=''
+  fi
+
+  if [ ! "${AWS_PROFILE}" = "" ]; then
+    PR_AWS_PROFILE='${PR_MAGENTA}[aws ${AWS_PROFILE}]'
+  else
+    PR_AWS_PROFILE=''
+  fi
 }
 
 
@@ -147,19 +160,6 @@ setprompt () {
 	else
 		PR_APM=''
 	fi
-
-  if which kubectl > /dev/null 2>&1; then
-    KUBE_NAMESPACE=$(kubectl config view --minify --output 'jsonpath={..namespace}')
-    PR_KUBE_NAMESPACE='${PR_YELLOW}[kube ${KUBE_NAMESPACE}]'
-  else
-    PR_KUBE_NAMESPACE=''
-  fi
-
-  if [ ! "${AWS_PROFILE}" = "" ]; then
-    PR_AWS_PROFILE='${PR_GREEN}[aws ${AWS_PROFILE}]'
-  else
-    PR_AWS_PROFILE=''
-  fi
 
 	###
 	# Finally, the prompt.
