@@ -62,6 +62,7 @@ alias in0='ionice -c2 -n0'
 
 alias tail='tail -f -n +0'
 
+alias exit-force='"exit"'
 alias exit='echo "Please confirm with(y/n): ";read ans;if [ "$ans" = "y" ];then exit;fi'
 
 # Quick working with screens
@@ -148,7 +149,15 @@ alias aws-unset-session='unset AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY AWS_SESSI
 
 # Kubectl
 
+alias k=kubectl
+
+if [ "$0" = "bash" ]; then
+  echo "I'm in bash"
+  complete -F __start_kubectl k
+fi
+
 kube-namespace() {
   kubectl config set-context --current --namespace=$1
 }
+
 
