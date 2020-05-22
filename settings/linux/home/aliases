@@ -151,6 +151,36 @@ alias aws-unset-session='unset AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY AWS_SESSI
 
 alias k=kubectl
 
+alias kg='k get'
+alias kgs='kg services'
+alias kgp='kg pods'
+alias kgpw='kg pods -o wide'
+alias kgd='kg deployments'
+
+alias kd='k describe'
+alias kds='kd service'
+alias kdp='kd pod'
+
+alias kpf='k port-forward'
+
+alias kl='k logs -f'
+
+alias krun-busybox='k run curl --image=radial/busyboxplus:curl -i --tty'
+
+keb() {
+  kubectl exec -ti "${1}" -- bash
+}
+
+kes() {
+  kubectl exec -ti "${1}" -- sh
+}
+
+kec() {
+  POD_NAME=${1}
+  shift
+  kubectl exec "${POD_NAME}" -- $*
+}
+
 if [ "$0" = "bash" ]; then
   echo "I'm in bash"
   complete -F __start_kubectl k
