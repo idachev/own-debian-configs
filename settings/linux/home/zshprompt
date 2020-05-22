@@ -148,16 +148,31 @@ setprompt () {
 		PR_APM=''
 	fi
 
+  if which kubectl > /dev/null 2>&1; then
+    KUBE_NAMESPACE=$(kubectl config view --minify --output 'jsonpath={..namespace}')
+    PR_KUBE_NAMESPACE='${PR_YELLOW}[kube ${KUBE_NAMESPACE}]'
+  else
+    PR_KUBE_NAMESPACE=''
+  fi
+
+  if [ ! "${AWS_PROFILE}" = "" ]; then
+    PR_AWS_PROFILE='${PR_GREEN}[aws ${AWS_PROFILE}]'
+  else
+    PR_AWS_PROFILE=''
+  fi
 
 	###
 	# Finally, the prompt.
-PR_DIM_YELLOW=$(print '%{\e[0;33m%}')
+  PR_DIM_YELLOW=$(print '%{\e[0;33m%}')
 
 	PROMPT='$PR_STITLE${(e)PR_TITLEBAR}\
 $PR_DIM_YELLOW%D{%H:%M:%S} %D{%d/%m/%Y} \
 $PR_DIM_GREEN%(!.%SROOT%s.%n)$PR_DIM_GREEN@%m:%l$PR_STY \
 $PR_DIM_RED%(?..ERRNO:$PR_RED%?) \
 ${(e)PR_APM}\
+
+${(e)PR_AWS_PROFILE}\
+${(e)PR_KUBE_NAMESPACE}\
 
 $PR_BLUE%$PR_PWDLEN<...<%~%<< \
 $PR_VCS_INFO\
