@@ -9,8 +9,10 @@ export LD_LIBRARY_PATH
 # Export vars
 export MAVEN_OPTS="-Xmx1024m -XX:MaxPermSize=256m"
 
-export LOCAL_JAVA_HOME_32=/home/idachev/lib/java/jre1.6.0_34
-export LOCAL_JAVA_HOME_64=/home/idachev/lib/java/jre1.6.0_34_x64
+export LOCAL_LIB=$HOME/lib
+
+export LOCAL_JAVA_HOME_32=$LOCAL_LIB/java/jre1.6.0_34
+export LOCAL_JAVA_HOME_64=$LOCAL_LIB/java/jre1.6.0_34_x64
 
 export SYS_JAVA_HOME_7=/usr/lib/jvm/java-7-oracle
 export SYS_JAVA_HOME_8=/usr/lib/jvm/java-8-oracle
@@ -50,9 +52,11 @@ export P4MERGE=kdiff3
 
 export PYTHONPATH=$PYTHONPATH:~/lib/pywikipedia/
 
-export GTEST_DIR=/home/idachev/develop/private/gtest/gtest-1.6.0
+export GTEST_DIR=$HOME/develop/private/gtest/gtest-1.6.0
 
-export RSYNC_PARTIAL_DIR=/home/idachev/.rsync-tmp
+export RSYNC_PARTIAL_DIR=$HOME/.rsync-tmp
+
+export HELM_HOME=$HOME/.helm
 
 if [ -f ~/.oracleenv ]; then
   . ~/.oracleenv
