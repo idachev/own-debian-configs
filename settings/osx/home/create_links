@@ -90,6 +90,10 @@ else
 #  link $BASEDIR/config/synapse $HOME/.config/synapse
 #  link $BASEDIR/config/terminator $HOME/.config/terminator
 #  link $BASEDIR/config/awesome $HOME/.config/awesome
+ 
+ # tmux
+  link $BASEDIR/tmux $HOME/.tmux
+  link $BASEDIR/tmux.conf $HOME/.tmux.conf
 
   # misc
   link $BASEDIR/aliases $HOME/.aliases
