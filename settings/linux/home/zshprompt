@@ -44,13 +44,14 @@ function precmd {
 
   if which kubectl > /dev/null 2>&1; then
     KUBE_NAMESPACE=$(kubectl config view --minify --output 'jsonpath={..namespace}')
-    PR_KUBE_NAMESPACE='${PR_YELLOW}[kube ${KUBE_NAMESPACE}]'
+    KUBE_CONTEXT=$(kubectl config current-context)
+    PR_KUBE_NAMESPACE='${PR_WHITE}[kube ${PR_DIM_YELLOW}${KUBE_CONTEXT} ${PR_YELLOW}${KUBE_NAMESPACE}${PR_WHITE}]'
   else
     PR_KUBE_NAMESPACE=''
   fi
 
   if [ ! "${AWS_PROFILE}" = "" ]; then
-    PR_AWS_PROFILE='${PR_MAGENTA}[aws ${AWS_PROFILE}]'
+    PR_AWS_PROFILE='${PR_WHITE}[aws ${PR_LIGHT_MAGENTA}${AWS_PROFILE}${PR_WHITE}]'
   else
     PR_AWS_PROFILE=''
   fi
@@ -106,9 +107,9 @@ setprompt () {
 		colors
 	fi
 	for color in RED GREEN YELLOW BLUE MAGENTA CYAN WHITE; do
-		eval PR_$color='%{$terminfo[bold]$fg[${(L)color}]%}'
-		eval PR_DIM_$color='%{$terminfo[dim]$fg[${(L)color}]%}'
-		eval PR_LIGHT_$color='%{$fg[${(L)color}]%}'
+		eval PR_$color='%{$terminfo[sgr0]%}%{$terminfo[bold]$fg[${(L)color}]%}'
+		eval PR_DIM_$color='%{$terminfo[sgr0]%}%{$terminfo[dim]$fg[${(L)color}]%}'
+		eval PR_LIGHT_$color='%{$terminfo[sgr0]%}%{$fg[${(L)color}]%}'
 		(( count = $count + 1 ))
 	done
 	PR_NO_COLOUR="%{$terminfo[sgr0]%}"
