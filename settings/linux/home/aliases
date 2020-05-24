@@ -156,6 +156,7 @@ alias kgs='kg services'
 alias kgp='kg pods'
 alias kgpw='kg pods -o wide'
 alias kgd='kg deployments'
+alias kga='kg all'
 
 alias kd='k describe'
 alias kds='kd service'
@@ -186,8 +187,14 @@ if [ "$0" = "bash" ]; then
   complete -F __start_kubectl k
 fi
 
-kube-namespace() {
+ksn() {
   kubectl config set-context --current --namespace=$1
 }
 
+# Helm
+
+alias helm_2_15_0="docker run -ti --rm \
+  -v $(pwd):/apps \
+  -v ~/.kube/config:/root/.kube/config \
+  -v ~/.helm:/root/.helm alpine/helm:2.15.0"
 

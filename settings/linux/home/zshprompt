@@ -42,18 +42,22 @@ function precmd {
 		PR_APM_RESULT=`apmi 2> /dev/null`
 	fi
 
-  if which kubectl > /dev/null 2>&1; then
-    KUBE_NAMESPACE=$(kubectl config view --minify --output 'jsonpath={..namespace}')
-    KUBE_CONTEXT=$(kubectl config current-context)
-    PR_KUBE_NAMESPACE='${PR_WHITE}[kube ${PR_DIM_YELLOW}${KUBE_CONTEXT} ${PR_YELLOW}${KUBE_NAMESPACE}${PR_WHITE}]'
-  else
-    PR_KUBE_NAMESPACE=''
+  if [ "${PR_SHOW_KUBE}" = "1"  ]; then
+    if which kubectl > /dev/null 2>&1; then
+      KUBE_NAMESPACE=$(kubectl config view --minify --output 'jsonpath={..namespace}')
+      KUBE_CONTEXT=$(kubectl config current-context)
+      PR_KUBE_NAMESPACE='${PR_WHITE}[kube ${PR_DIM_YELLOW}${KUBE_CONTEXT} ${PR_YELLOW}${KUBE_NAMESPACE}${PR_WHITE}]'
+    else
+      PR_KUBE_NAMESPACE=''
+    fi
   fi
 
-  if [ ! "${AWS_PROFILE}" = "" ]; then
-    PR_AWS_PROFILE='${PR_WHITE}[aws ${PR_LIGHT_MAGENTA}${AWS_PROFILE}${PR_WHITE}]'
-  else
-    PR_AWS_PROFILE=''
+  if [ "${PR_SHOW_AWS}" = "1" ]; then
+    if [ ! "${AWS_PROFILE}" = "" ]; then
+      PR_AWS_PROFILE='${PR_WHITE}[aws ${PR_LIGHT_MAGENTA}${AWS_PROFILE}${PR_WHITE}]'
+    else
+      PR_AWS_PROFILE=''
+    fi
   fi
 }
 
@@ -166,15 +170,26 @@ setprompt () {
 	# Finally, the prompt.
   PR_DIM_YELLOW=$(print '%{\e[0;33m%}')
 
+  if [ "${PR_SHOW_KUBE}" -o "${PR_SHOW_AWS}" ]; then
+    PR_SECOND_LINE="\
+
+${(e)PR_AWS_PROFILE}\
+${(e)PR_KUBE_NAMESPACE}"
+  fi
+
 	PROMPT='$PR_STITLE${(e)PR_TITLEBAR}\
 $PR_DIM_YELLOW%D{%H:%M:%S} %D{%d/%m/%Y} \
 $PR_DIM_GREEN%(!.%SROOT%s.%n)$PR_DIM_GREEN@%m:%l$PR_STY \
 $PR_DIM_RED%(?..ERRNO:$PR_RED%?) \
-${(e)PR_APM}\
+${(e)PR_APM}'
 
+  if [ "${PR_SHOW_KUBE}" = "1" -o "${PR_SHOW_AWS}" = "1" ]; then
+    PROMPT="${PROMPT}"'
 ${(e)PR_AWS_PROFILE}\
-${(e)PR_KUBE_NAMESPACE}\
+${(e)PR_KUBE_NAMESPACE}'
+  fi
 
+  PROMPT="${PROMPT}"'
 $PR_BLUE%$PR_PWDLEN<...<%~%<< \
 $PR_VCS_INFO\
 
