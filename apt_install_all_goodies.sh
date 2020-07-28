@@ -19,7 +19,14 @@ echo "deb http://dl.google.com/linux/chrome/deb/ stable main" | \
 
 sudo apt-add-repository -y ppa:jtaylor/keepass
 
+# Recoll - search indexing
+
+sudo add-apt-repository ppa:recoll-backports/recoll-1.15-on
+
 sudo apt-get update
+
+sudo -H apt-get -y install unrtf antiword poppler-utils recoll
+sudo -H pip3 install mutagen # recoll
 
 sudo -H apt-get -y install dconf-cli dconf-editor dconf-tools
 sudo -H apt-get -y install sublime-text-installer

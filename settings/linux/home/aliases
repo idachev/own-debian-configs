@@ -157,6 +157,8 @@ alias kgp='kg pods'
 alias kgpw='kg pods -o wide'
 alias kgd='kg deployments'
 alias kga='kg all'
+alias kgst='kg statefulset'
+alias kgn='kg namespace'
 
 alias kd='k describe'
 alias kds='kd service'
@@ -165,6 +167,8 @@ alias kdp='kd pod'
 alias kpf='k port-forward'
 
 alias kl='k logs -f'
+
+alias kdel='k delete'
 
 alias krun-busybox='k run curl --image=radial/busyboxplus:curl -i --tty'
 
@@ -193,8 +197,13 @@ ksn() {
 
 # Helm
 
-alias helm_2_15_0="docker run -ti --rm \
+alias helm_2_15_0="docker run -it --rm \
   -v $(pwd):/apps \
   -v ~/.kube/config:/root/.kube/config \
   -v ~/.helm:/root/.helm alpine/helm:2.15.0"
+
+alias kafkacat-dc="docker run -it --rm \
+  --network host \
+  confluentinc/cp-kafkacat \
+  kafkacat"
 

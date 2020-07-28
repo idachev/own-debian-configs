@@ -125,6 +125,8 @@ else
   link $BASEDIR/gconf $HOME/.gconf
 
   link ~/Dropbox/fonts $HOME/.fonts
+ 
+  link $BASEDIR/recoll/recoll.conf $HOME/.recoll/recoll.conf
 
 fi
 
