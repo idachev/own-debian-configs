@@ -127,6 +127,8 @@ else
   link ~/Dropbox/fonts $HOME/.fonts
  
   link $BASEDIR/recoll/recoll.conf $HOME/.recoll/recoll.conf
+  link $BASEDIR/recoll/mimeview $HOME/.recoll/mimeview
+  link $BASEDIR/recoll/mimeconf $HOME/.recoll/mimeconf
 
 fi
 
