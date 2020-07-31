@@ -27,6 +27,7 @@ sudo apt-get update
 
 sudo -H apt-get -y install unrtf antiword poppler-utils recoll
 sudo -H pip3 install mutagen # recoll
+sudo -H pip2 install opencv-python
 
 sudo -H apt-get -y install dconf-cli dconf-editor dconf-tools
 sudo -H apt-get -y install sublime-text-installer
@@ -37,7 +38,8 @@ sudo -H apt-get -y install okular
 
 sudo -H apt-get -y install ttf-dejavu-core glogg xbacklight kate \
  handbrake psensor parcellite gwenview kdiff3 x2goclient \
- shutter pgadmin3 libreoffice gpick spotify-client font-manager
+ shutter pgadmin3 libreoffice gpick spotify-client font-manager \
+ python-gtk2 xdotool
 
 "${DIR}/gnome_terminal_profile.sh" import "${DIR}/gnome_terminal_profile_default.conf"
 
