@@ -1,0 +1,12 @@
+version: "3"
+services:
+    onedrive:
+        image: driveone/onedrive:latest
+        container_name: onedrive
+        restart: unless-stopped
+        environment:
+            - ONEDRIVE_UID=${PUID}
+            - ONEDRIVE_GID=${PGID}
+        volumes: 
+            - ${ONE_DRIVE_CONFIG}:/onedrive/conf
+            - ${ONE_DRIVE_DATA}:/onedrive/data
