@@ -7,7 +7,7 @@ export LD_LIBRARY_PATH
 
 ###########################################################
 # Export vars
-export MAVEN_OPTS="-Xmx4192m -XX:MaxPermSize=256m"
+export MAVEN_OPTS="-Xmx4192m -XX:MaxPermSize=256m -Dorg.slf4j.simpleLogger.showDateTime=true -Dorg.slf4j.simpleLogger.dateTimeFormat=yyyy-MM-dd'T'HH:mm:ss.SSSZ -Duser.timezone=UTC"
 
 export LOCAL_LIB=$HOME/lib
 

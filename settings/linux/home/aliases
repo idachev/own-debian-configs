@@ -85,7 +85,7 @@ dkrr() {
 }
 
 dkrl() {
-  docker logs -f $1
+  docker logs -f $*
 }
 
 dkre() {

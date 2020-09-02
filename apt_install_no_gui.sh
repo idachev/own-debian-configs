@@ -5,7 +5,7 @@ sudo -H apt-get update
 sudo -H apt-get -y install python-software-properties debconf-utils apt-transport-https \
  ca-certificates curl software-properties-common dos2unix
 
-sudo -H apt-get -y install curl apt-transport-https lsb-release gnupg
+sudo -H apt-get -y install curl apt-transport-https lsb-release gnupg wget aria2
 
 ################################################################################
 # Setup for latest Docker CE
