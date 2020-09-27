@@ -29,7 +29,7 @@ sudo -H yum -y install java-11-openjdk java-11-openjdk-src \
   java-11-openjdk-javadoc java-11-openjdk-demo java-11-openjdk-devel 
 
 sudo -H yum -y install htop ncdu vim tmux zsh git gitk zip aspell \
-  keychain gparted smartmontools nvme-cli python-pip \
+  keychain gparted smartmontools nvme-cli python-pip ctags \
   cpulimit pcsc-tools opensc sshpass nmap socat lrzip p7zip \
   fdupes fslint gthumb mc openssh-server maven gcc make pv sssd-tools
 
