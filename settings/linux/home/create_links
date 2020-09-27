@@ -75,6 +75,7 @@ else
   link $BASEDIR/gitconfig $HOME/.gitconfig
   link $BASEDIR/gitattributes $HOME/.gitattributes
   link $BASEDIR/gitk $HOME/.gitk
+  link $BASEDIR/bash_git $HOME/.bash_git
 #  link $BASEDIR/gitignore $HOME/.gitignore
 #  link $BASEDIR/gitattributes $HOME/.gitattributes
 

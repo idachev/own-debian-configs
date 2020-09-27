@@ -88,6 +88,8 @@ if ! shopt -oq posix; then
   fi
 fi
 
+. ~/.bash_git
+
 GIT_PS1_SHOWDIRTYSTATE=true
 
 ###
