@@ -13,6 +13,10 @@ alias psg="ps ax | grep"
 alias gvim="gvim -geom 132x42"
 alias rh='echo '\''cleanup from hist:'\'';sed -n -e '\''${x;1!p;};h'\'' ~/.histfile;sed -i '\''$d'\'' ~/.histfile'
 
+# Archives
+alias tarcpz="tar c --use-compress-program=pigz -f"
+alias tarxpz="tar x --use-compress-program=pigz -f"
+
 # Interactive operation...
 alias rm='rm -i'
 alias cp='cp -i'
