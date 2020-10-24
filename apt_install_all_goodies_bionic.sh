@@ -1,7 +1,7 @@
 #!/bin/bash
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
-${DIR}/apt_install_no_gui.sh
+#${DIR}/apt_install_no_gui_bionic.sh
 
 wget -qO - https://download.sublimetext.com/sublimehq-pub.gpg | \
   sudo apt-key add -
@@ -25,8 +25,7 @@ sudo add-apt-repository ppa:recoll-backports/recoll-1.15-on
 
 sudo apt-get update
 
-sudo -H apt-get -y install unrtf antiword poppler-utils recoll
-sudo -H pip3 install mutagen # recoll
+sudo -H apt-get -y install unrtf antiword poppler-utils 
 sudo -H pip2 install opencv-python
 
 sudo -H apt-get -y install dconf-cli dconf-editor dconf-tools
