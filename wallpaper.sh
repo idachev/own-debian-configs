@@ -7,7 +7,7 @@ if [ ! -d $1 ]; then
 fi
 
 #Change this location if you keep your backgrounds elsewhere.
-IMGS=`find -L $PICS \( -iname '*.jpg' -o -iname '*.png' -o -iname '*.svg' \) -printf '%p '`
+IMGS=`find -L $PICS -size +100k \( -iname '*.jpg' -o -iname '*.png' -o -iname '*.svg' \) -printf '%p '`
 
 #Find out how many pictures we got
 N=`echo $IMGS | wc -w`

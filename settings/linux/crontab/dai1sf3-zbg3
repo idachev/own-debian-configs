@@ -1,0 +1,8 @@
+# m h  dom mon dow   command
+
+*/5 * * * * /home/idachev/bin/dbus_crontab_exec.sh dbus-daemon idachev /home/idachev/bin/battery_status_notify.sh > /dev/null 2>&1
+
+*/10 * * * * /home/idachev/bin/dbus_crontab_exec.sh dbus-daemon idachev /home/idachev/bin/wallpaper.sh ~/Dropbox/pics/Astronomy > /dev/null 2>&1
+
+1 */2 * * * /home/idachev/bin/dropbox_restart.sh > /dev/null 2>&1
+

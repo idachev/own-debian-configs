@@ -3,7 +3,7 @@
 sudo -H apt-get update
 
 sudo -H apt-get -y install python-software-properties debconf-utils apt-transport-https \
- ca-certificates curl software-properties-common dos2unix pigz
+ ca-certificates curl software-properties-common dos2unix pigz acpi
 
 sudo -H apt-get -y install curl apt-transport-https lsb-release gnupg wget aria2
 

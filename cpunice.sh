@@ -29,6 +29,6 @@ renice ${NICE_LEVEL} -p ${pid}
 echo "Limit CPU to ${CPU_LIMIT}%"
 cpulimit -p ${pid} -l ${CPU_LIMIT} -b
 
-echo "Set ionice level to ${IO_NICE}%"
+echo "Set ionice level to ${IO_NICE}"
 ionice -p ${pid} -c 2 -n ${IO_NICE}
 

@@ -3,7 +3,7 @@
 sudo -H apt-get update
 
 sudo -H apt-get -y install python-software-properties debconf-utils apt-transport-https \
- ca-certificates curl software-properties-common dos2unix curl gnupg wget aria2 pigz
+ ca-certificates curl software-properties-common dos2unix curl gnupg wget aria2 pigz acpi
 
 ################################################################################
 # Setup for latest Docker CE
@@ -19,26 +19,6 @@ echo "deb [arch=amd64] https://download.docker.com/linux/ubuntu ${UBUNTU_RELEASE
   sudo -H tee /etc/apt/sources.list.d/docker.list
 
 ################################################################################
-# Setup for latest Mongo 4.0
-
-# sudo -H apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 \
-# --recv 9DA31620334BD75D9DCB49F368818C72E52529D4
-
-#sudo rm /etc/apt/sources.list.d/mongodb-org-4.0.list
-#echo "deb [ arch=amd64,arm64 ] https://repo.mongodb.org/apt/ubuntu ${UBUNTU_RELEASE}/mongodb-org/4.0 multiverse" \
-# | sudo -H tee /etc/apt/sources.list.d/mongodb-org-4.0.list
-
-################################################################################
-# Setup for latest Mongo 3.6
-
-#sudo -H apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 \
-# --recv 2930ADAE8CAF5059EE73BB4B58712A2291FA4AD5
-
-#sudo rm /etc/apt/sources.list.d/mongodb-org-3.6.list
-#echo "deb [ arch=amd64,arm64 ] https://repo.mongodb.org/apt/ubuntu ${UBUNTU_RELEASE}/mongodb-org/3.6 multiverse" \
-# | sudo tee /etc/apt/sources.list.d/mongodb-org-3.6.list
-
-################################################################################
 # Setup for Azure cli
 
 curl -sL https://packages.microsoft.com/keys/microsoft.asc | \
@@ -48,11 +28,12 @@ curl -sL https://packages.microsoft.com/keys/microsoft.asc | \
 echo "deb [arch=amd64] https://packages.microsoft.com/repos/azure-cli/ ${UBUNTU_RELEASE} main" | \
     sudo tee /etc/apt/sources.list.d/azure-cli.list
 
+sudo -H add-apt-repository -y ppa:ubuntuhandbook1/shutter
+sudo -H apt update
+sudo -H apt install -y libgtk2-appindicator-perl shutter
+
 ################################################################################
 # Setup for Java and others
-
-#sudo -H add-apt-repository -y ppa:ricotz/experimental
-#sudo -H add-apt-repository -y ppa:webupd8team/java
 
 sudo -H dpkg --add-architecture i386
 
@@ -69,11 +50,9 @@ sudo -H apt-get -y install htop ncdu vim tmux zsh git gitk zip aspell aptitude \
  ffmpeg postgresql-client python-dev fdupes fslint gthumb mc archivemount \
  openssh-server maven libcurl4-openssl-dev gcc g++ make pv acpitool
 
-#sudo -H apt-get -y install snapd
-
 sudo apt-get install azure-cli
 
-# Mongo shell and tools 3.6/4.0
+# Mongo shell and tools
 sudo -H apt-get -y install mongodb-org-shell mongodb-org-tools
 
 # ia32-libs is only available in mint - separate in new line to not fail above in Ubuntu
@@ -97,13 +76,11 @@ sudo -H apt-get -y install nodejs
 
 sudo -H npm install -g @angular/cli
 
-sudo -H apt-get -y install docker-ce
-
 ################################################################################
 # Install docker
 #
-# To install specific version check
-# sudo -H apt-cache madison docker-ce
+
+sudo -H apt-get -y install docker-ce
 
 sudo groupadd docker
 sudo gpasswd -a "${USER}" docker
