@@ -4,5 +4,5 @@
 
 */10 * * * * /home/idachev/bin/dbus_crontab_exec.sh dbus-daemon idachev /home/idachev/bin/wallpaper.sh ~/Dropbox/pics/Astronomy > /dev/null 2>&1
 
-1 */2 * * * /home/idachev/bin/dropbox_restart.sh > /dev/null 2>&1
+01 */2 * * * /home/idachev/bin/dbus_crontab_exec.sh dbus-daemon idachev /home/idachev/bin/dropbox_restart.sh > /dev/null 2>&1
 

@@ -16,7 +16,7 @@ done
 
 dropbox start
 
-sleep 15
+sleep 1
 
 cpunice.sh dropbox 2 40 5
 

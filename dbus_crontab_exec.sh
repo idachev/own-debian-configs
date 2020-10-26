@@ -46,6 +46,8 @@ export XAUTHORITY=/home/${USER_SEARCH}/.Xauthority
 
 export DISPLAY=:0
 
+export PATH=${PATH}:/home/${USER_SEARCH}/bin
+
 # ==================================================
 
 SCRIPT=$1
