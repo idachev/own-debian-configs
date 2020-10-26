@@ -8,5 +8,5 @@ dropbox start
 
 sleep 1
 
-cpunice.sh dropbox 1 70
+cpunice.sh dropbox 1 70 6
 

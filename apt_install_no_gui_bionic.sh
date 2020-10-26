@@ -3,7 +3,7 @@
 sudo -H apt-get update
 
 sudo -H apt-get -y install python-software-properties debconf-utils apt-transport-https \
- ca-certificates curl software-properties-common dos2unix curl gnupg wget aria2
+ ca-certificates curl software-properties-common dos2unix curl gnupg wget aria2 pigz
 
 ################################################################################
 # Setup for latest Docker CE
