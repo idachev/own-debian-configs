@@ -2,8 +2,8 @@
 
 sudo -H yum update
 
-sudo -H yum -y install debconf-utils ca-certificates curl dos2unix \
-  gnupg wget 
+sudo -H yum -y install debconf-utils ca-certificates dos2unix
+sudo -H yum -y install curl gnupg wget aria2 pigz acpi encfs
 
 ################################################################################
 # Setup for latest Docker CE
@@ -13,7 +13,7 @@ sudo yum-config-manager --add-repo \
 
 sudo yum update
 
-sudo yum install -y docker-ce docker-ce-cli containerd.io 
+sudo yum install -y docker-ce docker-ce-cli containerd.io
 
 sudo systemctl enable docker
 
@@ -28,10 +28,13 @@ sudo -H yum -y install java-1.8.0-openjdk java-1.8.0-openjdk-src \
 sudo -H yum -y install java-11-openjdk java-11-openjdk-src \
   java-11-openjdk-javadoc java-11-openjdk-demo java-11-openjdk-devel 
 
-sudo -H yum -y install htop ncdu vim tmux zsh git gitk zip aspell \
-  keychain gparted smartmontools nvme-cli python-pip ctags \
-  cpulimit pcsc-tools opensc sshpass nmap socat lrzip p7zip \
-  fdupes fslint gthumb mc openssh-server maven gcc make pv sssd-tools
+################################################################################
+# Setup Others
+
+sudo -H yum -y install htop ncdu vim tmux zsh git gitk zip aspell
+sudo -H yum -y install keychain gparted smartmontools nvme-cli python-pip python3-pip ctags
+sudo -H yum -y install cpulimit pcsc-tools opensc sshpass nmap socat lrzip p7zip
+sudo -H yum -y install fdupes fslint gthumb mc openssh-server maven gcc make pv sssd-tools
 
 sudo yum -y install epel-release
 sudo yum -y localinstall --nogpgcheck \
@@ -40,14 +43,18 @@ sudo yum -y localinstall --nogpgcheck \
 sudo yum -y install ffmpeg ffmpeg-devel
 
 sudo -H pip install -U pip 
+
 sudo -H pip install setuptools
 sudo -H pip install jump
-sudo -H pip install docker-compose
 sudo -H pip install pbkdf2
 sudo -H pip install bcrypt
 sudo -H pip install RBTools
 sudo -H pip install natsort
 sudo -H pip install numpy
 
-sudo sss_override user-add "${USER}" --shell=/bin/zsh
+sudo -H pip3 install -U pip
 
+sudo -H pip3 install setuptools
+sudo -H pip3 install docker-compose
+
+sudo sss_override user-add "${USER}" --shell=/bin/zsh

@@ -1,9 +1,11 @@
 #!/bin/bash
 
+UBUNTU_RELEASE=bionic
+
 sudo -H apt-get update
 
-sudo -H apt-get -y install python-software-properties debconf-utils apt-transport-https
-sudo -H apt-get -y install ca-certificates curl software-properties-common dos2unix
+sudo -H apt-get -y install python-software-properties software-properties-common apt-transport-https
+sudo -H apt-get -y install debconf-utils ca-certificates dos2unix
 sudo -H apt-get -y install curl gnupg wget aria2 pigz acpi encfs
 
 ################################################################################
@@ -13,11 +15,14 @@ curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo -H apt-key add -
 
 sudo -H apt-key fingerprint 0EBFCD88
 
-UBUNTU_RELEASE=bionic
-
 sudo rm /etc/apt/sources.list.d/docker.list
 echo "deb [arch=amd64] https://download.docker.com/linux/ubuntu ${UBUNTU_RELEASE} stable" | \
   sudo -H tee /etc/apt/sources.list.d/docker.list
+
+sudo -H apt-get -y install docker-ce
+
+sudo groupadd docker
+sudo gpasswd -a "${USER}" docker
 
 ################################################################################
 # Setup for Azure cli
@@ -81,12 +86,3 @@ curl -sL https://deb.nodesource.com/setup_8.x | sudo -E bash -
 sudo -H apt-get -y install nodejs
 
 sudo -H npm install -g @angular/cli
-
-################################################################################
-# Install docker
-#
-
-sudo -H apt-get -y install docker-ce
-
-sudo groupadd docker
-sudo gpasswd -a "${USER}" docker

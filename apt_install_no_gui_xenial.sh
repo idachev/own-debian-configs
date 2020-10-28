@@ -1,10 +1,13 @@
 #!/bin/bash
 
+UBUNTU_RELEASE=xenial
+
 sudo -H apt-get update
 
-sudo -H apt-get -y install python-software-properties debconf-utils apt-transport-https
-sudo -H apt-get -y install ca-certificates curl software-properties-common dos2unix
-sudo -H apt-get -y install curl lsb-release gnupg wget aria2 pigz acpi encfs
+sudo -H apt-get -y install lsb-release
+sudo -H apt-get -y install python-software-properties software-properties-common apt-transport-https
+sudo -H apt-get -y install debconf-utils ca-certificates dos2unix
+sudo -H apt-get -y install curl gnupg wget aria2 pigz acpi encfs
 
 ################################################################################
 # Setup for latest Docker CE
@@ -13,11 +16,14 @@ curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo -H apt-key add -
 
 sudo -H apt-key fingerprint 0EBFCD88
 
-UBUNTU_RELEASE=xenial
-
 sudo rm /etc/apt/sources.list.d/docker.list
 echo "deb [arch=amd64] https://download.docker.com/linux/ubuntu ${UBUNTU_RELEASE} stable" | \
   sudo -H tee /etc/apt/sources.list.d/docker.list
+
+sudo -H apt-get -y install docker-ce
+
+sudo groupadd docker
+sudo gpasswd -a "${USER}" docker
 
 ################################################################################
 # Setup for latest Mongo 4.0
@@ -74,17 +80,16 @@ sudo -H apt-get -y install pyqt4-dev-tools pdftk lrzip p7zip p7zip-full libimage
 sudo -H apt-get -y install ffmpeg postgresql-client python-dev fdupes fslint gthumb mc archivemount
 sudo -H apt-get -y install openssh-server maven libcurl4-openssl-dev gcc g++ make pv acpitool pavucontrol
 
-sudo -H apt-get -y install snapd
-
 sudo apt-get install azure-cli
 
-# Mongo shell and tools 3.6/4.0
+# Mongo shell and tools
 sudo -H apt-get -y install mongodb-org-shell mongodb-org-tools
 
 # ia32-libs is only available in mint - separate in new line to not fail above in Ubuntu
 sudo -H apt-get -y install ia32-libs
 
 sudo -H pip install -U pip
+
 sudo -H pip install setuptools
 sudo -H pip install jump
 sudo -H pip install pbkdf2
@@ -105,12 +110,3 @@ curl -sL https://deb.nodesource.com/setup_8.x | sudo -E bash -
 sudo -H apt-get -y install nodejs
 
 sudo -H npm install -g @angular/cli
-
-################################################################################
-# Install docker
-#
-
-sudo -H apt-get -y install docker-ce
-
-sudo groupadd docker
-sudo gpasswd -a "${USER}" docker
