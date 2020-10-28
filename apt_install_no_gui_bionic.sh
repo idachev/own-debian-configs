@@ -2,8 +2,9 @@
 
 sudo -H apt-get update
 
-sudo -H apt-get -y install python-software-properties debconf-utils apt-transport-https \
- ca-certificates curl software-properties-common dos2unix curl gnupg wget aria2 pigz acpi
+sudo -H apt-get -y install python-software-properties debconf-utils apt-transport-https
+sudo -H apt-get -y install ca-certificates curl software-properties-common dos2unix
+sudo -H apt-get -y install curl gnupg wget aria2 pigz acpi encfs
 
 ################################################################################
 # Setup for latest Docker CE
@@ -42,13 +43,13 @@ sudo -H apt-get update
 sudo -H apt-get -y install openjdk-8-jdk openjdk-8-dbg openjdk-8-source
 sudo -H apt-get -y install openjdk-11-jdk openjdk-11-dbg openjdk-11-source
 
-sudo -H apt-get -y install htop ncdu vim tmux zsh git gitk zip aspell aptitude \
- keychain gparted smartmontools build-essential nvme-cli python-pip exuberant-ctags \
- cpulimit python3-pip \
- pcsc-tools pcscd opensc libnss3-tools sshpass nmap python-pyqtgraph socat \
- pyqt4-dev-tools lrzip p7zip p7zip-full libimage-exiftool-perl \
- ffmpeg postgresql-client python-dev fdupes fslint gthumb mc archivemount \
- openssh-server maven libcurl4-openssl-dev gcc g++ make pv acpitool
+sudo -H apt-get -y install htop ncdu vim tmux zsh git gitk zip aspell aptitude
+sudo -H apt-get -y install keychain gparted smartmontools build-essential nvme-cli exuberant-ctags
+sudo -H apt-get -y install cpulimit python3-pip python-pip
+sudo -H apt-get -y install pcsc-tools pcscd opensc libnss3-tools sshpass nmap python-pyqtgraph socat
+sudo -H apt-get -y install pyqt4-dev-tools lrzip p7zip p7zip-full libimage-exiftool-perl
+sudo -H apt-get -y install ffmpeg postgresql-client python-dev fdupes fslint gthumb mc archivemount
+sudo -H apt-get -y install openssh-server maven libcurl4-openssl-dev gcc g++ make pv acpitool pavucontrol
 
 sudo apt-get install azure-cli
 
@@ -58,15 +59,20 @@ sudo -H apt-get -y install mongodb-org-shell mongodb-org-tools
 # ia32-libs is only available in mint - separate in new line to not fail above in Ubuntu
 sudo -H apt-get -y install ia32-libs
 
-sudo -H pip install -U pip 
+sudo -H pip install -U pip
+
 sudo -H pip install setuptools
 sudo -H pip install jump
-sudo -H pip install docker-compose
 sudo -H pip install pbkdf2
 sudo -H pip install bcrypt
 sudo -H pip install RBTools
 sudo -H pip install natsort
 sudo -H pip install numpy
+
+sudo -H pip3 install -U pip
+
+sudo -H pip3 install setuptools
+sudo -H pip3 install docker-compose
 
 ################################################################################
 # Setup for nodejs and angular/cli
