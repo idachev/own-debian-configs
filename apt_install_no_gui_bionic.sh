@@ -78,6 +78,7 @@ sudo -H pip3 install -U pip
 
 sudo -H pip3 install setuptools
 sudo -H pip3 install docker-compose
+sudo -H pip3 install validators
 
 ################################################################################
 # Setup for nodejs and angular/cli
