@@ -12,7 +12,11 @@ NICE_LEVEL=$2
 CPU_LIMIT=$3
 IO_NICE=$4
 
-pid=$(pgrep -u ${LOGNAME} -n ${PNAME})
+if [ -n "${PNAME}" ] && [ "${PNAME}" -eq "${PNAME}" ] 2>/dev/null; then
+  pid=${PNAME}
+else
+  pid=$(pgrep -u ${LOGNAME} -n ${PNAME})
+fi
 
 if [ -z "$pid" ]; then
 	echo "No PID for $PNAME" >&2
@@ -22,6 +26,8 @@ fi
 set -e
 
 echo "Found PID: ${pid} for ${PNAME}"
+
+ps "${pid}"
 
 echo "Set nice level to ${NICE_LEVEL}"
 renice ${NICE_LEVEL} -p ${pid}
