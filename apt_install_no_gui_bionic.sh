@@ -50,7 +50,7 @@ sudo -H apt-get -y install openjdk-11-jdk openjdk-11-dbg openjdk-11-source
 
 sudo -H apt-get -y install htop ncdu vim tmux zsh git gitk zip aspell aptitude
 sudo -H apt-get -y install keychain gparted smartmontools build-essential nvme-cli exuberant-ctags
-sudo -H apt-get -y install cpulimit python3-pip python-pip
+sudo -H apt-get -y install npm cpulimit python3-pip python-pip
 sudo -H apt-get -y install pcsc-tools pcscd opensc libnss3-tools sshpass nmap python-pyqtgraph socat
 sudo -H apt-get -y install pyqt4-dev-tools lrzip p7zip p7zip-full libimage-exiftool-perl
 sudo -H apt-get -y install ffmpeg postgresql-client python-dev fdupes fslint gthumb mc archivemount
