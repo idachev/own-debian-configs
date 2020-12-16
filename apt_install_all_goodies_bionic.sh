@@ -1,7 +1,7 @@
 #!/bin/bash
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
-#${DIR}/apt_install_no_gui_bionic.sh
+${DIR}/apt_install_no_gui_bionic.sh
 
 wget -qO - https://download.sublimetext.com/sublimehq-pub.gpg | \
   sudo apt-key add -
