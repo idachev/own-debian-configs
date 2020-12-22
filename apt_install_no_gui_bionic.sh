@@ -6,7 +6,7 @@ sudo -H apt-get update
 
 sudo -H apt-get -y install python-software-properties software-properties-common apt-transport-https
 sudo -H apt-get -y install debconf-utils ca-certificates dos2unix
-sudo -H apt-get -y install curl gnupg wget aria2 pigz acpi encfs
+sudo -H apt-get -y install curl gnupg wget aria2 pigz acpi encfs moreutils
 
 ################################################################################
 # Setup for latest Docker CE
