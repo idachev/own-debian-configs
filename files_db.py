@@ -202,21 +202,24 @@ class FilesManage:
     _files_db = None
     _files_src_root = None
     _files_dst_root = None
+    _working_dir = True
     _dry_run = True
     _files_cache = None
     _file_cache_map = None
 
-    def __init__(self, files_db, files_src_root, files_dst_root, files_cache, dry_run=True):
+    def __init__(self, files_db, files_src_root, files_dst_root, files_cache, working_dir, dry_run=True):
         self._files_db = files_db
         self._files_src_root = files_src_root
         self._files_dst_root = files_dst_root
         self._files_cache = files_cache
+        self._working_dir = working_dir
         self._dry_run = dry_run
 
         verbose("files src db: %s" % self._files_db)
         verbose("files src root dir: %s" % self._files_src_root)
         verbose("files dst root dir: %s" % self._files_dst_root)
         verbose("files src/dst cache: %s" % self._files_cache)
+        verbose("files working dir: %s" % self._working_dir)
         verbose("dry run: %d" % self._dry_run)
 
         self._src_db_map = self._read_db()
@@ -269,7 +272,7 @@ class FilesManage:
         if not self._dry_run:
             file_path_dir = path.dirname(file_path)
             if not path.exists(file_path_dir):
-                os.mkdir(file_path_dir)
+                os.makedirs(file_path_dir)
 
             if path.exists(file_path):
                 bak_p = "_bak"
@@ -397,7 +400,7 @@ class FilesManage:
         for ritem in values:
             for dupitem in ritem.duplicate:
                 verbose("Found duplicate:\n  name: %s" % dupitem)
-                self._recycle(self._files_dst_root, dupitem)
+                self._recycle(dupitem)
             ritem.duplicate = []
 
         # next move files to right location according the files source root DB
@@ -415,7 +418,7 @@ class FilesManage:
                     if path.exists(f2):
                         if _calculate_hash(f2, self._file_cache_map) == ritem.hash:
                             verbose("Found duplicate:\n  name: %s" % ritem.name)
-                            self._recycle(self._files_dst_root, ritem.name)
+                            self._recycle(ritem.name)
                         else:
                             error("Destination already exist skip move:\n  file: %s:" % f2)
                     else:
@@ -424,7 +427,7 @@ class FilesManage:
                             os.utime(f2, (ditem.mtime, ditem.mtime))
             else:
                 f1 = path.join(self._files_dst_root, ritem.name)
-                f2 = path.join(self._files_dst_root, CHECK_DIR, ritem.name)
+                f2 = path.join(self._files_dst_root, self._working_dir, CHECK_DIR, ritem.name)
                 verbose("Not in DB move to:\n  name: %s" % f2)
                 if path.exists(f2):
                     error("Destination already exist skip move:\n  file: %s:" % f2)
@@ -437,13 +440,13 @@ class FilesManage:
         if self._dry_run:
             verbose("DRY RUN")
 
-    def _recycle(self, files_root, name):
+    def _recycle(self, name):
         """
         Move file to local RECYCLE_DIR
         """
-        recycle_dir = path.join(files_root, RECYCLE_DIR)
+        recycle_dir = path.join(self._files_dst_root, self._working_dir, RECYCLE_DIR)
 
-        f1 = path.join(files_root, name)
+        f1 = path.join(self._files_dst_root, name)
         f2 = path.join(recycle_dir, name)
 
         i = 0
@@ -455,7 +458,7 @@ class FilesManage:
 
         if not self._dry_run:
             if not path.exists(recycle_dir):
-                os.mkdir(recycle_dir)
+                os.makedirs(recycle_dir)
 
             os.renames(f1, f2)
 
@@ -588,7 +591,7 @@ def main():
     parse_args()
 
     t0 = timeit.default_timer()
-    inst = FilesManage(FILES_DB, FILES_SRC_ROOT, FILES_DST_ROOT, FILES_CACHE, DRY_RUN)
+    inst = FilesManage(FILES_DB, FILES_SRC_ROOT, FILES_DST_ROOT, FILES_CACHE, WORKING_DIR, DRY_RUN)
     verbose("Load DB for: %d seconds" % (timeit.default_timer() - t0))
 
     if UPDATE_DB:
