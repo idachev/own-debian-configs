@@ -6,15 +6,14 @@
 import argparse
 import hashlib
 import multiprocessing
+import numpy as np
 import os
 import pickle
 import stat
 import sys
-import time
+import timeit
 from multiprocessing import Queue, Process
 from os import path
-
-import numpy as np
 
 # ========================================
 # Settings
@@ -37,7 +36,7 @@ if DEFAULT_THREADS == 0:
 # ========================================
 # Defines
 
-BUFF_FILE = 512 * 1024
+BUFF_FILE = 10 * 1024 * 1024
 
 CHECK_DIR = ".check"
 RECYCLE_DIR = ".recycle"
@@ -63,7 +62,7 @@ def stdout_msg_noln(msg):
 
 def verbose(msg):
     if VERBOSE:
-        stdout_msg("[INF] %s" % (msg))
+        stdout_msg("[INF] %s" % msg)
 
 
 def verbose_nhdr(msg):
@@ -73,11 +72,11 @@ def verbose_nhdr(msg):
 
 def debug(msg):
     if DEBUG:
-        stdout_msg("[DBG] %s" % (msg))
+        stdout_msg("[DBG] %s" % msg)
 
 
 def error(msg):
-    stdout_msg("[ERR] %s" % (msg))
+    stdout_msg("[ERR] %s" % msg)
 
 
 # ========================================
@@ -110,21 +109,19 @@ class CacheItem:
         self.hash = _hash
 
 
-def _calculate_hash_int(file_path):
+def _calculate_hash_int_hashlib(file_path):
     """
-    Calculate hash of a file, using internal python methods sha1 + md5
+    Calculate hash of a file, using internal python methods sha512
     """
-    s = hashlib.sha1()
-    m = hashlib.md5()
+    s = hashlib.sha512()
 
     with open(file_path, 'rb') as rfile:
         buf = rfile.read(BUFF_FILE)
         while len(buf) > 0:
             s.update(buf)
-            m.update(buf)
             buf = rfile.read(BUFF_FILE)
 
-    return s.hexdigest() + m.hexdigest()
+    return s.hexdigest()
 
 
 def _calculate_hash(file_path, file_cache_map):
@@ -142,18 +139,18 @@ def _calculate_hash(file_path, file_cache_map):
 
     size = path.getsize(file_path)
     mtime = os.stat(file_path)[stat.ST_MTIME]
-    hash = None
+    res_hash = None
 
-    if file_cache_map.has_key(file_path):
+    if file_path in file_cache_map:
         cache_item = file_cache_map[file_path]
         if cache_item.size == size and cache_item.mtime == mtime:
-            hash = cache_item.hash
+            res_hash = cache_item.hash
 
-    if hash is None:
-        hash = _calculate_hash_int(file_path)
-        file_cache_map[file_path] = CacheItem(file_path, size, mtime, hash)
+    if res_hash is None:
+        res_hash = _calculate_hash_int_hashlib(file_path)
+        file_cache_map[file_path] = CacheItem(file_path, size, mtime, res_hash)
 
-    return hash
+    return res_hash
 
 
 def part_multiprocess_hashes(queue, part_name, files_part, file_cache_map):
@@ -210,10 +207,10 @@ class FilesManage:
         self._file_cache = file_cache
         self._dry_run = dry_run
 
-        verbose("files db: %s" % (self._files_db))
-        verbose("files root dir: %s" % (self._files_root))
-        verbose("file cache: %s" % (self._file_cache))
-        verbose("dry run: %d" % (self._dry_run))
+        verbose("files db: %s" % self._files_db)
+        verbose("files root dir: %s" % self._files_root)
+        verbose("file cache: %s" % self._file_cache)
+        verbose("dry run: %d" % self._dry_run)
 
         self._db_map = self._read_db()
         self._file_cache_map = self._read_cache()
@@ -222,14 +219,12 @@ class FilesManage:
         """
         Parse our DB file.
         """
+        data = self._read_pickle(self._files_db)
+
         db_map = {}
-        if path.exists(self._files_db):
-            with open(self._files_db, 'rb') as rfile:
-                db_data = pickle.load(rfile)
-            for dbitem in db_data:
-                db_map[dbitem.hash] = dbitem
-        else:
-            verbose("Files DB file does no exist will be created: %s" % (self._files_db))
+        if data is not None:
+            for item in data:
+                db_map[item.hash] = item
 
         return db_map
 
@@ -237,12 +232,32 @@ class FilesManage:
         """
         Write db file.
         """
-        verbose("Writing DB file: %s" % (file_path))
+        verbose("Writing DB file: %s" % file_path)
         self._write_pickle(db_map.values(), file_path)
+
+    def _read_cache(self):
+        """
+        Parse our cache file.
+        """
+        data = self._read_pickle(self._file_cache)
+
+        file_cache_map = {}
+        if data is not None:
+            for item in data:
+                file_cache_map[item.path] = item
+
+        return file_cache_map
+
+    def _write_cache(self, file_cache_map, file_path):
+        """
+        Write file cache.
+        """
+        verbose("Writing file cache: %s" % file_path)
+        self._write_pickle(file_cache_map.values(), file_path)
 
     def _write_pickle(self, data, file_path):
         """
-        Write pickle to file with backup DB file.
+        Write pickle data to file
         """
         if not self._dry_run:
             if path.exists(file_path):
@@ -253,41 +268,32 @@ class FilesManage:
                     i += 1
                 os.rename(file_path, file_path + bak_p)
 
-            with open(file_path, 'wb') as wfile:
-                pickle.dump(data, wfile)
+            with open(file_path, 'wb') as f:
+                pickle.dump(data, f)
 
-    def _read_cache(self):
+    def _read_pickle(self, file_path):
         """
-        Parse our cache file.
+        Read pickle data from file
         """
-        file_cache_map = {}
-        if path.exists(self._file_cache):
-            with open(self._file_cache, 'rb') as rfile:
-                data = pickle.load(rfile)
-            for item in data:
-                file_cache_map[item.path] = item
+        pickle_data = None
+        if path.exists(file_path):
+            with open(file_path, 'rb') as f:
+                pickle_data = pickle.load(f)
         else:
-            verbose("File cache does no exist will be created: %s" % (self._file_cache))
+            verbose("File does no exist will be created: %s" % file_path)
 
-        return file_cache_map
+        return pickle_data
 
-    def _write_cache(self, file_cache_map, file_path):
-        """
-        Write file cache.
-        """
-        verbose("Writing file cache: %s" % (file_path))
-        self._write_pickle(file_cache_map.values(), file_path)
-
-    def _fill_db(self, dir, db_map):
+    def _fill_db(self, dir_path, db_map):
         """
         Fill DB from directory.
         """
-        verbose("Fill db from: %s" % dir)
+        verbose("Fill db from: %s" % dir_path)
         all_files = []
-        for root, dirs, files in os.walk(dir):
+        for root, dirs, files in os.walk(dir_path):
             files = (path.join(root, x) for x in files)
             for file_path in files:
-                name = file_path[len(dir) + 1:]
+                name = file_path[len(dir_path) + 1:]
                 if (os.sep + '.') in name or name.startswith('.'):
                     continue
                 all_files.append(file_path)
@@ -297,27 +303,27 @@ class FilesManage:
 
         for hashes in parts_res:
             assert isinstance(hashes, dict)
-            for file_path, hash in hashes.items():
-                name = file_path[len(dir) + 1:]
+            for file_path, res_hash in hashes.items():
+                name = file_path[len(dir_path) + 1:]
                 size = path.getsize(file_path)
                 mtime = os.stat(file_path)[stat.ST_MTIME]
-                self._add_to_file_cache_map(file_path, hash)
-                self._add_to_db(db_map, dir, FilesDbItem(name, size, mtime, hash))
+                self._add_to_file_cache_map(file_path, res_hash)
+                self._add_to_db(db_map, dir_path, FilesDbItem(name, size, mtime, res_hash))
                 verbose_nhdr("\rfiles: %d" % len(db_map))
 
         verbose_nhdr("\n")
 
-    def _add_to_file_cache_map(self, file_path, hash):
+    def _add_to_file_cache_map(self, file_path, res_hash):
         size = path.getsize(file_path)
         mtime = os.stat(file_path)[stat.ST_MTIME]
 
-        if self._file_cache_map.has_key(file_path):
+        if file_path in self._file_cache_map:
             cache_item = self._file_cache_map[file_path]
             if cache_item.size == size and cache_item.mtime == mtime \
-                    and cache_item.hash == hash:
+                    and cache_item.hash == res_hash:
                 return
 
-        self._file_cache_map[file_path] = CacheItem(file_path, size, mtime, hash)
+        self._file_cache_map[file_path] = CacheItem(file_path, size, mtime, res_hash)
 
     def update_db(self):
         """
@@ -342,7 +348,7 @@ class FilesManage:
         debug("Add to db\n  name: %s\n  size: %d\n  hash: %s" %
               (db_item.name, db_item.size, db_item.hash))
         # check if we have this file in the db by hash
-        if db_map.has_key(db_item.hash):
+        if db_item.hash in db_map:
             existing_item = db_map[db_item.hash]
             if existing_item.name != db_item.name:
                 if path.exists(path.join(root_dir, existing_item.name)):
@@ -371,7 +377,7 @@ class FilesManage:
         # next remove duplicate move files
         for ritem in values:
             for dupitem in ritem.duplicate:
-                verbose("Found duplicate:\n  name: %s" % (dupitem))
+                verbose("Found duplicate:\n  name: %s" % dupitem)
                 self._recycle(dupitem)
             ritem.duplicate = []
 
@@ -389,10 +395,10 @@ class FilesManage:
                     verbose("Move files:\n  old name: %s\n  new name: %s" % (f1, f2))
                     if path.exists(f2):
                         if _calculate_hash(f2, self._file_cache_map) == ritem.hash:
-                            verbose("Found duplicate:\n  name: %s" % (ritem.name))
+                            verbose("Found duplicate:\n  name: %s" % ritem.name)
                             self._recycle(ritem.name)
                         else:
-                            error("Destination already exist skip move:\n  file: %s:" % (f2))
+                            error("Destination already exist skip move:\n  file: %s:" % f2)
                     else:
                         if not self._dry_run:
                             os.renames(f1, f2)
@@ -400,9 +406,9 @@ class FilesManage:
             else:
                 f1 = self._files_root + os.sep + ritem.name
                 f2 = self._files_root + os.sep + CHECK_DIR + os.sep + ritem.name
-                verbose("Not in DB move to:\n  name: %s" % (f2))
+                verbose("Not in DB move to:\n  name: %s" % f2)
                 if path.exists(f2):
-                    error("Destination already exist skip move:\n  file: %s:" % (f2))
+                    error("Destination already exist skip move:\n  file: %s:" % f2)
                 else:
                     if not self._dry_run:
                         os.renames(f1, f2)
@@ -422,7 +428,7 @@ class FilesManage:
         while path.exists(f2):
             f2 = self._files_root + os.sep + RECYCLE_DIR + os.sep + name + '_' + str(i)
             i += 1
-        verbose("Recycle:\n  file: %s" % (f2))
+        verbose("Recycle:\n  file: %s" % f2)
         if not self._dry_run:
             os.renames(f1, f2)
 
@@ -460,17 +466,17 @@ def parse_args():
                         dest='files_db',
                         default=FILES_DB,
                         required=True,
-                        help='point to a db file to use, default is "%s"' % (FILES_DB))
+                        help='point to a db file to use, default is "%s"' % FILES_DB)
     parser.add_argument('--files-root',
                         dest='files_root',
                         default=FILES_ROOT,
                         required=True,
-                        help='point to files root dir, default is "%s"' % (FILES_ROOT))
+                        help='point to files root dir, default is "%s"' % FILES_ROOT)
     parser.add_argument('--file-cache',
                         dest='file_cache',
                         default=FILE_CACHE,
                         required=False,
-                        help='point to a file hash cache to use, default is "%s"' % (FILE_CACHE))
+                        help='point to a file hash cache to use, default is "%s"' % FILE_CACHE)
     parser.add_argument('--update-db',
                         dest='update_db',
                         action='store_true',
@@ -520,19 +526,19 @@ def main():
         error("Expecting existing files root directory: %s" % FILES_ROOT)
         sys.exit(5)
 
-    t0 = time.time()
+    t0 = timeit.default_timer()
     inst = FilesManage(FILES_DB, FILES_ROOT, FILE_CACHE, DRY_RUN)
-    verbose("Load DB for: %d seconds" % (time.time() - t0))
+    verbose("Load DB for: %d seconds" % (timeit.default_timer() - t0))
 
     if UPDATE_DB:
-        t0 = time.time()
+        t0 = timeit.default_timer()
         inst.update_db()
-        verbose("Update DB for: %d seconds" % (time.time() - t0))
+        verbose("Update DB for: %d seconds" % (timeit.default_timer() - t0))
 
     if UPDATE_ROOT:
-        t0 = time.time()
+        t0 = timeit.default_timer()
         inst.update_root()
-        verbose("Update root for: %d seconds" % (time.time() - t0))
+        verbose("Update root for: %d seconds" % (timeit.default_timer() - t0))
 
 
 # ========================================
