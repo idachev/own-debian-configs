@@ -20,10 +20,14 @@ from os import path
 
 DRY_RUN = True
 
-FILES_DB = "files.db"
-FILES_ROOT = "files"
+WORKING_DIR = ".working"
 
-FILE_CACHE = ".file_cache"
+FILES_DB = "files.db"
+
+FILES_SRC_ROOT = "files_src"
+FILES_DST_ROOT = "files_dst"
+
+FILES_CACHE = ".files_cache"
 
 UPDATE_DB = False
 
@@ -194,25 +198,28 @@ def parts_multiprocess_hashes(files_parts, file_cache_map):
 
 
 class FilesManage:
-    _db_map = None
+    _src_db_map = None
     _files_db = None
-    _files_root = None
+    _files_src_root = None
+    _files_dst_root = None
     _dry_run = True
-    _file_cache = None
+    _files_cache = None
     _file_cache_map = None
 
-    def __init__(self, files_db, files_root, file_cache, dry_run=True):
+    def __init__(self, files_db, files_src_root, files_dst_root, files_cache, dry_run=True):
         self._files_db = files_db
-        self._files_root = files_root
-        self._file_cache = file_cache
+        self._files_src_root = files_src_root
+        self._files_dst_root = files_dst_root
+        self._files_cache = files_cache
         self._dry_run = dry_run
 
-        verbose("files db: %s" % self._files_db)
-        verbose("files root dir: %s" % self._files_root)
-        verbose("file cache: %s" % self._file_cache)
+        verbose("files src db: %s" % self._files_db)
+        verbose("files src root dir: %s" % self._files_src_root)
+        verbose("files dst root dir: %s" % self._files_dst_root)
+        verbose("files src/dst cache: %s" % self._files_cache)
         verbose("dry run: %d" % self._dry_run)
 
-        self._db_map = self._read_db()
+        self._src_db_map = self._read_db()
         self._file_cache_map = self._read_cache()
 
     def _read_db(self):
@@ -239,14 +246,14 @@ class FilesManage:
         """
         Parse our cache file.
         """
-        data = self._read_pickle(self._file_cache)
+        data = self._read_pickle(self._files_cache)
 
-        file_cache_map = {}
+        files_cache_map = {}
         if data is not None:
             for item in data:
-                file_cache_map[item.path] = item
+                files_cache_map[item.path] = item
 
-        return file_cache_map
+        return files_cache_map
 
     def _write_cache(self, file_cache_map, file_path):
         """
@@ -260,6 +267,10 @@ class FilesManage:
         Write pickle data to file
         """
         if not self._dry_run:
+            file_path_dir = path.dirname(file_path)
+            if not path.exists(file_path_dir):
+                os.mkdir(file_path_dir)
+
             if path.exists(file_path):
                 bak_p = "_bak"
                 i = 0
@@ -332,11 +343,11 @@ class FilesManage:
         If there is existing file with same cache it is replaced.
         """
         verbose("Update DB")
-        self._fill_db(self._files_root, self._db_map)
+        self._fill_db(self._files_src_root, self._src_db_map)
 
-        self._write_db(self._db_map, self._files_db)
+        self._write_db(self._src_db_map, self._files_db)
 
-        self._write_cache(self._file_cache_map, self._file_cache)
+        self._write_cache(self._file_cache_map, self._files_cache)
 
         if self._dry_run:
             verbose("DRY RUN")
@@ -369,34 +380,42 @@ class FilesManage:
         """
         verbose("Update root")
 
+        if len(self._src_db_map) == 0:
+            error("Source DB is empty")
+            sys.exit(101)
+
+        if self._files_dst_root is None:
+            error("Destination root directory should be set")
+            sys.exit(102)
+
         # first create current root directory db
         rmap = {}
-        self._fill_db(self._files_root, rmap)
+        self._fill_db(self._files_dst_root, rmap)
 
         values = rmap.values()
         # next remove duplicate move files
         for ritem in values:
             for dupitem in ritem.duplicate:
                 verbose("Found duplicate:\n  name: %s" % dupitem)
-                self._recycle(dupitem)
+                self._recycle(self._files_dst_root, dupitem)
             ritem.duplicate = []
 
-        # next move files to right location according the files root
+        # next move files to right location according the files source root DB
         for ritem in values:
-            if ritem.hash in self._db_map:
-                ditem = self._db_map[ritem.hash]
+            if ritem.hash in self._src_db_map:
+                ditem = self._src_db_map[ritem.hash]
                 if ditem.size != ritem.size:
                     verbose("Size mismatch:\n  old name: %s\n  old size: %d\n  new name: %s\n  new size: %d" % (
                         ritem.name, ritem.size, ditem.name, ditem.size))
                     continue
                 if ditem.name != ritem.name:
-                    f1 = self._files_root + os.sep + ritem.name
-                    f2 = self._files_root + os.sep + ditem.name
+                    f1 = path.join(self._files_dst_root, ritem.name)
+                    f2 = path.join(self._files_dst_root, ditem.name)
                     verbose("Move files:\n  old name: %s\n  new name: %s" % (f1, f2))
                     if path.exists(f2):
                         if _calculate_hash(f2, self._file_cache_map) == ritem.hash:
                             verbose("Found duplicate:\n  name: %s" % ritem.name)
-                            self._recycle(ritem.name)
+                            self._recycle(self._files_dst_root, ritem.name)
                         else:
                             error("Destination already exist skip move:\n  file: %s:" % f2)
                     else:
@@ -404,8 +423,8 @@ class FilesManage:
                             os.renames(f1, f2)
                             os.utime(f2, (ditem.mtime, ditem.mtime))
             else:
-                f1 = self._files_root + os.sep + ritem.name
-                f2 = self._files_root + os.sep + CHECK_DIR + os.sep + ritem.name
+                f1 = path.join(self._files_dst_root, ritem.name)
+                f2 = path.join(self._files_dst_root, CHECK_DIR, ritem.name)
                 verbose("Not in DB move to:\n  name: %s" % f2)
                 if path.exists(f2):
                     error("Destination already exist skip move:\n  file: %s:" % f2)
@@ -413,23 +432,31 @@ class FilesManage:
                     if not self._dry_run:
                         os.renames(f1, f2)
 
-        self._write_cache(self._file_cache_map, self._file_cache)
+        self._write_cache(self._file_cache_map, self._files_cache)
 
         if self._dry_run:
             verbose("DRY RUN")
 
-    def _recycle(self, name):
+    def _recycle(self, files_root, name):
         """
-        Move file to local .recycle
+        Move file to local RECYCLE_DIR
         """
-        f1 = self._files_root + os.sep + name
-        f2 = self._files_root + os.sep + RECYCLE_DIR + os.sep + name
+        recycle_dir = path.join(files_root, RECYCLE_DIR)
+
+        f1 = path.join(files_root, name)
+        f2 = path.join(recycle_dir, name)
+
         i = 0
         while path.exists(f2):
-            f2 = self._files_root + os.sep + RECYCLE_DIR + os.sep + name + '_' + str(i)
+            f2 = path.join(recycle_dir, name + '_' + str(i))
             i += 1
+
         verbose("Recycle:\n  file: %s" % f2)
+
         if not self._dry_run:
+            if not path.exists(recycle_dir):
+                os.mkdir(recycle_dir)
+
             os.renames(f1, f2)
 
 
@@ -444,12 +471,18 @@ def parse_args():
     global DEBUG
     global VERBOSE
     global FILES_DB
-    global FILES_ROOT
+    global FILES_SRC_ROOT
+    global FILES_DST_ROOT
     global UPDATE_DB
     global UPDATE_ROOT
-    global FILE_CACHE
+    global FILES_CACHE
+    global WORKING_DIR
 
     parser = argparse.ArgumentParser(description='Script to manage files names and directory places')
+    parser.add_argument('files_src_root', metavar='FILES_SRC_ROOT', nargs=1,
+                        help='point to files source root dir')
+    parser.add_argument('files_dst_root', metavar='FILES_DST_ROOT', nargs='?',
+                        help='point to files destination root dir, required if -root/--update-root is used')
     parser.add_argument('-v', '--verbose',
                         dest="verbose",
                         action='store_true',
@@ -462,26 +495,23 @@ def parse_args():
                         dest="dry_run",
                         action='store_true',
                         help='dry run')
+    parser.add_argument('--working-dir',
+                        dest='working_dir',
+                        default=WORKING_DIR,
+                        help='working dir name to store DB and files cache, default is "%s"' % WORKING_DIR)
     parser.add_argument('--files-db',
                         dest='files_db',
                         default=FILES_DB,
-                        required=True,
-                        help='point to a db file to use, default is "%s"' % FILES_DB)
-    parser.add_argument('--files-root',
-                        dest='files_root',
-                        default=FILES_ROOT,
-                        required=True,
-                        help='point to files root dir, default is "%s"' % FILES_ROOT)
-    parser.add_argument('--file-cache',
-                        dest='file_cache',
-                        default=FILE_CACHE,
-                        required=False,
-                        help='point to a file hash cache to use, default is "%s"' % FILE_CACHE)
-    parser.add_argument('--update-db',
+                        help='file name of the DB to use, default is "%s"' % FILES_DB)
+    parser.add_argument('--files-cache',
+                        dest='files_cache',
+                        default=FILES_CACHE,
+                        help='file name of the files cache to use, default is "%s"' % FILES_CACHE)
+    parser.add_argument('-db', '--update-db',
                         dest='update_db',
                         action='store_true',
                         help='update the db with data from files root')
-    parser.add_argument('--update-root',
+    parser.add_argument('-root', '--update-root',
                         dest='update_root',
                         action='store_true',
                         help='update the files root with data from db')
@@ -492,50 +522,80 @@ def parse_args():
     DEBUG = args.debug
     VERBOSE = args.verbose or DEBUG
     FILES_DB = args.files_db
-    FILES_ROOT = args.files_root
+    FILES_SRC_ROOT = args.files_src_root
+    FILES_DST_ROOT = args.files_dst_root
     UPDATE_DB = args.update_db
     UPDATE_ROOT = args.update_root
-    FILE_CACHE = args.file_cache
-
-    basedir = path.dirname(sys.argv[0])
-
-    if len(path.dirname(FILES_ROOT)) == 0:
-        FILES_ROOT = "%s%s%s" % (basedir, os.sep, FILES_ROOT)
-    if len(path.dirname(FILES_DB)) == 0:
-        FILES_DB = "%s%s%s" % (basedir, os.sep, FILES_DB)
-    if len(path.dirname(FILE_CACHE)) == 0:
-        FILE_CACHE = "%s%s%s" % (basedir, os.sep, FILE_CACHE)
-
-    FILES_ROOT = path.abspath(FILES_ROOT)
-    FILES_DB = path.abspath(FILES_DB)
-    FILE_CACHE = path.abspath(FILE_CACHE)
+    FILES_CACHE = args.files_cache
+    WORKING_DIR = args.working_dir
 
     if UPDATE_DB and UPDATE_ROOT:
-        error("Only one of the --update-db or --update-root should be specified.")
+        error("Only one of the -db/--update-db or -root/--update-root should be specified.")
         sys.exit(1)
 
     if (not UPDATE_DB) and (not UPDATE_ROOT):
-        error("One of the --update-db or --update-root should be specified.")
-        sys.exit(1)
+        error("One of the -db/--update-db or -root/--update-root should be specified.")
+        sys.exit(2)
+
+    FILES_SRC_ROOT = path.abspath(FILES_SRC_ROOT[0])
+
+    if FILES_DST_ROOT is not None:
+        FILES_DST_ROOT = path.abspath(FILES_DST_ROOT)
+
+    if UPDATE_DB and FILES_DST_ROOT is not None:
+        error("Destination root directory should be not set when update DB: %s" % FILES_DST_ROOT)
+        sys.exit(3)
+
+    if UPDATE_ROOT and FILES_DST_ROOT is None:
+        error("Destination root directory is required when update root")
+        sys.exit(4)
+
+    if not path.isdir(FILES_SRC_ROOT) or not path.exists(FILES_SRC_ROOT):
+        error("Files source root is not a directory: %s" % FILES_SRC_ROOT)
+        sys.exit(5)
+
+    if FILES_DST_ROOT is not None and (not path.isdir(FILES_DST_ROOT) or not path.exists(FILES_DST_ROOT)):
+        error("Files destination root is not a directory: %s" % FILES_DST_ROOT)
+        sys.exit(6)
+
+    if UPDATE_ROOT and FILES_DST_ROOT == FILES_SRC_ROOT:
+        error("When updating root the source should be differ from destination: %s" % FILES_SRC_ROOT)
+        sys.exit(7)
+
+    if len(path.dirname(FILES_DB)) != 0:
+        error("You cannot specify path in the files DB name: %s" % FILES_DB)
+        sys.exit(8)
+
+    if len(path.dirname(FILES_CACHE)) != 0:
+        error("You cannot specify path in the files cache name: %s" % FILES_CACHE)
+        sys.exit(9)
+
+    if len(path.dirname(WORKING_DIR)) != 0:
+        error("You cannot specify path in the working directory name: %s" % WORKING_DIR)
+        sys.exit(10)
+
+    FILES_DB = path.join(FILES_SRC_ROOT, WORKING_DIR, FILES_DB)
+    if UPDATE_ROOT:
+        FILES_CACHE = path.join(FILES_DST_ROOT, WORKING_DIR, FILES_CACHE)
+    else:
+        FILES_CACHE = path.join(FILES_SRC_ROOT, WORKING_DIR, FILES_CACHE)
+
+    FILES_DB = path.abspath(FILES_DB)
+    FILES_CACHE = path.abspath(FILES_CACHE)
 
 
 def main():
     parse_args()
 
-    if not os.path.exists(FILES_ROOT) or not os.path.isdir(FILES_ROOT):
-        error("Expecting existing files root directory: %s" % FILES_ROOT)
-        sys.exit(5)
-
     t0 = timeit.default_timer()
-    inst = FilesManage(FILES_DB, FILES_ROOT, FILE_CACHE, DRY_RUN)
+    inst = FilesManage(FILES_DB, FILES_SRC_ROOT, FILES_DST_ROOT, FILES_CACHE, DRY_RUN)
     verbose("Load DB for: %d seconds" % (timeit.default_timer() - t0))
 
     if UPDATE_DB:
         t0 = timeit.default_timer()
         inst.update_db()
         verbose("Update DB for: %d seconds" % (timeit.default_timer() - t0))
-
-    if UPDATE_ROOT:
+    elif UPDATE_ROOT:
         t0 = timeit.default_timer()
         inst.update_root()
         verbose("Update root for: %d seconds" % (timeit.default_timer() - t0))
