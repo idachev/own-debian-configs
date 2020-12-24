@@ -127,6 +127,8 @@ class CacheItem:
 def _calculate_hash_int_hashlib(file_path):
     """
     Calculate hash of a file, using internal python methods sha512
+
+    It is faster compared to call external process like sha512sum
     """
     s = hashlib.sha512()
 
@@ -139,16 +141,9 @@ def _calculate_hash_int_hashlib(file_path):
     return s.hexdigest()
 
 
-def _calculate_hash(file_path, file_cache_map):
+def _calculate_hash(file_path, name, file_cache_map):
     """
     Calculate hash of a file
-
-    I thought that the internal checksum is slower then this
-    but actually it is USB mass storage buffer which when is
-    freed then is starts really slow to read the files.
-    But this is actually more reliable then coping files by hand.
-
-    Use here only internal calculation and change to use sha1 plus md5.
     """
     log_debug('CH: %s' % file_path)
 
@@ -156,31 +151,32 @@ def _calculate_hash(file_path, file_cache_map):
     mtime = os.stat(file_path)[stat.ST_MTIME]
     res_hash = None
 
-    if file_path in file_cache_map:
-        cache_item = file_cache_map[file_path]
+    if name in file_cache_map:
+        cache_item = file_cache_map[name]
         if cache_item.size == size and cache_item.mtime == mtime:
             res_hash = cache_item.hash
 
     if res_hash is None:
         res_hash = _calculate_hash_int_hashlib(file_path)
-        file_cache_map[file_path] = CacheItem(file_path, size, mtime, res_hash)
+        file_cache_map[name] = CacheItem(name, size, mtime, res_hash)
 
     return res_hash
 
 
-def part_multiprocess_hashes(queue, part_name, files_part, file_cache_map):
-    log_verbose("Start processing part: %s files: %d" % (part_name, len(files_part)))
+def part_multiprocess_hashes(queue, part_name, root_path, files_part, file_cache_map):
+    log_verbose("Start processing part: %s root_path: %s files: %d" % (part_name, root_path, len(files_part)))
 
     hashes = {}
     for file_path in files_part:
-        hashes[file_path] = _calculate_hash(file_path, file_cache_map)
+        name = file_path[len(root_path) + 1:]
+        hashes[file_path] = _calculate_hash(file_path, name, file_cache_map)
         for i in range(1, 5):
             if len(hashes) == (i * len(files_part) / 4):
                 log_verbose('Processed part: %s progress: %d%%' % (part_name, (25 * i)))
     queue.put(hashes)
 
 
-def parts_multiprocess_hashes(files_parts, file_cache_map):
+def parts_multiprocess_hashes(root_path, files_parts, file_cache_map):
     processes = []
 
     part_i = 0
@@ -189,9 +185,9 @@ def parts_multiprocess_hashes(files_parts, file_cache_map):
 
         process = Process(
             target=part_multiprocess_hashes,
-            args=(queue, part_i, files_part, file_cache_map))
+            args=(queue, part_i, root_path, files_part, file_cache_map))
 
-        proc_data = [files_part, queue, process]
+        proc_data = [queue, process]
         processes.append(proc_data)
 
         process.start()
@@ -200,10 +196,10 @@ def parts_multiprocess_hashes(files_parts, file_cache_map):
 
     files_parts_hashes = []
     for proc_data in processes:
-        files_parts_hashes.append(proc_data[1].get())
+        files_parts_hashes.append(proc_data[0].get())
 
     for proc_data in processes:
-        proc_data[2].join()
+        proc_data[1].join()
 
     return files_parts_hashes
 
@@ -254,7 +250,7 @@ class FilesManage:
         Write db file.
         """
         log_verbose("Writing DB file: %s" % file_path)
-        self._write_pickle(db_map.values(), file_path)
+        self._write_pickle(list(db_map.values()), file_path)
 
     def _read_cache(self):
         """
@@ -274,7 +270,7 @@ class FilesManage:
         Write file cache.
         """
         log_verbose("Writing file cache: %s" % file_path)
-        self._write_pickle(file_cache_map.values(), file_path)
+        self._write_pickle(list(file_cache_map.values()), file_path)
 
     def _write_pickle(self, data, file_path):
         """
@@ -309,46 +305,46 @@ class FilesManage:
 
         return pickle_data
 
-    def _fill_db(self, dir_path, db_map):
+    def _fill_db(self, root_path, db_map):
         """
         Fill DB from directory.
         """
-        log_verbose("Fill db from: %s" % dir_path)
+        log_verbose("Fill db from: %s" % root_path)
         all_files = []
-        for root, dirs, files in os.walk(dir_path):
+        for root, dirs, files in os.walk(root_path):
             files = (path.join(root, x) for x in files)
             for file_path in files:
-                name = file_path[len(dir_path) + 1:]
+                name = file_path[len(root_path) + 1:]
                 if (os.sep + '.') in name or name.startswith('.'):
                     continue
                 all_files.append(file_path)
 
         parts = np.array_split(all_files, DEFAULT_THREADS)
-        parts_res = parts_multiprocess_hashes(parts, self._file_cache_map)
+        parts_res = parts_multiprocess_hashes(root_path, parts, self._file_cache_map)
 
         for hashes in parts_res:
             assert isinstance(hashes, dict)
             for file_path, res_hash in hashes.items():
-                name = file_path[len(dir_path) + 1:]
+                name = file_path[len(root_path) + 1:]
                 size = path.getsize(file_path)
                 mtime = os.stat(file_path)[stat.ST_MTIME]
-                self._add_to_file_cache_map(file_path, res_hash)
-                self._add_to_db(db_map, dir_path, FilesDbItem(name, size, mtime, res_hash))
+                self._add_to_file_cache_map(file_path, name, res_hash)
+                self._add_to_db(db_map, root_path, FilesDbItem(name, size, mtime, res_hash))
                 log_verbose_nhdr("\rfiles: %d" % len(db_map))
 
         log_verbose_nhdr("\n")
 
-    def _add_to_file_cache_map(self, file_path, res_hash):
+    def _add_to_file_cache_map(self, file_path, name, res_hash):
         size = path.getsize(file_path)
         mtime = os.stat(file_path)[stat.ST_MTIME]
 
-        if file_path in self._file_cache_map:
-            cache_item = self._file_cache_map[file_path]
+        if name in self._file_cache_map:
+            cache_item = self._file_cache_map[name]
             if cache_item.size == size and cache_item.mtime == mtime \
                     and cache_item.hash == res_hash:
                 return
 
-        self._file_cache_map[file_path] = CacheItem(file_path, size, mtime, res_hash)
+        self._file_cache_map[name] = CacheItem(name, size, mtime, res_hash)
 
     def update_db(self):
         """
@@ -372,21 +368,23 @@ class FilesManage:
         """
         log_debug("Add to db\n  name: %s\n  size: %d\n  hash: %s" %
                   (db_item.name, db_item.size, db_item.hash))
-        # check if we have this file in the db by hash
+
         if db_item.hash in db_map:
             existing_item = db_map[db_item.hash]
-            if existing_item.name != db_item.name:
-                if path.exists(path.join(root_dir, existing_item.name)):
-                    if db_item.name not in existing_item.duplicate:
-                        log_verbose("Found duplicate:\n  name: %s\n  name: %s" %
-                                    (existing_item.name, db_item.name))
-                        existing_item.duplicate.append(db_item.name)
-                else:
-                    log_verbose("Replace none existing duplicate:\n  name: %s\n  name: %s" %
+            if existing_item.name == db_item.name:
+                return
+
+            if path.exists(path.join(root_dir, existing_item.name)):
+                if db_item.name not in existing_item.duplicate:
+                    log_verbose("Found duplicate:\n  name: %s\n  name: %s" %
                                 (existing_item.name, db_item.name))
-                    db_map[db_item.hash] = db_item
-        else:
-            db_map[db_item.hash] = db_item
+                    existing_item.duplicate.append(db_item.name)
+                    return
+            else:
+                log_verbose("Replace none existing duplicate:\n  name: %s\n  name: %s" %
+                            (existing_item.name, db_item.name))
+
+        db_map[db_item.hash] = db_item
 
     def update_root(self):
         """
