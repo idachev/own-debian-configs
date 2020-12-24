@@ -81,7 +81,7 @@ reverse_files_only=1
 copymove_persistent_attr=true
 select_flags=6
 editor_backup_extension=~
-skin=ir_black.ini
+skin=modarcon16root-thin
 keymap=mc.keymap
 auto_save_setup_panels=1
 filepos_max_saved_entries=1024
@@ -124,7 +124,7 @@ free_space=1
 
 horizontal_split=0
 vertical_equal=1
-left_panel_size=105
+left_panel_size=52
 horizontal_equal=1
 top_panel_size=98
 
