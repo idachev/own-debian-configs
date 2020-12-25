@@ -47,6 +47,7 @@ BUFF_FILE = 10 * 1024 * 1024
 
 CHECK_DIR = ".check"
 RECYCLE_DIR = ".recycle"
+PARKED_DIR = ".parked"
 
 # ========================================
 # Debugging
@@ -101,14 +102,14 @@ class FilesDbItem:
     size = 0
     mtime = 0
     hash = None
-    duplicate = None
+    duplicates = None
 
     def __init__(self, _name, _size, _mtime, _hash):
         self.name = _name
         self.size = _size
         self.mtime = _mtime
         self.hash = _hash
-        self.duplicate = []
+        self.duplicates = []
 
 
 class CacheItem:
@@ -210,16 +211,25 @@ class FilesManage:
     _files_src_root = None
     _files_dst_root = None
     _working_dir = True
+    _recycle_duplicates = False
     _dry_run = True
     _files_cache = None
     _file_cache_map = None
 
-    def __init__(self, files_db, files_src_root, files_dst_root, files_cache, working_dir, dry_run=True):
+    def __init__(self,
+                 files_db,
+                 files_src_root,
+                 files_dst_root,
+                 files_cache,
+                 working_dir,
+                 recycle_duplicates=False,
+                 dry_run=True):
         self._files_db = files_db
         self._files_src_root = files_src_root
         self._files_dst_root = files_dst_root
         self._files_cache = files_cache
         self._working_dir = working_dir
+        self._recycle_duplicates = recycle_duplicates
         self._dry_run = dry_run
 
         log_verbose("files src db: %s" % self._files_db)
@@ -230,6 +240,7 @@ class FilesManage:
         log_verbose("dry run: %d" % self._dry_run)
 
         self._src_db_map = self._read_db()
+        self._dst_db_map = {}
         self._file_cache_map = self._read_cache()
 
     def _read_db(self):
@@ -322,15 +333,20 @@ class FilesManage:
         parts = np.array_split(all_files, DEFAULT_THREADS)
         parts_res = parts_multiprocess_hashes(root_path, parts, self._file_cache_map)
 
+        processed = 0
         for hashes in parts_res:
             assert isinstance(hashes, dict)
             for file_path, res_hash in hashes.items():
                 name = file_path[len(root_path) + 1:]
                 size = path.getsize(file_path)
                 mtime = os.stat(file_path)[stat.ST_MTIME]
+
                 self._add_to_file_cache_map(file_path, name, res_hash)
+
                 self._add_to_db(db_map, root_path, FilesDbItem(name, size, mtime, res_hash))
-                log_verbose_nhdr("\rfiles: %d" % len(db_map))
+
+                log_verbose_nhdr("\rfiles: %d" % processed)
+                processed += 1
 
         log_verbose_nhdr("\n")
 
@@ -375,14 +391,15 @@ class FilesManage:
                 return
 
             if path.exists(path.join(root_dir, existing_item.name)):
-                if db_item.name not in existing_item.duplicate:
-                    log_verbose("Found duplicate:\n  name: %s\n  name: %s" %
+                if db_item.name not in [iter.name for iter in existing_item.duplicates]:
+                    log_verbose_nhdr("\n")  # keep this because of files counter with \r
+                    log_verbose("Found duplicates:\n  %s\n  %s" %
                                 (existing_item.name, db_item.name))
-                    existing_item.duplicate.append(db_item.name)
-                    return
-            else:
-                log_verbose("Replace none existing duplicate:\n  name: %s\n  name: %s" %
-                            (existing_item.name, db_item.name))
+                    existing_item.duplicates.append(db_item)
+
+                return
+
+            log_verbose("Replace none existing duplicates:\n  %s\n  %s" % (existing_item.name, db_item.name))
 
         db_map[db_item.hash] = db_item
 
@@ -400,76 +417,205 @@ class FilesManage:
             log_error("Destination root directory should be set")
             sys.exit(102)
 
-        # first create current root directory db
-        rmap = {}
-        self._fill_db(self._files_dst_root, rmap)
+        self._dst_db_map = {}
+        self._fill_db(self._files_dst_root, self._dst_db_map)
 
-        values = rmap.values()
-        # next remove duplicate move files
-        for ritem in values:
-            for dupitem in ritem.duplicate:
-                log_verbose("Found duplicate:\n  name: %s" % dupitem)
-                self._recycle(dupitem)
-            ritem.duplicate = []
+        dst_items = self._dst_db_map.values()
 
-        # next move files to right location according the files source root DB
-        for ritem in values:
-            if ritem.hash in self._src_db_map:
-                ditem = self._src_db_map[ritem.hash]
-                if ditem.size != ritem.size:
-                    log_verbose("Size mismatch:\n  old name: %s\n  old size: %d\n  new name: %s\n  new size: %d" % (
-                        ritem.name, ritem.size, ditem.name, ditem.size))
-                    continue
-                if ditem.name != ritem.name:
-                    f1 = path.join(self._files_dst_root, ritem.name)
-                    f2 = path.join(self._files_dst_root, ditem.name)
-                    log_verbose("Move files:\n  old name: %s\n  new name: %s" % (f1, f2))
-                    if path.exists(f2):
-                        if _calculate_hash(f2, self._file_cache_map) == ritem.hash:
-                            log_verbose("Found duplicate:\n  name: %s" % ritem.name)
-                            self._recycle(ritem.name)
-                        else:
-                            log_error("Destination already exist skip move:\n  file: %s:" % f2)
-                    else:
-                        if not self._dry_run:
-                            os.renames(f1, f2)
-                            os.utime(f2, (ditem.mtime, ditem.mtime))
-            else:
-                f1 = path.join(self._files_dst_root, ritem.name)
-                f2 = path.join(self._files_dst_root, self._working_dir, CHECK_DIR, ritem.name)
-                log_verbose("Not in DB move to:\n  name: %s" % f2)
-                if path.exists(f2):
-                    log_error("Destination already exist skip move:\n  file: %s:" % f2)
-                else:
-                    if not self._dry_run:
-                        os.renames(f1, f2)
+        if self._recycle_duplicates:
+            for dst_item in dst_items:
+                for dup_item in dst_item.duplicates:
+                    log_verbose("Found duplicate:\n  name: %s" % dup_item)
+                    self._move_to_recycle(dup_item.name)
+                dst_item.duplicates = []
+
+        for dst_item in dst_items:
+            if dst_item.hash not in self._src_db_map:
+                self._move_for_check_item(dst_item)
+                continue
+
+            src_item = self._src_db_map[dst_item.hash]
+            if src_item.size != dst_item.size:
+                log_verbose("Size mismatch:\n  dst name: %s\n  dst size: %d\n  src name: %s\n  src size: %d" % (
+                    dst_item.name, dst_item.size, src_item.name, src_item.size))
+
+                self._move_for_check_item(dst_item)
+                continue
+
+            self._sync_duplicates(src_item, dst_item)
+
+            if src_item.name == dst_item.name:
+                continue
+
+            self._safe_move_dst(dst_item.name, src_item)
+
+        self._cleanup_cache()
 
         self._write_cache(self._file_cache_map, self._files_cache)
 
         if self._dry_run:
             log_verbose("DRY RUN")
 
-    def _recycle(self, name):
+    def _cleanup_cache(self):
+        cached_items = list(self._file_cache_map.values())
+        for cached_item in cached_items:
+            assert isinstance(cached_item, CacheItem)
+            cached_item_path = path.join(self._files_dst_root, cached_item.path)
+            if not path.exists(cached_item_path):
+                self._file_cache_map.pop(cached_item.path, None)
+
+    def _move_files(self, src_file_path, dst_file_path, mtime_to_set):
+        log_verbose("Move files:\n  old name: %s\n  new name: %s" % (src_file_path, dst_file_path))
+        if not self._dry_run:
+            os.renames(src_file_path, dst_file_path)
+            os.utime(dst_file_path, (mtime_to_set, mtime_to_set))
+
+    def _sync_duplicates(self, src_item, dst_item):
+        assert isinstance(src_item, FilesDbItem)
+        assert isinstance(dst_item, FilesDbItem)
+
+        if len(dst_item.duplicates) == 0:
+            return
+
+        if len(src_item.duplicates) == 0:
+            log_verbose("No source duplicates recycle destination")
+            for dup_item in dst_item.duplicates:
+                self._move_to_recycle(dup_item.name)
+
+            return
+
+        src_dup_names = [item.name for item in src_item.duplicates]
+        dst_dup_names = [item.name for item in dst_item.duplicates]
+
+        dst_dup_not_in_src = []
+        for dup_item in dst_item.duplicates:
+            if dup_item.name not in src_dup_names:
+                dst_dup_not_in_src.append(dup_item)
+
+        src_dup_not_in_dst = []
+        for dup_item in src_item.duplicates:
+            if dup_item.name not in dst_dup_names:
+                src_dup_not_in_dst.append(dup_item)
+
+        if len(src_dup_not_in_dst) == 0 or len(dst_dup_not_in_src) == 0:
+
+            if len(dst_dup_not_in_src) != 0:
+                log_verbose("All source duplicates matched, recycle rest of destination")
+
+                for dup_item in dst_dup_not_in_src:
+                    self._move_to_recycle(dup_item.name)
+
+            return
+
+        for i in range(0, len(dst_dup_not_in_src)):
+            dst_dup_item = dst_dup_not_in_src[i]
+
+            if i >= len(src_dup_not_in_dst):
+                log_verbose("All source duplicates moved, recycle rest of destination")
+
+                self._move_to_recycle(dst_dup_item.name)
+                continue
+
+            src_dup_item = src_dup_not_in_dst[i]
+
+            self._safe_move_dst(dst_dup_item.name, src_dup_item)
+
+    def _safe_move_dst(self, dst_name, src_item):
+        assert isinstance(src_item, FilesDbItem)
+
+        f1 = path.join(self._files_dst_root, dst_name)
+        f2 = path.join(self._files_dst_root, src_item.name)
+
+        if path.exists(f2):
+            if _calculate_hash(f2, src_item.name, self._file_cache_map) == src_item.hash:
+                log_verbose("Source name already exists and match, recycle destination")
+
+                self._move_to_recycle(dst_name)
+                return
+            else:
+                self._rename_diff_content_same_name(src_item.name)
+
+        self._move_files(f1, f2, src_item.mtime)
+
+    def _rename_diff_content_same_name(self, name):
+        file_path = path.join(self._files_dst_root, name)
+
+        res_hash = _calculate_hash(file_path, name, self._file_cache_map)
+
+        if res_hash not in self._dst_db_map:
+            self._move_to_check(name)
+            return
+
+        dst_item = self._dst_db_map[res_hash]
+        new_file = self._move_to_parked(name)
+
+        new_name = new_file[len(self._files_dst_root) + 1:]
+
+        dst_item.name = new_name
+
+        cache_item = self._file_cache_map[name]
+        del self._file_cache_map[name]
+        self._file_cache_map[new_name] = cache_item
+
+    def _move_for_check_item(self, item):
+        assert isinstance(item, FilesDbItem)
+
+        self._move_to_check(item.name)
+
+        if len(item.duplicates) > 0:
+            for dup_item in item.duplicates:
+                self._move_to_check(dup_item.name)
+
+    def _move_to_check(self, name):
+        """
+        Move file to local CHECK_DIR
+        """
+        log_verbose("Not in DB move to check:\n  %s" % name)
+
+        check_dir = path.join(self._files_dst_root, self._working_dir, CHECK_DIR)
+
+        self._move_file_to_dir_inc_existing(name, self._files_dst_root, check_dir, CHECK_DIR)
+
+        self._file_cache_map.pop(name, None)
+
+    def _move_to_recycle(self, name):
         """
         Move file to local RECYCLE_DIR
         """
+        log_verbose("Recycle:\n  %s" % name)
+
         recycle_dir = path.join(self._files_dst_root, self._working_dir, RECYCLE_DIR)
 
-        f1 = path.join(self._files_dst_root, name)
-        f2 = path.join(recycle_dir, name)
+        self._move_file_to_dir_inc_existing(name, self._files_dst_root, recycle_dir, RECYCLE_DIR)
+
+        self._file_cache_map.pop(name, None)
+
+    def _move_to_parked(self, name):
+        """
+        Move file to local PARKED_DIR
+        """
+        log_verbose("Temporary parked duplicate source name file:\n  %s" % name)
+
+        parked_dir = path.join(self._files_dst_root, self._working_dir, PARKED_DIR)
+
+        return self._move_file_to_dir_inc_existing(name, self._files_dst_root, parked_dir, PARKED_DIR)
+
+    def _move_file_to_dir_inc_existing(self, name, src_dir, dst_dir, context):
+        f1 = path.join(src_dir, name)
+        f2 = path.join(dst_dir, name)
 
         i = 0
         while path.exists(f2):
-            f2 = path.join(recycle_dir, name + '_' + str(i))
+            f2 = path.join(dst_dir, name + context + '_' + str(i))
             i += 1
 
-        log_verbose("Recycle:\n  file: %s" % f2)
-
         if not self._dry_run:
-            if not path.exists(recycle_dir):
-                os.makedirs(recycle_dir)
+            if not path.exists(dst_dir):
+                os.makedirs(dst_dir)
 
             os.renames(f1, f2)
+
+        return f2
 
 
 # ========================================
@@ -480,6 +626,7 @@ def parse_args():
     Parse arguments and print help message if requested.
     """
     global DRY_RUN
+    global RECYCLE_DUPLICATES
     global DEBUG
     global VERBOSE
     global FILES_DB
@@ -507,6 +654,10 @@ def parse_args():
                         dest="dry_run",
                         action='store_true',
                         help='dry run')
+    parser.add_argument('--recycle-duplicates',
+                        dest="recycle_duplicates",
+                        action='store_true',
+                        help='recycle duplicates otherwise sync to source')
     parser.add_argument('--working-dir',
                         dest='working_dir',
                         default=WORKING_DIR,
@@ -531,6 +682,7 @@ def parse_args():
     args = parser.parse_args()
 
     DRY_RUN = args.dry_run
+    RECYCLE_DUPLICATES = args.recycle_duplicates
     DEBUG = args.debug
     VERBOSE = args.verbose or DEBUG
     FILES_DB = args.files_db
@@ -600,7 +752,7 @@ def main():
     parse_args()
 
     t0 = timeit.default_timer()
-    inst = FilesManage(FILES_DB, FILES_SRC_ROOT, FILES_DST_ROOT, FILES_CACHE, WORKING_DIR, DRY_RUN)
+    inst = FilesManage(FILES_DB, FILES_SRC_ROOT, FILES_DST_ROOT, FILES_CACHE, WORKING_DIR, RECYCLE_DUPLICATES, DRY_RUN)
     log_verbose("Load DB for: %d seconds" % (timeit.default_timer() - t0))
 
     if UPDATE_DB:
