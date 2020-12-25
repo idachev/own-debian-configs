@@ -5,7 +5,6 @@
 
 import argparse
 import hashlib
-import multiprocessing
 import numpy as np
 import os
 import pickle
@@ -34,7 +33,9 @@ UPDATE_DB = False
 
 UPDATE_ROOT = False
 
-DEFAULT_THREADS = multiprocessing.cpu_count() - 2
+# TODO check this with HDD seek
+# DEFAULT_THREADS = multiprocessing.cpu_count() - 2
+DEFAULT_THREADS = 1
 if DEFAULT_THREADS == 0:
     DEFAULT_THREADS = 1
 elif DEFAULT_THREADS > 3:
