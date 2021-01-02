@@ -1,5 +1,6 @@
 #!/bin/bash
-DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+[ "$1" = -x ] && shift && set -x
+DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 ${DIR}/apt_install_no_gui_bionic.sh
 
