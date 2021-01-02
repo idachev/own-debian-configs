@@ -211,6 +211,3 @@ alias kafkacat-dc="docker run -it --rm \
   confluentinc/cp-kafkacat \
   kafkacat"
 
-# tagsistant
-alias tag-cp="ln -s"
-
