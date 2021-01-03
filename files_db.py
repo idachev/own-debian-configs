@@ -643,14 +643,14 @@ def parse_args():
                         help='point to files source root dir')
     parser.add_argument('files_dst_root', metavar='FILES_DST_ROOT', nargs='?',
                         help='point to files destination root dir, required if -root/--update-root is used')
-    parser.add_argument('-v', '--verbose',
-                        dest="verbose",
+    parser.add_argument('-q', '--quiet',
+                        dest="quiet",
                         action='store_true',
-                        help='verbose messages')
-    parser.add_argument('-vv', '--debug',
+                        help='quiet messages')
+    parser.add_argument('-v', '--debug',
                         dest="debug",
                         action='store_true',
-                        help='debug messages, implies verbose')
+                        help='debug messages')
     parser.add_argument('-n', '--dry-run',
                         dest="dry_run",
                         action='store_true',
@@ -684,8 +684,8 @@ def parse_args():
 
     DRY_RUN = args.dry_run
     RECYCLE_DUPLICATES = args.recycle_duplicates
-    DEBUG = args.debug
-    VERBOSE = args.verbose or DEBUG
+    DEBUG = (not args.quiet) and args.debug
+    VERBOSE = (not args.quiet) or DEBUG
     FILES_DB = args.files_db
     FILES_SRC_ROOT = args.files_src_root
     FILES_DST_ROOT = args.files_dst_root
