@@ -104,6 +104,10 @@ sudo -H pip3 install setuptools
 sudo -H pip3 install docker-compose
 sudo -H pip3 install validators
 
+# thirdparty pip
+
+sudo -H pip install git+https://github.com/basak/glacier-cli.git
+
 ################################################################################
 # Setup for nodejs and angular/cli
 
