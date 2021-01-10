@@ -9,22 +9,6 @@ sudo -H apt-get -y install debconf-utils ca-certificates dos2unix
 sudo -H apt-get -y install curl gnupg wget aria2 pigz acpi encfs moreutils autossh
 
 ################################################################################
-# Setup for latest Docker CE
-
-curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo -H apt-key add -
-
-sudo -H apt-key fingerprint 0EBFCD88
-
-sudo rm /etc/apt/sources.list.d/docker.list
-echo "deb [arch=amd64] https://download.docker.com/linux/ubuntu ${UBUNTU_RELEASE} stable" | \
-  sudo -H tee /etc/apt/sources.list.d/docker.list
-
-sudo -H apt-get -y install docker-ce
-
-sudo groupadd docker
-sudo gpasswd -a "${USER}" docker
-
-################################################################################
 # Setup for Azure cli
 
 curl -sL https://packages.microsoft.com/keys/microsoft.asc | \
@@ -56,7 +40,9 @@ sudo -H apt-get -y install pyqt4-dev-tools lrzip p7zip p7zip-full libimage-exift
 sudo -H apt-get -y install ffmpeg postgresql-client python-dev fdupes fslint gthumb mc archivemount
 sudo -H apt-get -y install openssh-server maven libcurl4-openssl-dev gcc g++ make pv acpitool pavucontrol
 
-sudo apt-get install azure-cli
+sudo -H apt-get -y install docker.io
+
+sudo -H apt-get -y install azure-cli
 
 # Mongo shell and tools
 sudo -H apt-get -y install mongodb-org-shell mongodb-org-tools
