@@ -15,23 +15,13 @@ if [ ! -L "$LUKS_DEV" ]; then
   exit 2
 fi
 
-echo -e "Unmounting the luks dev: $LUKS_DEV"
-umount $LUKS_DEV
+set -e
 
-LAST_ERR=$?
-if [[ $LAST_ERR -ne 0 ]]; then
-  echo "Error on umount: $LAST_ERR, continue..."
-fi
+echo -e "\nUnmounting the luks dev: $LUKS_DEV"
+umount $LUKS_DEV
 
 echo -e "\nGet luks status before close..."
 cryptsetup status $LUKS_NAME
 
 echo -e "\nClosing luks dev..."
 cryptsetup luksClose $LUKS_NAME
-
-LAST_ERR=$?
-if [[ $LAST_ERR -ne 0 ]]; then
-  echo "Error on luks close: $LAST_ERR"
-  exit $LAST_ERR
-fi
-
