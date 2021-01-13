@@ -1,5 +1,6 @@
 #!/bin/bash
-#set -x
+[ "$1" = -x ] && shift && set -x
+DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 if [ "$#" -ne 4 ]; then
   echo "Usage:"
@@ -19,8 +20,8 @@ else
 fi
 
 if [ -z "$pid" ]; then
-	echo "No PID for $PNAME" >&2
-	exit 1
+  echo "No PID for $PNAME" >&2
+  exit 1
 fi
 
 set -e
@@ -37,4 +38,3 @@ cpulimit -p ${pid} -l ${CPU_LIMIT} -b
 
 echo "Set ionice level to ${IO_NICE}"
 ionice -p ${pid} -c 2 -n ${IO_NICE}
-
