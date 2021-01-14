@@ -430,4 +430,5 @@ R       Rotate 90 right
 g       View with glogg
         glogg '%d/%f'
 
-
+a       Archive selected
+        ~/bin/mc_archive_dir.sh '%d/%f'
