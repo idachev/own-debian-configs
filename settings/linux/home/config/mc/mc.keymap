@@ -1,0 +1,9 @@
+[main:empty-cmdline]
+ChangePanel = tab
+
+[main]
+ChangePanel = tab
+
+[input]
+Complete = ctrl-tab
+
