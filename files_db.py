@@ -5,13 +5,15 @@
 
 import argparse
 import hashlib
+import math
+import multiprocessing
 import numpy as np
 import os
 import pickle
 import stat
 import sys
 import timeit
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from multiprocessing import Queue, Process
 from os import path
 
@@ -33,13 +35,15 @@ UPDATE_DB = False
 
 UPDATE_ROOT = False
 
-# TODO check this with HDD seek
-# DEFAULT_THREADS = multiprocessing.cpu_count() - 2
-DEFAULT_THREADS = 1
-if DEFAULT_THREADS == 0:
+MAX_THREADS = 3
+
+DEFAULT_THREADS = multiprocessing.cpu_count() - 2
+if DEFAULT_THREADS <= 0:
     DEFAULT_THREADS = 1
-elif DEFAULT_THREADS > 3:
-    DEFAULT_THREADS = 3
+elif DEFAULT_THREADS > MAX_THREADS:
+    DEFAULT_THREADS = MAX_THREADS
+
+REPORT_STATS_EACH_SECONDS = 15
 
 # ========================================
 # Defines
@@ -126,6 +130,35 @@ class CacheItem:
         self.hash = _hash
 
 
+class ComputedStat:
+    size = 0
+    count = 0
+    start_time = 0
+
+    def __init__(self):
+        self.reset()
+
+    def elapsed_seconds(self):
+        return timeit.default_timer() - self.start_time
+
+    def reset(self):
+        self.size = 0
+        self.count = 0
+        self.start_time = timeit.default_timer()
+
+    def size_mb(self):
+        return self.size / (1024.0 * 1024.0)
+
+    def read_speed(self):
+        return (self.size / (1024.0 * 1024.0)) / self.elapsed_seconds()
+
+    def progress(self, total):
+        return (self.count * 100) / total
+
+    def elapsed_delta(self):
+        return str(timedelta(seconds=math.ceil(self.elapsed_seconds())))
+
+
 def _calculate_hash_int_hashlib(file_path):
     """
     Calculate hash of a file, using internal python methods sha512
@@ -143,7 +176,7 @@ def _calculate_hash_int_hashlib(file_path):
     return s.hexdigest()
 
 
-def _calculate_hash(file_path, name, file_cache_map):
+def _calculate_hash(file_path, name, file_cache_map, computed_stat=None):
     """
     Calculate hash of a file
     """
@@ -161,6 +194,8 @@ def _calculate_hash(file_path, name, file_cache_map):
     if res_hash is None:
         res_hash = _calculate_hash_int_hashlib(file_path)
         file_cache_map[name] = CacheItem(name, size, mtime, res_hash)
+        if computed_stat is not None:
+            computed_stat.size += size
 
     return res_hash
 
@@ -168,13 +203,31 @@ def _calculate_hash(file_path, name, file_cache_map):
 def part_multiprocess_hashes(queue, part_name, root_path, files_part, file_cache_map):
     log_verbose("Start processing part: %s root_path: %s files: %d" % (part_name, root_path, len(files_part)))
 
+    total_stat = ComputedStat()
+    mark_stat = ComputedStat()
+
+    total = len(files_part)
     hashes = {}
     for file_path in files_part:
         name = file_path[len(root_path) + 1:]
-        hashes[file_path] = _calculate_hash(file_path, name, file_cache_map)
-        for i in range(1, 5):
-            if len(hashes) == (i * len(files_part) / 4):
-                log_verbose('Processed part: %s progress: %d%%' % (part_name, (25 * i)))
+        hashes[file_path] = _calculate_hash(file_path, name, file_cache_map, mark_stat)
+        mark_stat.count += 1
+
+        if mark_stat.elapsed_seconds() > REPORT_STATS_EACH_SECONDS:
+            total_stat.size += mark_stat.size
+            total_stat.count += mark_stat.count
+            log_verbose('Processed part: %s, progress: %2d%%, elapsed time: %s, processed: %d, %d MB, %d MB/s, total: %d, %d MB, %d MB/s' %
+                        (part_name, total_stat.progress(total), total_stat.elapsed_delta(),
+                         mark_stat.count, mark_stat.size_mb(), mark_stat.read_speed(),
+                         total_stat.count, total_stat.size_mb(), total_stat.read_speed()))
+            mark_stat.reset()
+
+    total_stat.size += mark_stat.size
+    total_stat.count += mark_stat.count
+    log_verbose('Processed part: %s DONE, elapsed time: %s, total: %d, %d MB, %d MB/s' %
+                (part_name, total_stat.elapsed_delta(),
+                 total_stat.count, total_stat.size_mb(), total_stat.read_speed()))
+
     queue.put(hashes)
 
 
@@ -528,7 +581,8 @@ class FilesManage:
         f2 = path.join(self._files_dst_root, src_item.name)
 
         if path.exists(f2):
-            if _calculate_hash(f2, src_item.name, self._file_cache_map) == src_item.hash:
+            f2_hash = _calculate_hash(f2, src_item.name, self._file_cache_map)
+            if f2_hash == src_item.hash:
                 log_verbose("Source name already exists and match, recycle destination")
 
                 self._move_to_recycle(dst_name)
