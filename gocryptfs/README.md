@@ -1,3 +1,6 @@
+> **WARNING:** After using it a while it has big problems on HDD and sometime
+> on writes it gets too slow switching back to `encfs` :)
+
 # GoCryptFS Releases
 
 https://github.com/rfjakob/gocryptfs/releases
@@ -15,3 +18,4 @@ To check the plain file path in encrypted dir use:
 (inode numbers are the same in encrypted and plain)
 
 To unmount use: `fusermount -u mount-dir`
+

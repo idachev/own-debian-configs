@@ -6,7 +6,6 @@
 import argparse
 import hashlib
 import math
-import multiprocessing
 import numpy as np
 import os
 import pickle
@@ -35,13 +34,7 @@ UPDATE_DB = False
 
 UPDATE_ROOT = False
 
-MAX_THREADS = 3
-
-DEFAULT_THREADS = multiprocessing.cpu_count() - 2
-if DEFAULT_THREADS <= 0:
-    DEFAULT_THREADS = 1
-elif DEFAULT_THREADS > MAX_THREADS:
-    DEFAULT_THREADS = MAX_THREADS
+DEFAULT_THREADS = 1
 
 REPORT_STATS_EACH_SECONDS = 15
 
@@ -691,6 +684,7 @@ def parse_args():
     global UPDATE_ROOT
     global FILES_CACHE
     global WORKING_DIR
+    global DEFAULT_THREADS
 
     parser = argparse.ArgumentParser(description='Script to manage files names and directory places')
     parser.add_argument('files_src_root', metavar='FILES_SRC_ROOT', nargs=1,
@@ -709,6 +703,11 @@ def parse_args():
                         dest="dry_run",
                         action='store_true',
                         help='dry run')
+    parser.add_argument('-t', '--num-threads',
+                        dest="num_threads",
+                        type=int,
+                        default=DEFAULT_THREADS,
+                        help='number of threads to use')
     parser.add_argument('--recycle-duplicates',
                         dest="recycle_duplicates",
                         action='store_true',
@@ -747,6 +746,7 @@ def parse_args():
     UPDATE_ROOT = args.update_root
     FILES_CACHE = args.files_cache
     WORKING_DIR = args.working_dir
+    DEFAULT_THREADS = args.num_threads
 
     if UPDATE_DB and UPDATE_ROOT:
         log_error("Only one of the -db/--update-db or -root/--update-root should be specified.")
@@ -792,6 +792,9 @@ def parse_args():
     if len(path.dirname(WORKING_DIR)) != 0:
         log_error("You cannot specify path in the working directory name: %s" % WORKING_DIR)
         sys.exit(10)
+
+    if DEFAULT_THREADS <= 0:
+        DEFAULT_THREADS = 1
 
     FILES_DB = path.join(FILES_SRC_ROOT, WORKING_DIR, FILES_DB)
     if UPDATE_ROOT:
