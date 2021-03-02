@@ -71,3 +71,6 @@ if [ -f ~/.localenv ]; then
   . ~/.localenv
 fi
 
+crypt_check.sh
+
+

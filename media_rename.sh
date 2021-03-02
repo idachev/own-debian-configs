@@ -1,63 +1,41 @@
 #!/bin/bash
 
-if [ -z $1 ]; then
-	echo "Expected one argument the video extension like: mov, avi..."
-	exit 1
+EXT="$1"
+TYP="$2"
+
+if [ -z "${EXT}" ] || [ -z "${TYP}" ]; then
+  echo "Expected 2 argument the <media extension like: jpg, mp4, mov, avi...> <type: img or vid>"
+  exit 1
 fi
 
-EXT="$1"
-EXT=$(echo $EXT | tr '[:upper:]' '[:lower:]')
-EXT_UPPER=$(echo $EXT | tr '[:lower:]' '[:upper:]')
+EXT=$(echo ${EXT} | tr '[:upper:]' '[:lower:]')
+EXT_UPPER=$(echo ${EXT} | tr '[:lower:]' '[:upper:]')
 
 # first do all lower case
 echo
-echo "Rename files .$EXT_UPPER to lower case .$EXT"
-rename -v -f 'y/A-Z/a-z/' *.$EXT_UPPER
-rename -v -f 'y/A-Z/a-z/' *.$EXT
+echo "Rename files .${EXT_UPPER} to lower case .${EXT}"
+rename -v -f 'y/A-Z/a-z/' *."${EXT_UPPER}"
+rename -v -f 'y/A-Z/a-z/' *."${EXT}"
 
 echo "Remove spaces from file names replace with: '_'"
-rename -v -f 'y/ /_/' *.$EXT
+rename -v -f 'y/ /_/' *."${EXT}"
 
 # add date taken to the file modify
 echo
 echo 'Set file modify date.'
-exiftool '-DateTimeOriginal>FileModifyDate' *.$EXT
-
-# in some cases we should fix the time zones
-# the tool does not support write of mov files so
-# we should modify the file system modify date
-echo
-echo -n 'Do you want to fix the time zone(y/n): '
-read -e UANS
-if [ "$UANS" = "y" ]; then
-	UDEF="+3"
-	echo
-	echo -n "Hours to fix($UDEF): "
-	read -e UFIX
-
-	if [ -z "$UFIX" ]; then
-		UFIX="$UDEF"
-	fi
-
-	let "AUFIX=(( 0 + $UFIX ))"
-	if [ $AUFIX -ge 0 ]; then
-		FIX="+=$AUFIX"
-	else
-		let "AUFIX=(( 0 - $UFIX ))"
-		FIX="-=$AUFIX"
-	fi
-
-	echo
-	echo "Fix timezone by $UFIX hours."
-	exiftool "-FileModifyDate$FIX" *.$EXT
-fi
-
-echo
-echo 'If something is going wrong use this to return back names:'
-echo 'rename -v "s/.*(mvi_[0-9]*)\.mov/$1.mov/" *.mov'
+exiftool '-DateTimeOriginal>FileModifyDate' *."${EXT}"
 
 # rename with adding date taken in our case
 # the modified file system modify date from above
 echo
 echo 'Rename files by adding date and time as prefix.'
-exiftool '-FileName<FileModifyDate' -d %Y%m%d-%H%M%S-%%f.%%e *.$EXT
+exiftool '-FileName<FileModifyDate' -d %Y%m%d_%H%M%S_%%f.%%e *."${EXT}"
+
+if [ "${TYP}" = "img" ]; then
+  rename 's/(^[0-9]{8})_([0-9]{6})_.*\.'"${EXT}"'/img_$1_$2.'"${EXT}"'/g' *."${EXT}"
+elif [ "${TYP}" = "vid" ]; then
+  rename 's/(^[0-9]{8})_([0-9]{6})_.*\.'"${EXT}"'/vid_$1_$2.'"${EXT}"'/g' *."${EXT}"
+else
+  echo "Unexpected type: ${TYP}"
+fi
+
