@@ -7,10 +7,11 @@ fi
 
 PARTITION_DEV=$1
 MOUNT_DIR=$2
-DISK_DEV=$(echo $PARTITION_DEV | sed -e 's/[0-9]$//g')
+#DISK_DEV=$(echo $PARTITION_DEV | sed -e 's/[0-9]$//g')
+DISK_DEV=$PARTITION_DEV
 
-echo "\nCheck the SMART info for dev: $DISK_DEV"
-smartctl -i -T permissive -d sat "$DISK_DEV"
+echo -e "\nCheck the SMART info for dev: $DISK_DEV"
+smartctl -i "$DISK_DEV"
 
 LUKS_NAME="secure"$(echo $PARTITION_DEV | sed -e 's/\//_/g')
 LUKS_DEV="/dev/mapper/$LUKS_NAME"

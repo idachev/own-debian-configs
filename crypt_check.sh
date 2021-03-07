@@ -8,11 +8,11 @@ if [ ! -d ~/storage_private_docs/docs ]; then
   echo -e "\nDO: gocryptfs_storage_private_docs.sh"
 fi
 
-if [ ! -d ~/storage/crypt/cameras ]; then
-  echo -e "\nDO: gocryptfs_storage_crypt.sh"
+if [ ! -d ~/storage_ssd/lost+found ]; then
+  echo -e "\nDO: sudo ~/bin/luks_mount.sh /dev/nvme1n1 $(realpath ~/storage_ssd)"
 fi
 
-if [ ! -d ~/storage_ssd/lost+found ]; then
-  echo -e "\nDO: sudo ~/bin/luks_mount.sh /dev/sda $(realpath ~/storage_ssd)"
+if [ ! -d ~/storage_2tb/lost+found ]; then
+  echo -e "\nDO: sudo ~/bin/luks_mount.sh /dev/sda $(realpath ~/storage_2tb)"
 fi
 
