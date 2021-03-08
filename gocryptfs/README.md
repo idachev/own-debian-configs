@@ -1,6 +1,3 @@
-> **WARNING:** After using it a while it has big problems on HDD and sometime
-> on writes it gets too slow switching back to `encfs` :)
-
 # GoCryptFS Releases
 
 https://github.com/rfjakob/gocryptfs/releases
