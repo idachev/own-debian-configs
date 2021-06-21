@@ -13,11 +13,12 @@ ID, Component, Summary, Priority, Description
 E101, ComponentA, My epic Summary, P0, My Epic Description
 E101-S01, ComponentA, My story Summary, P1, My Story Description
 
-
 The epics and story IDs are prepended to the summary.
 
 The epic ID should be in format EXYZ - where XYZ is a number - keep the length always to 4
 The story ID should start with epic ID and should contain -S - this is the code check for a story
+
+The Description could contain new lines with sequence: \n
 """
 
 import csv
