@@ -19,6 +19,10 @@ if [ $? -eq 0 ]; then
   exit
 fi
 
+if [ $BATTERY_LEVEL -eq 0 ]; then
+  exit
+fi
+
 if [ $BATTERY_LEVEL -le $BATTERY_TRESHOLD ]; then
   zenity --width 300 --warning --title 'Battery Status' --text "<span font-size=\"xx-large\">$MSG</span>" --timeout $NOTIFY_TIMEOUT 
 fi
