@@ -121,7 +121,7 @@ alias prettyjson='python -m json.tool'
 
 alias pssh='psg ssh'
 
-#alias assume-role='function(){eval $(command assume-role $@);}'
+alias assume-role='function(){unset AWS_ACCESS_KEY_ID;unset AWS_SECRET_ACCESS_KEY;unset AWS_SESSION_TOKEN;unset AWS_SECURITY_TOKEN;unset ASSUMED_ROLE;eval $(command assume-role $@);}'
 
 # AWS Profiles
 
