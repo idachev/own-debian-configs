@@ -4,7 +4,7 @@ DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
   echo "This script should be sourced in order to work" 1>&2
-  exit
+  command exit 1
 fi
 
 AWS_PROFILE=$1
@@ -25,7 +25,7 @@ function get_current_account() {
 CURRENT_ACCOUNT_ID=$(get_current_account)
 
 if [ "${ACCOUNT_ID}" = "${CURRENT_ACCOUNT_ID}" ]; then
-  echo "Account still active: ${ROLE_ARN} for ${AWS_PROFILE}"
+  echo -e "Account role already activated:\n${ROLE_ARN}"
   return
 fi
 
@@ -40,6 +40,6 @@ eval $(command assume-role "${AWS_PROFILE}")
 CURRENT_ACCOUNT_ID=$(get_current_account)
 
 if [ "${ACCOUNT_ID}" = "${CURRENT_ACCOUNT_ID}" ]; then
-  echo "Account activated: ${ROLE_ARN} for ${AWS_PROFILE}"
+  echo -e "Account role activated:\n${ROLE_ARN}"
   return
 fi
