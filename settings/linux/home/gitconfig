@@ -68,3 +68,4 @@
   helper = cache
 [push]
   default = simple
+
