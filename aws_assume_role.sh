@@ -22,8 +22,12 @@ function get_current_account() {
   aws sts get-caller-identity 2>/dev/null | jq -r '.Account'
 }
 
-CURRENT_ACCOUNT_ID=$(get_current_account)
-
+if [ "${AWS_ACCESS_KEY_ID}" != "" ]; then
+  CURRENT_ACCOUNT_ID=$(get_current_account)
+else
+  CURRENT_ACCOUNT_ID=
+fi
+ 
 if [ "${ACCOUNT_ID}" = "${CURRENT_ACCOUNT_ID}" ]; then
   echo -e "Account role already activated:\n${ROLE_ARN}"
   return
