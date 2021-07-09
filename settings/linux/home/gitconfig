@@ -68,4 +68,9 @@
   helper = cache
 [push]
   default = simple
-
+[credential "https://git-codecommit.eu-west-1.amazonaws.com/"]
+  helper = !aws --region eu-west-1 codecommit credential-helper $@
+  UseHttpPath = true
+[credential "https://git-codecommit.eu-west-2.amazonaws.com/"]
+  helper = !aws --region eu-west-2 codecommit credential-helper $@
+  UseHttpPath = true
