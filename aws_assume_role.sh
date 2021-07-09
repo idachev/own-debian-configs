@@ -39,7 +39,9 @@ unset AWS_SESSION_TOKEN
 unset AWS_SECURITY_TOKEN
 unset ASSUMED_ROLE
 
-eval $(command assume-role "${AWS_PROFILE}")
+# The sed at the end is when using this script on Windows from git bash.
+# There the assume-role is a win program and generates output for Powershell.
+eval $(command assume-role "${AWS_PROFILE}" | sed -e "s/\$env:/export /g")
 
 CURRENT_ACCOUNT_ID=$(get_current_account)
 
