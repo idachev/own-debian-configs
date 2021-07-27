@@ -21,7 +21,7 @@ export SYS_JAVA_HOME=${SYS_JAVA_HOME_8}
 
 export JAVA_HOME=${SYS_JAVA_HOME}
 
-export MAVEN_OPTS="-Xmx4192m -XX:MaxPermSize=256m -Dorg.slf4j.simpleLogger.showDateTime=true -Dorg.slf4j.simpleLogger.dateTimeFormat=yyyy-MM-dd'T'HH:mm:ss.SSSZ -Duser.timezone=UTC"
+export MAVEN_OPTS="-Xmx4192m -Dorg.slf4j.simpleLogger.showDateTime=true -Dorg.slf4j.simpleLogger.dateTimeFormat=yyyy-MM-dd'T'HH:mm:ss.SSSZ -Duser.timezone=UTC"
 export MAVEN_HOME=${LOCAL_LIB}/maven
 
 export PATH=$PATH:${MAVEN_HOME}/bin
