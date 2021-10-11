@@ -29,13 +29,15 @@ fi
 
 OPEN_SSL_ENC="openssl enc -aes-256-cbc -pass env:PASSWORD_1 "${DO_DECRYPT_FLAG}" -a -iter 10000 -md md5 -in "${TMP_FILE}
 
-for (( i=1; i<=${NUMBER_WORDS}; i++ )); do
+echo "${OPEN_SSL_ENC}"
+
+for ((i = 1; i <= ${NUMBER_WORDS}; i++)); do
   echo -n "${i}: "
   read -s PLAIN_WORD
 
   rm -f "${TMP_FILE}"
   touch "${TMP_FILE}"
-  echo "${PLAIN_WORD}" > "${TMP_FILE}"
+  echo "${PLAIN_WORD}" >"${TMP_FILE}"
 
   echo "$(PASSWORD_1="${PASSWORD_1}" ${OPEN_SSL_ENC})"
 done
