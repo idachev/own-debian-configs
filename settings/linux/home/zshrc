@@ -234,10 +234,15 @@ fi
 # kubectl
 
 if which kubectl > /dev/null 2>&1; then
- source <(kubectl completion zsh)
+  source <(kubectl completion zsh)
 fi
 
 #THIS MUST BE AT THE END OF THE FILE FOR SDKMAN TO WORK!!!
 export SDKMAN_DIR="${HOME}/.sdkman"
 [[ -s "${HOME}/.sdkman/bin/sdkman-init.sh" ]] && source "${HOME}/.sdkman/bin/sdkman-init.sh"
+
+
+if [ -f "~/bin/aws-vault" ]; then
+  eval "$(aws-vault --completion-script-zsh)"
+fi
 

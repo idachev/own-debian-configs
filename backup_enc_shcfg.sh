@@ -39,9 +39,13 @@ TGZ_FILE_ENC_2="${BACKUP_DIR_2_ENCRYPTED}/${TGZ_NAME}.7z"
 echo -e "\nArchive:"
 ls -alh "${BACKUP_SRC_DIR}"
 
-sudo "${DIR}/tar_pigz.sh" "${TGZ_FILE}" "${BACKUP_SRC_DIR}"
+if [ "${USE_SUDO}" = "1" ]; then
+  sudo "${DIR}/tar_pigz.sh" "${TGZ_FILE}" "${BACKUP_SRC_DIR}" "${BACKUP_SRC_EXCLUDE}"
 
-sudo chown "${USER}:${USER}" "${TGZ_FILE}"
+  sudo chown "${USER}:${USER}" "${TGZ_FILE}"
+else
+  "${DIR}/tar_pigz.sh" "${TGZ_FILE}" "${BACKUP_SRC_DIR}" "${BACKUP_SRC_EXCLUDE}" 
+fi
 
 echo -e "\nCreated tgz:"
 ls -alh "${TGZ_FILE}"

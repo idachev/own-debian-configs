@@ -149,7 +149,19 @@ asp() {
     export AWS_EB_PROFILE=$1
 }
 
-alias aws-unset-session='unset AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY AWS_SESSION_TOKEN'
+alias aws-unset-session='unset AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY AWS_SESSION_TOKEN AWS_SECURITY_TOKEN'
+
+awsl() {
+  if [[ -z "$1" ]]; then
+    echo -e "Expect a AWS profile check aws-vault list"
+    return
+  fi
+
+  local url=$(aws-vault login $1 --stdout)
+  google-chrome "https://signin.aws.amazon.com/oauth?Action=logout"
+  sleep 1
+  google-chrome "${url}"
+}
 
 # Kubectl
 
