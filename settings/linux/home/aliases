@@ -151,16 +151,54 @@ asp() {
 
 alias aws-unset-session='unset AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY AWS_SESSION_TOKEN AWS_SECURITY_TOKEN'
 
-awsl() {
+alias awsv='aws-vault list'
+
+awsvl() {
   if [[ -z "$1" ]]; then
     echo -e "Expect a AWS profile check aws-vault list"
     return
   fi
 
   local url=$(aws-vault login $1 --stdout)
+
   google-chrome "https://signin.aws.amazon.com/oauth?Action=logout"
+
   sleep 1
+
   google-chrome "${url}"
+}
+
+awsvlp() {
+  if [[ -z "$1" ]]; then
+    echo -e "Expect a AWS profile check aws-vault list"
+    return
+  fi
+
+  local url=$(aws-vault login $1 --stdout)
+
+  google-chrome -incognito "https://signin.aws.amazon.com/oauth?Action=logout"
+
+  sleep 1
+
+  google-chrome -incognito "${url}"
+}
+
+awsvep() {
+  if [[ -z "$1" ]]; then
+    echo -e "Expect a AWS profile check aws-vault list"
+    return
+  fi
+
+  aws-vault exec "$1" -- env | grep '^AWS_'
+}
+
+awsve() {
+  if [[ -z "$1" ]]; then
+    echo -e "Expect a AWS profile check aws-vault list"
+    return
+  fi
+
+  aws-vault exec "$1" -- env | grep '^AWS_' | while read line; do echo export "$line"; done
 }
 
 # Kubectl
