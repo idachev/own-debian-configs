@@ -125,8 +125,9 @@ alias assume-role='source aws_assume_role.sh $@'
 
 # AWS Profiles
 
-aws_profiles() {
+aspl() {
     [[ -r "${AWS_CONFIG_FILE:-$HOME/.aws/config}" ]] || return 1
+
     grep --color=auto --exclude-dir={.bzr,CVS,.git,.hg,.svn} \
       '\[profile' "${AWS_CONFIG_FILE:-$HOME/.aws/config}" | \
       sed -e 's/.*profile \([a-zA-Z0-9_\.-]*\).*/\1/'
@@ -138,12 +139,14 @@ asp() {
         echo -e "AWS profile cleared."
         return
     fi
+
     local available_profiles=($(aws_profiles))
     if [[ -z "${available_profiles[(r)$1]}" ]]; then
         echo "${fg[red]}Profile '$1' not found in '${AWS_CONFIG_FILE:-$HOME/.aws/config}'" >&2
         echo "Available profiles: ${(j:, :)available_profiles:-no profiles found}${reset_color}" >&2
         return 1
     fi
+
     export AWS_DEFAULT_PROFILE=$1
     export AWS_PROFILE=$1
     export AWS_EB_PROFILE=$1
@@ -161,11 +164,11 @@ awsvl() {
 
   local url=$(aws-vault login $1 --stdout)
 
-  google-chrome "https://signin.aws.amazon.com/oauth?Action=logout"
+  "${BROWSER}" "https://signin.aws.amazon.com/oauth?Action=logout"
 
   sleep 1
 
-  google-chrome "${url}"
+  "${BROWSER}" "${url}"
 }
 
 awsvlp() {
@@ -176,11 +179,11 @@ awsvlp() {
 
   local url=$(aws-vault login $1 --stdout)
 
-  google-chrome -incognito "https://signin.aws.amazon.com/oauth?Action=logout"
+  "${BROWSER}" -incognito "https://signin.aws.amazon.com/oauth?Action=logout"
 
   sleep 1
 
-  google-chrome -incognito "${url}"
+  "${BROWSER}" -incognito "${url}"
 }
 
 awsvep() {

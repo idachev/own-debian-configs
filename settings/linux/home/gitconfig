@@ -26,7 +26,7 @@
   quick-stats = ! /usr/local/bin/git-quick-stats
   fap = fetch --all --prune
   sha = log --pretty=format:'%h' -n 1
-  pub = "!f() { git pull; git fap; git br; }; f"
+  pub = "!f() { git pull; git fap; git brm; }; f"
   rescue = "!f() { \
       git fsck --full --no-reflogs --unreachable --lost-found | \
       grep commit | \
