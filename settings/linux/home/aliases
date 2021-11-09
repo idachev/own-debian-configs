@@ -117,7 +117,7 @@ alias dkrm-old='docker ps --filter "status=exited" | awk '\''{print $1}'\'' | xa
 
 alias tmux="tmux -2"
 
-alias ktmux="ps ax | grep tmux | awk '{ print $1 }' | xargs kill"
+alias ktmux='ps ax | grep tmux | awk '\''{ print $1 }'\'' | xargs kill'
 
 alias prettyjson='python -m json.tool'
 
@@ -142,7 +142,7 @@ asp() {
         return
     fi
 
-    local available_profiles=($(aws_profiles))
+    local available_profiles=($(aspl))
     if [[ -z "${available_profiles[(r)$1]}" ]]; then
         echo "${fg[red]}Profile '$1' not found in '${AWS_CONFIG_FILE:-$HOME/.aws/config}'" >&2
         echo "Available profiles: ${(j:, :)available_profiles:-no profiles found}${reset_color}" >&2
