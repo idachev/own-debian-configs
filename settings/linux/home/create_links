@@ -125,6 +125,8 @@ else
 
   link $BASEDIR/gconf $HOME/.gconf
 
+  link $BASEDIR/awsenv $HOME/.awsenv
+
   link ~/Dropbox/fonts $HOME/.fonts
  
 fi

@@ -66,6 +66,9 @@ if [ -f ~/.oracleenv ]; then
   . ~/.oracleenv
 fi
 
+if [ -f ~/.awsenv ]; then
+  . ~/.awsenv
+fi
 
 # Add local PC shell settings
 # Disable this if you use rsync and ssh or scp
