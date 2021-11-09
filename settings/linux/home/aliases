@@ -117,6 +117,8 @@ alias dkrm-old='docker ps --filter "status=exited" | awk '\''{print $1}'\'' | xa
 
 alias tmux="tmux -2"
 
+alias ktmux="ps ax | grep tmux | awk '{ print $1 }' | xargs kill"
+
 alias prettyjson='python -m json.tool'
 
 alias pssh='psg ssh'
