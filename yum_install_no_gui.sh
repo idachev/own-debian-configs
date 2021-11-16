@@ -57,4 +57,6 @@ sudo -H pip3 install -U pip
 sudo -H pip3 install setuptools
 sudo -H pip3 install docker-compose
 
+sudo -H pip3 install yubikey-manager
+
 sudo sss_override user-add "${USER}" --shell=/bin/zsh

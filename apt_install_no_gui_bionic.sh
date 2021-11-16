@@ -39,6 +39,7 @@ sudo -H apt-get -y install pcsc-tools pcscd opensc libnss3-tools sshpass nmap py
 sudo -H apt-get -y install pyqt4-dev-tools lrzip p7zip p7zip-full libimage-exiftool-perl
 sudo -H apt-get -y install ffmpeg postgresql-client python-dev fdupes fslint gthumb mc archivemount
 sudo -H apt-get -y install openssh-server maven libcurl4-openssl-dev gcc g++ make pv acpitool pavucontrol
+sudo -H apt-get -y install libpcsclite-dev swig
 
 sudo -H apt-get -y install docker.io
 
@@ -65,6 +66,7 @@ sudo -H pip3 install -U pip
 sudo -H pip3 install setuptools
 sudo -H pip3 install docker-compose
 sudo -H pip3 install validators
+sudo -H pip3 install yubikey-manager
 
 # thirdparty pip
 
