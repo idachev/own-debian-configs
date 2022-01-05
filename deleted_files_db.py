@@ -31,6 +31,8 @@ DELETED_FILES_DB = "deleted_files.db"
 
 DEFAULT_THREADS = 1
 
+TO_DELETE_DIR = '.to-delete'
+
 # ========================================
 # Defines
 
@@ -187,6 +189,8 @@ class DeletedFilesManage:
         self._deleted_db_map = self._read_db()
         self._to_delete_db_map = {}
 
+        self._files_for_delete_dir = path.join(self._files_root, TO_DELETE_DIR)
+
     def _read_db(self):
         """
         Parse our DB file.
@@ -301,7 +305,7 @@ class DeletedFilesManage:
 
         db_map[db_item.hash] = db_item
 
-    def delete_files(self):
+    def mark_delete_files(self):
         """
         Find files that need to be deleted and report them
         """
@@ -331,23 +335,32 @@ class DeletedFilesManage:
                     dst_item.name, dst_item.size, src_item.name, src_item.size))
                 continue
 
-            to_delete_path = path.join(self._files_root, dst_item.name)
-
             deleted_files_count += 1
 
-            if self._dry_run:
-                log_verbose("DRY RUN Deleting: %s" % to_delete_path)
-
-                continue
-
-            log_verbose("Deleting: %s" % to_delete_path)
-            os.remove(to_delete_path)
-
+            to_delete_path = self._move_file_to_dir_inc_existing(dst_item.name, self._files_root, self._files_for_delete_dir)
+            log_verbose("Move for deleting: %s" % to_delete_path)
 
         if self._dry_run:
             log_verbose("DRY RUN")
 
         log_verbose("Deleted files: %d" % deleted_files_count)
+
+    def _move_file_to_dir_inc_existing(self, name, src_dir, dst_dir):
+        f1 = path.join(src_dir, name)
+        f2 = path.join(dst_dir, name)
+
+        i = 0
+        while path.exists(f2):
+            f2 = path.join(dst_dir, name + '_' + str(i))
+            i += 1
+
+        if not self._dry_run:
+            if not path.exists(dst_dir):
+                os.makedirs(dst_dir)
+
+            os.renames(f1, f2)
+
+        return f2
 
 
 # ========================================
