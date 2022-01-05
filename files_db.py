@@ -6,7 +6,6 @@
 import argparse
 import hashlib
 import math
-import numpy as np
 import os
 import pickle
 import stat
@@ -15,6 +14,8 @@ import timeit
 from datetime import datetime, timezone, timedelta
 from multiprocessing import Queue, Process
 from os import path
+
+import numpy as np
 
 # ========================================
 # Settings
@@ -418,12 +419,14 @@ class FilesManage:
         log_verbose("Update DB")
         self._fill_db(self._files_src_root, self._src_db_map)
 
+        if self._dry_run:
+            log_verbose("DRY RUN")
+
+            return
+
         self._write_db(self._src_db_map, self._files_db)
 
         self._write_cache(self._file_cache_map, self._files_cache)
-
-        if self._dry_run:
-            log_verbose("DRY RUN")
 
     def _add_to_db(self, db_map, root_dir, db_item):
         """
