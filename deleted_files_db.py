@@ -450,7 +450,7 @@ def main():
         log_verbose("Updated DB for: %d seconds" % (timeit.default_timer() - t0))
     elif DELETE_FILES:
         t0 = timeit.default_timer()
-        inst.delete_files()
+        inst.mark_delete_files()
         log_verbose("Deleted files from root for: %d seconds" % (timeit.default_timer() - t0))
 
 

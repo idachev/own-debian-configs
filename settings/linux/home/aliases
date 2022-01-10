@@ -266,3 +266,20 @@ alias kafkacat-dc="docker run -it --rm \
   confluentinc/cp-kafkacat \
   kafkacat"
 
+# Software
+
+cleanup_mvn_target_dirs() {
+  DOIT=$1
+  find . -type d -iname "target" | \
+    while read line
+    do
+      if [ -f "${line}/../pom.xml" ]; then
+        if [ "${DOIT}" = "doit" ]; then
+          rm -rf "${line}"
+        else
+          echo "[DRY RUN] rm -rf ${line}"
+        fi
+      fi
+    done
+}
+
