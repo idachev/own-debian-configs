@@ -283,3 +283,18 @@ cleanup_mvn_target_dirs() {
     done
 }
 
+mvn() {
+  local dir="$PWD"
+  while [[ ! -x "${dir}/mvnw" && "${dir}" != / ]]; do
+    dir="${dir:h}"
+  done
+
+  if [[ -x "${dir}/mvnw" ]]; then
+    echo "Running \`${dir}/mvnw\`..." >&2
+    "${dir}/mvnw" "$@"
+    return $?
+  fi
+
+  command mvn "$@"
+}
+
