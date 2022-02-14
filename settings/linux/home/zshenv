@@ -8,7 +8,7 @@ export LD_LIBRARY_PATH
 ###########################################################
 # Export vars
 
-export LOCAL_LIB=$HOME/lib
+export LOCAL_LIB=${HOME}/lib
 
 export LOCAL_JAVA_HOME_32=$LOCAL_LIB/java/jre1.6.0_34
 export LOCAL_JAVA_HOME_64=$LOCAL_LIB/java/jre1.6.0_34_x64
@@ -24,7 +24,7 @@ export JAVA_HOME=${SYS_JAVA_HOME}
 export MAVEN_OPTS="-Xmx4192m -Dorg.slf4j.simpleLogger.showDateTime=true -Dorg.slf4j.simpleLogger.dateTimeFormat=yyyy-MM-dd'T'HH:mm:ss.SSSZ -Duser.timezone=UTC"
 export MAVEN_HOME=${LOCAL_LIB}/maven
 
-export PATH=$PATH:${MAVEN_HOME}/bin
+export PATH=${PATH}:${MAVEN_HOME}/bin
 
 # PyCharm
 #export PYCHARM_JDK=$LOCAL_JAVA_HOME_32
@@ -40,14 +40,17 @@ export WEBIDE_JDK=${SYS_JAVA_HOME_7}
 # ThisnkOrSwim
 export INSTALL4J_JAVA_HOME=${SYS_JAVA_HOME_8}
 
-# Add custom scripts to bin
-export PATH=$PATH:/usr/share/fslint/fslint:$HOME/bin
+# Add custom scripts to ~/bin
+export PATH=${PATH}:/usr/share/fslint/fslint:${HOME}/bin
+
+# Add one binary programs to ~/lib/bin
+export PATH=${PATH}:${HOME}/lib/bin
 
 # Add pip local bin
-export PATH=$PATH:$HOME/.local/bin
+export PATH=${PATH}:${HOME}/.local/bin
 
 # Add go bin
-export PATH=$PATH:$HOME/go/bin
+export PATH=${PATH}:${HOME}/go/bin
 
 # Perforce custom envs
 export P4CONFIG=.p4config
@@ -56,11 +59,11 @@ export P4MERGE=kdiff3
 
 export PYTHONPATH=$PYTHONPATH:~/lib/pywikipedia/
 
-export GTEST_DIR=$HOME/develop/private/gtest/gtest-1.6.0
+export GTEST_DIR=${HOME}/develop/private/gtest/gtest-1.6.0
 
-export RSYNC_PARTIAL_DIR=$HOME/.rsync-tmp
+export RSYNC_PARTIAL_DIR=${HOME}/.rsync-tmp
 
-export HELM_HOME=$HOME/.helm
+export HELM_HOME=${HOME}/.helm
 
 if [ -f ~/.oracleenv ]; then
   . ~/.oracleenv
