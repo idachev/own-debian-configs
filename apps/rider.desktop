@@ -1,0 +1,11 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Rider
+Exec="/home/idachev/lib/rider/bin/rider.sh" %f
+Icon=/home/idachev/lib/rider/bin/rider.png
+Comment=Develop with pleasure!
+Categories=Development;IDE;C#
+Terminal=false
+StartupNotify=true
+Name[en_US]=Rider

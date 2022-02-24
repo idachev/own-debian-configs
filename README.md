@@ -42,3 +42,10 @@ To install all useful programs call
 ```
 apt_install_all_goodies.sh
 ```
+
+# Custom Settings
+
+## Terminal Profiles
+
+Check `settings/linux/home/_manual_/gnome-terminal`
+

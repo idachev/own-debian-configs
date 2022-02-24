@@ -217,7 +217,9 @@ alias kgpw='kg pods -o wide'
 alias kgd='kg deployments'
 alias kga='kg all'
 alias kgst='kg statefulset'
-alias kgn='kg namespace'
+alias kgn='kg namespace --show-labels'
+
+alias kgc='kubectl config get-contexts'
 
 alias kd='k describe'
 alias kds='kd service'
@@ -252,6 +254,10 @@ fi
 
 ksn() {
   kubectl config set-context --current --namespace=$1
+}
+
+ksc() {
+  kubectl config use-context $1
 }
 
 # Helm
@@ -290,11 +296,15 @@ mvn() {
   done
 
   if [[ -x "${dir}/mvnw" ]]; then
-    echo "Running \`${dir}/mvnw\`..." >&2
+    echo -e "Running \`${dir}/mvnw\`...\n" >&2
+    "${dir}/mvnw" -v >&2
+    echo '' >&2
     "${dir}/mvnw" "$@"
     return $?
   fi
 
+  command mvn -v >&2
+  echo '' >&2
   command mvn "$@"
 }
 
