@@ -24,6 +24,10 @@ echo "deb [arch=amd64] https://packages.microsoft.com/repos/azure-cli/ ${UBUNTU_
 ################################################################################
 # Setup for Java and others
 
+wget -qO - https://www.mongodb.org/static/pgp/server-5.0.asc | sudo apt-key add -
+echo "deb [ arch=amd64,arm64 ] https://repo.mongodb.org/apt/ubuntu ${UBUNTU_RELEASE}/mongodb-org/5.0 multiverse" | \
+  sudo tee /etc/apt/sources.list.d/mongodb-org-5.0.list
+
 sudo -H dpkg --add-architecture i386
 
 sudo -H apt update
@@ -32,8 +36,8 @@ packages=( openjdk-8-jdk openjdk-8-dbg openjdk-8-source \
   openjdk-11-jdk openjdk-11-dbg openjdk-11-source \
   htop ncdu vim tmux zsh git gitk zip aspell aptitude keychain gparted smartmontools \
   build-essential nvme-cli exuberant-ctags npm cpulimit python3-pip pcsc-tools pcscd opensc \
-  libnss3-tools sshpass nmap python-pyqtgraph socat pyqt4-dev-tools lrzip p7zip p7zip-full \
-  libimage-exiftool-perl ffmpeg postgresql-client python-dev fdupes fslint gthumb mc \
+  libnss3-tools sshpass nmap python3-pyqtgraph socat lrzip p7zip p7zip-full \
+  libimage-exiftool-perl ffmpeg postgresql-client python-dev fdupes gthumb mc \
   archivemount openssh-server maven libcurl4-openssl-dev gcc g++ make pv acpitool pavucontrol \
   libpcsclite-dev swig docker.io azure-cli mongodb-org-shell mongodb-org-tools )
 
@@ -43,7 +47,7 @@ done
 
 pip install -U pip
 
-packages=( setuptools jump pbkdf2 bcrypt RBTools natsort numpy )
+packages=( setuptools pbkdf2 bcrypt RBTools natsort numpy )
 
 for i in "${packages[@]}"; do
   pip install "$i"
@@ -54,7 +58,7 @@ pip3 install -U pip
 packages=( setuptools docker-compose validators yubikey-manager )
 
 for i in "${packages[@]}"; do
-  pipe install "$i"
+  pip3 install "$i"
 done
 
 # thirdparty pip
