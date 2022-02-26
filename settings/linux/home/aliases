@@ -22,10 +22,11 @@ alias rm='rm -i'
 alias cp='cp -i'
 alias mv='mv -i'
 
-# Default to human readable figures
+# Disk/dir utils...
 alias df='df -h'
 alias du='du -h'
 alias ncdu='ncdu -q'
+alias ddiff="sudo ${HOME}/bin/diff_dir.sh"
 
 # Misc :)
 alias less='less -r'                          # raw control characters

@@ -81,6 +81,7 @@ if [ -f ~/.localenv ]; then
   . ~/.localenv
 fi
 
-crypt_check.sh
-
+if [[ -o interactive ]]; then
+  crypt_check.sh
+fi
 
