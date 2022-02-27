@@ -26,60 +26,6 @@ shell_patterns=0
 2       Call the info hypertext browser
         info
 
-= t d
-3       Compress the current subdirectory (tar.gz)
-	Pwd=`basename %d /`
-	echo -n "Name of the compressed file (without extension) [$Pwd]: "
-	read tar
-        if [ "$tar"x = x ]; then tar="$Pwd"; fi
-	cd .. && \
-	tar cf - "$Pwd" | gzip -f9 > "$tar.tar.gz" && \
-	echo "../$tar.tar.gz created."
-
-4       Compress the current subdirectory (tar.bz2)
-	Pwd=`basename %d /`
-	echo -n "Name of the compressed file (without extension) [$Pwd]: "
-	read tar
-        if [ "$tar"x = x ]; then tar="$Pwd"; fi
-	cd .. && \
-	tar cf - "$Pwd" | bzip2 -f > "$tar.tar.bz2" && \
-	echo "../$tar.tar.bz2 created."
-
-5       Compress the current subdirectory (tar.p7)
-	Pwd=`basename %d /`
-	echo -n "Name of the compressed file (without extension) [$Pwd]: "
-	read tar
-        if [ "$tar"x = x ]; then tar="$Pwd"; fi
-	cd .. && \
-	tar cf - "$Pwd" | 7za a -si "$tar.tar.7z" && \
-	echo "../$tar.tar.7z created."
-
-6       Compress the current subdirectory (tar.lzma)
-	Pwd=`basename %d /`
-	echo -n "Name of the compressed file (without extension) [$Pwd]: "
-	read tar
-        if [ "$tar"x = x ]; then tar="$Pwd"; fi
-	cd .. && \
-	tar cf - "$Pwd" | lzma -f > "$tar.tar.lzma" && \
-	echo "../$tar.tar.lzma created."
-
-7       Compress the current subdirectory (tar.lz)
-	Pwd=`basename %d /`
-	echo -n "Name of the compressed file (without extension) [$Pwd]: "
-	read tar
-        if [ "$tar"x = x ]; then tar="$Pwd"; fi
-	cd .. && \
-	tar cf - "$Pwd" | lzip -f > "$tar.tar.lz" && \
-	echo "../$tar.tar.lz created."
-
-8       Compress the current subdirectory (tar.xz)
-	Pwd=`basename %d /`
-	echo -n "Name of the compressed file (without extension) [$Pwd]: "
-	read tar
-        if [ "$tar"x = x ]; then tar="$Pwd"; fi
-	cd .. && \
-	tar cf - "$Pwd" | xz -f > "$tar.tar.xz" && \
-	echo "../$tar.tar.xz created."
 = f \.c$ & t r
 + f \.c$ & t r & ! t t
         Compile and link current .c file
@@ -436,5 +382,12 @@ q       Diff with home
 a       Archive selected
         ~/bin/mc_archive_dir.sh '%d/%f'
 
+A       Archive selected with sudo
+        sudo ~/bin/mc_archive_dir.sh '%d/%f'
+
 w       ncdu
         ncdu '%d/%f'
+
+W       ncdu current dir
+        ncdu '%d'
+
