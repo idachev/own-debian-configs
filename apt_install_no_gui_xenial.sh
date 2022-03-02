@@ -1,4 +1,6 @@
 #!/bin/bash
+[ "$1" = -x ] && shift && set -x
+DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 UBUNTU_RELEASE=xenial
 
@@ -60,6 +62,11 @@ sudo -H apt update
 sudo -H apt install -y libgtk2-appindicator-perl shutter
 
 ################################################################################
+# Setup for Kubectl
+
+"${DIR}/install_kubectl.sh"
+
+################################################################################
 # Setup for Java and others
 
 sudo -H add-apt-repository -y ppa:ricotz/experimental
@@ -72,7 +79,7 @@ sudo -H apt-get update
 sudo -H apt-get -y install openjdk-8-jdk openjdk-8-dbg openjdk-8-source
 sudo -H apt-get -y install openjdk-11-jdk openjdk-11-dbg openjdk-11-source
 
-sudo -H apt-get -y install htop ncdu vim tmux zsh git gitk zip aspell aptitude
+sudo -H apt-get -y install htop ncdu vim tmux zsh git gitk zip aspell aptitude xsensors
 sudo -H apt-get -y install keychain gparted smartmontools build-essential nvme-cli exuberant-ctags
 sudo -H apt-get -y install cpulimit libgoo-canvas-perl python3-pip python-pip
 sudo -H apt-get -y install pcsc-tools pcscd opensc libnss3-tools sshpass nmap python-pyqtgraph socat

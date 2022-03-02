@@ -12,6 +12,7 @@ fi
 
 cd ${TARGET_DIR}
 
+sudo apt update
 sudo apt install -y git
 
 git clone https://github.com/idachev/own-debian-configs.git .

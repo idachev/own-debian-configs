@@ -12,6 +12,9 @@ fi
 
 cd ${TARGET_DIR}
 
+sudo apt update
+sudo apt install -y git
+
 git clone https://github.com/idachev/own-debian-configs.git .
 
 find . -type f -not -path "./.git/*" -print0 | xargs -0 sed -i "s/\/home\/idachev/${HOME}/g"
