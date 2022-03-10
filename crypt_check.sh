@@ -12,13 +12,13 @@ if [ ! -d ~/storage_private_docs/docs ]; then
   OK=0
 fi
 
-if [ ! -d ~/storage_ssd/lost+found ]; then
-  echo -e "\nDO: sudo ~/bin/luks_mount.sh /dev/nvme1n1 $(realpath ~/storage_ssd)"
+if [ ! -d ~/storage_b/lost+found ]; then
+  echo -e "\nDO: sudo ~/bin/luks_mount.sh /dev/nvme1n1 $(realpath ~/storage_b)"
   OK=0
 fi
 
-if [ ! -d ~/storage_2tb/lost+found ]; then
-  echo -e "\nDO: sudo ~/bin/luks_mount.sh /dev/sda $(realpath ~/storage_2tb)"
+if [ ! -d ~/storage_c/lost+found ]; then
+  echo -e "\nDO: sudo ~/bin/luks_mount.sh /dev/nvme2n1 $(realpath ~/storage_c)"
   OK=0
 fi
 

@@ -44,15 +44,17 @@ wget -qO - https://www.mongodb.org/static/pgp/server-5.0.asc | sudo apt-key add 
 echo "deb [ arch=amd64,arm64 ] https://repo.mongodb.org/apt/ubuntu ${UBUNTU_RELEASE}/mongodb-org/5.0 multiverse" | \
     sudo tee /etc/apt/sources.list.d/mongodb-org-5.0.list
 
+sudo add-apt-repository ppa:apandada1/brightness-controller
+
 sudo -H dpkg --add-architecture i386
 
 sudo -H apt update
 
 packages=( openjdk-8-jdk openjdk-8-dbg openjdk-8-source \
-  openjdk-11-jdk openjdk-11-dbg openjdk-11-source xsensors \
+  openjdk-11-jdk openjdk-11-dbg openjdk-11-source xsensors brightness-controller \
   htop ncdu vim tmux zsh git gitk zip aspell aptitude keychain gparted smartmontools \
   build-essential nvme-cli exuberant-ctags npm cpulimit python3-pip pcsc-tools pcscd opensc \
-  libnss3-tools sshpass nmap python3-pyqtgraph socat lrzip p7zip p7zip-full \
+  libnss3-tools sshpass nmap python3-pyqtgraph socat lrzip p7zip p7zip-full jq \
   libimage-exiftool-perl ffmpeg postgresql-client python-dev fdupes gthumb mc \
   archivemount openssh-server maven libcurl4-openssl-dev gcc g++ make pv acpitool pavucontrol \
   libpcsclite-dev swig docker.io azure-cli mongodb-org-shell mongodb-org-tools google-cloud-sdk )
