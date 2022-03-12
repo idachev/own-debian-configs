@@ -33,6 +33,7 @@ cat /root/.gnupg/mount/mount_dev_nvme1n1.enc | \
 ## Configure GPG
 
 In order GPG to use `gpg --pinentry-mode loopback` write this:
+
 ```text
 allow-loopback-pinentry
 ```
@@ -40,3 +41,10 @@ allow-loopback-pinentry
 Store this to: `/root/.gnupg/gpg-agent.conf`
 
 And restart the agent with: `gpg-connect-agent reloadagent /bye`
+
+To test use:
+
+```bash
+echo "test" | sudo gpg -q --encrypt --armor -r key@email.com | \
+  cat | sudo gpg --pinentry-mode loopback -q --decrypt
+```
