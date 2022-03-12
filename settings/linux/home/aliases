@@ -55,6 +55,10 @@ alias gcam='git ci -am'
 alias gk='gitk'
 alias gka='gitk --all'
 
+function git-find-merged() {
+  git branch --all --merged | egrep -v "(^\*|master|develop|dev|qa|production|staging|HEAD)" | sed 's/remotes\/origin\///g' | xargs echo -e "\ngit push origin --delete"
+}
+
 # Extended man viewer
 #alias man='pinfo -m'
 
