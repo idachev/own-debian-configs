@@ -22,7 +22,7 @@ packages=( shutter gnome-web-photo unrtf antiword poppler-utils \
   keepass2 xdotool okular kazam ttf-dejavu-core glogg xbacklight kate \
   handbrake psensor parcellite gwenview kdiff3 x2goclient pgadmin3 \
   libreoffice gpick spotify-client font-manager python-gtk2 xdotool \
-  gconf-editor )
+  gconf-editor vlc )
 
 for i in "${packages[@]}"; do
     sudo -H apt install -y "$i"

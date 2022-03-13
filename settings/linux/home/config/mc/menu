@@ -376,8 +376,8 @@ R       Rotate 90 right
 g       View with glogg
         glogg %d/%f
 
-q       Diff with home
-        sudo ~/bin/diff_path.sh %d/%f ~/%f
+q       Diff paths
+        ~/bin/diff_path.sh %d/%f %D/%F 
 
 a       Archive selected
         ~/bin/mc_archive_dir.sh %d/%f
