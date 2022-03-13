@@ -9,8 +9,9 @@ fi
 
 PARTITION_DEV=$1
 MOUNT_DIR=$2
+TARGET_USER=$3
 
-MOUNT_KEY_FILE="/root/.gnupg/mount/mount$(echo ${PARTITION_DEV} | sed -e 's/\//_/g').enc"
+MOUNT_KEY_FILE="/home/${TARGET_USER}/.gnupg/mount/mount$(echo ${PARTITION_DEV} | sed -e 's/\//_/g').enc"
 
 #DISK_DEV=$(echo ${PARTITION_DEV} | sed -e 's/[0-9]$//g')
 DISK_DEV=${PARTITION_DEV}
@@ -29,7 +30,7 @@ cryptsetup luksDump ${PARTITION_DEV}
 if [[ -f "${MOUNT_KEY_FILE}" ]]; then
   echo -e "\n\nUsing ${MOUNT_KEY_FILE} to decrypt:"
 
-  MOUNT_PASS=$(cat "${MOUNT_KEY_FILE}" | gpg --pinentry-mode loopback -q --decrypt)
+  MOUNT_PASS=$(cat "${MOUNT_KEY_FILE}" | sudo -u ${TARGET_USER} gpg --pinentry-mode loopback -q --decrypt)
 else
   echo -e "\n\nNot found ${MOUNT_KEY_FILE} using stdin"
 fi

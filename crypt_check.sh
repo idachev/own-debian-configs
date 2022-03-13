@@ -13,12 +13,12 @@ if [ ! -d ~/storage_private_docs/docs ]; then
 fi
 
 if [ ! -d ~/storage_b/lost+found ]; then
-  echo -e "\nDO: sudo ~/bin/luks_mount.sh /dev/nvme1n1 $(realpath ~/storage_b)"
+  echo -e "\nDO: sudo ~/bin/luks_mount.sh /dev/nvme1n1 $(realpath ~/storage_b) "'${USER}'
   OK=0
 fi
 
 if [ ! -d ~/storage_c/lost+found ]; then
-  echo -e "\nDO: sudo ~/bin/luks_mount.sh /dev/nvme2n1 $(realpath ~/storage_c)"
+  echo -e "\nDO: sudo ~/bin/luks_mount.sh /dev/nvme2n1 $(realpath ~/storage_c) "'${USER}'
   OK=0
 fi
 

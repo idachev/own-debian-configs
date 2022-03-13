@@ -4,7 +4,6 @@ fusermount -u ~/storage_a
 
 fusermount -u ~/storage_private_docs
 
-fusermount -u ~/storage/crypt
+sudo ~/bin/luks_umount.sh /dev/nvme1n1
 
-sudo ~/bin/luks_umount.sh /dev/sda
-
+sudo ~/bin/luks_umount.sh /dev/nvme2n1

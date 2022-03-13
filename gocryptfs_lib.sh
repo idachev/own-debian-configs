@@ -15,11 +15,11 @@ gocryptfs_mount() {
     echo -e "\nIf all OK do mount"
   fi
 
-  MOUNT_KEY_FILE="/root/.gnupg/mount/mount"$(echo "${CRYPT_DIR}" | sed -e 's/[\/\.]\+/_/g').enc
-  if sudo test -f "${MOUNT_KEY_FILE}"; then
+  MOUNT_KEY_FILE="${HOME}/.gnupg/mount/mount"$(echo "${CRYPT_DIR}" | sed -e 's/[\/\.]\+/_/g').enc
+  if [[ -f "${MOUNT_KEY_FILE}" ]]; then
     echo -e "\n\nUsing ${MOUNT_KEY_FILE} to decrypt:"
 
-    MOUNT_PASS=$(sudo cat "${MOUNT_KEY_FILE}" | sudo gpg --pinentry-mode loopback -q --decrypt)
+    MOUNT_PASS=$(cat "${MOUNT_KEY_FILE}" | gpg --pinentry-mode loopback -q --decrypt)
   else
     echo -e "\n\nNot found ${MOUNT_KEY_FILE} using stdin"
   fi
