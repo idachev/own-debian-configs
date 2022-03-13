@@ -22,9 +22,6 @@ alias rm='rm -i'
 alias cp='cp -i'
 alias mv='mv -i'
 
-alias cpg='advcp -g'
-alias mvg='advmv -g'
-
 # Disk/dir utils...
 alias df='df -h'
 alias du='du -h'
