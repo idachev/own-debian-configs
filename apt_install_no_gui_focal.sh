@@ -55,7 +55,7 @@ packages=( openjdk-8-jdk openjdk-8-dbg openjdk-8-source \
   htop ncdu vim tmux zsh git gitk zip aspell aptitude keychain gparted smartmontools \
   build-essential nvme-cli exuberant-ctags npm cpulimit python3-pip pcsc-tools pcscd opensc \
   libnss3-tools sshpass nmap python3-pyqtgraph socat lrzip p7zip p7zip-full jq \
-  libimage-exiftool-perl ffmpeg postgresql-client python-dev fdupes gthumb mc \
+  libimage-exiftool-perl ffmpeg postgresql-client python-dev fdupes gthumb mc progress \
   archivemount openssh-server maven libcurl4-openssl-dev gcc g++ make pv acpitool pavucontrol \
   libpcsclite-dev swig docker.io azure-cli mongodb-org-shell mongodb-org-tools google-cloud-sdk )
 

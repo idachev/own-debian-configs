@@ -353,41 +353,41 @@ o       Open next a free console
         open -s -- sh
 
 t       Touch file in inactive to be as file from active panel
-        touch -am -r '%d/%f' '%D/%F'
+        touch -am -r %d/%f %D/%F
 
 c       Compare with kdiff3
-        kdiff3 '%d/%f' '%D/%F'
+        kdiff3 %d/%f %D/%F
 
 K       Compare with cmp
-        cmp -l '%d/%f' '%D/%F'
+        cmp -l %d/%f %D/%F
 
 e       View with FBReader
-        fbreader '%f'
+        fbreader %f
 
 v       View vlc
-        vlc '%d/%f'
+        vlc %d/%f
 
 L       Rotate 90 left
-        nconvert_rotate_90_left.sh '%d/%f'
+        nconvert_rotate_90_left.sh %d/%f
 
 R       Rotate 90 right
-        nconvert_rotate_90_right.sh '%d/%f'
+        nconvert_rotate_90_right.sh %d/%f
 
 g       View with glogg
-        glogg '%d/%f'
+        glogg %d/%f
 
 q       Diff with home
-        sudo ~/bin/diff_path.sh '%d/%f' ~/'%f'
+        sudo ~/bin/diff_path.sh %d/%f ~/%f
 
 a       Archive selected
-        ~/bin/mc_archive_dir.sh '%d/%f'
+        ~/bin/mc_archive_dir.sh %d/%f
 
 A       Archive selected with sudo
-        sudo ~/bin/mc_archive_dir.sh '%d/%f'
+        sudo ~/bin/mc_archive_dir.sh %d/%f
 
 w       ncdu
-        ncdu '%d/%f'
+        ncdu %d/%f
 
 W       ncdu current dir
-        ncdu '%d'
+        ncdu %d
 
