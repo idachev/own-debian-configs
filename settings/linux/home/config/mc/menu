@@ -217,25 +217,6 @@ Y       Gzip or gunzip tagged files
           gzip $DECOMP -v $i
         done
 
-+ ! t t
-b       Bzip2 or bunzip2 current file
-        unset DECOMP
-	case %f in 
-	    *.bz2) DECOMP=-d;;
-	esac
-        bzip2 $DECOMP -v %f
-
-+ t t
-B       Bzip2 or bunzip2 tagged files
-        for i in %t
-        do
-          unset DECOMP
-	  case $i in 
-	    *.bz2) DECOMP=-d;;
-	  esac
-          bzip2 $DECOMP -v $i
-        done
-
 + f \.tar.gz$ | f \.tgz$ | f \.tpz$ | f \.tar.Z$ | f \.tar.z$ | f \.tar.bz2$ | f \.tar.F$ & t r & ! t t
 z       Extract compressed tar file to subdirectory
 	unset D
@@ -290,63 +271,9 @@ U       Extract compressed zip files to subdirectories
     mkdir $D; cd $D && (unzip ../$i)
   done
 
-+ f \.gz$ | f \.tgz$ | f \.tpz$ | f \.Z$ | f \.z$ | f \.bz2$ & t r & ! t t
-c       Convert gz<->bz2, tar.gz<->tar.bz2 & tgz->tar.bz2
-	unset D
-	unset EXT
-	case %f in
-	    *.tgz)	EXT=tgz;;
-	    *.tpz)	EXT=tpz;;
-	    *.Z)	EXT=Z;;
-	    *.z)	EXT=z;;
-	    *.gz)	EXT=gz;;
-	    *.bz2)	EXT=bz2;;
-	esac
-        case $EXT in
-	  tgz|tpz)	D="`basename %f .$EXT`.tar";;
-	  gz|Z|z)	D="`basename %f .$EXT`";;
-	  bz2)		D="`basename %f .bz2`";;
-        esac
-        if [ "$EXT" = "bz2" ]; then
-	    bunzip2 -v %f ; gzip -f9 -v $D
-	else
-	    gunzip -v %f ; bzip2 -v $D
-	fi
-
 + f \.3[G|g][P|p]$ & t r & ! t t
 p       Play with vlc
 	vlc %f
-
-+ t t
-C       Convert gz<->bz2, tar.gz<->tar.bz2 & tgz->tar.bz2
-	set %t
-	while [ -n "$1" ]
-        do
-	  unset D
-	  unset EXT
-	  case $1 in
-	    *.tgz)	EXT=tgz;;
-	    *.tpz)	EXT=tpz;;
-	    *.Z)	EXT=Z;;
-	    *.z)	EXT=z;;
-	    *.gz)	EXT=gz;;
-	    *.bz2)	EXT=bz2;;
-	  esac
-	  case $EXT in
-	      tgz)    D="`basename $1 .tgz`.tar";;
-              tpz)    D="`basename $1 .tpz`.tar";;
-	      gz|Z|z) D="`basename $1 .$EXT`";;
-	      bz2)    D="`basename $1 .bz2`";;
-	  esac
-	  if [ "$EXT" = "bz2" ]; then
-	    bunzip2 -v $1
-	    gzip -f9 -v $D
-	  else
-	    gunzip -v $1
-	    bzip2 -v $D
-	  fi
-	  shift
-        done
 
 + x /usr/bin/open | x /usr/local/bin/open & x /bin/sh
 o       Open next a free console
@@ -361,33 +288,49 @@ c       Compare with kdiff3
 K       Compare with cmp
         cmp -l %d/%f %D/%F
 
-e       View with FBReader
++ t f
+b       View with FBReader
         fbreader %f
 
++ t f
 v       View vlc
         vlc %d/%f
 
++ t f
 L       Rotate 90 left
         nconvert_rotate_90_left.sh %d/%f
 
++ t f
 R       Rotate 90 right
         nconvert_rotate_90_right.sh %d/%f
 
++ t f
 g       View with glogg
         glogg %d/%f
 
 q       Diff paths
         ~/bin/diff_path.sh %d/%f %D/%F 
 
++ t d
 a       Archive selected
         ~/bin/mc_archive_dir.sh %d/%f
 
++ t d
 A       Archive selected with sudo
         sudo ~/bin/mc_archive_dir.sh %d/%f
 
++ t d
 w       ncdu
         ncdu %d/%f
 
 W       ncdu current dir
         ncdu %d
+
++ t d
+f       fdupes current dir
+        fdupes -dr -o name %d %d
+
++ t f
+e       7z enc file
+        7z_enc_file.sh %d/%f
 

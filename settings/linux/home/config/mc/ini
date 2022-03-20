@@ -19,7 +19,7 @@ confirm_overwrite=true
 confirm_execute=true
 confirm_exit=true
 confirm_directory_hotlist_delete=true
-safe_delete=false
+safe_delete=true
 mouse_repeat_rate=100
 double_click_speed=250
 use_8th_bit_as_meta=false
@@ -103,7 +103,7 @@ editor_drop_selection_on_copy=true
 editor_state_full_filename=true
 editor_stop_format_chars=-+*\\,.;:&>
 
-safe_overwrite=false
+safe_overwrite=true
 
 [Layout]
 message_visible=true
@@ -154,6 +154,8 @@ content_regexp=false
 content_first_hit=false
 content_whole_words=false
 content_all_charsets=false
+
+ignore_dirs_enable=true
 
 [Panels]
 kilobyte_si=true

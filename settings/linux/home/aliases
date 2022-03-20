@@ -12,6 +12,7 @@ alias mem="free -m"
 alias psg="ps ax | grep"
 alias gvim="gvim -geom 132x42"
 alias rh='echo '\''cleanup from hist:'\'';sed -n -e '\''${x;1!p;};h'\'' ~/.histfile;sed -i '\''$d'\'' ~/.histfile'
+alias gzip='gzip -9'
 
 # Archives
 alias tarcpz="tar c --use-compress-program=pigz -f"

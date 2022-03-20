@@ -1,0 +1,16 @@
+# m h  dom mon dow   command
+
+*/5 * * * * /home/idachev/bin/dbus_crontab_exec.sh dbus-daemon idachev /home/idachev/bin/battery_status_notify.sh > /dev/null 2>&1
+
+*/10 * * * * /home/idachev/bin/dbus_crontab_exec.sh dbus-daemon idachev /home/idachev/bin/wallpaper.sh ~/Dropbox/pics/Astronomy > /dev/null 2>&1
+
+#1 */2 * * * /home/idachev/bin/dbus_crontab_exec.sh dbus-daemon idachev /home/idachev/bin/dropbox_restart.sh > /dev/null 2>&1
+
+15 */3 * * * /home/idachev/bin/dbus_crontab_exec.sh dbus-daemon idachev /home/idachev/bin/docker_new_version_monitor.sh maven maven:3-openjdk-11 maven@sha256:194b6c025a5d73003648a91abd44c44a099f25bd54e834e97efa535827f2a69c > /dev/null 2>&1
+
+5 */3 * * * /home/idachev/Dropbox/sync/sync_laptop.sh doit >> /tmp/cron_dropbox_sync.log 2>&1
+
+4 */4 * * * /home/idachev/develop/personal/nasa-photos/cron-batch.sh > /dev/null 2>&1
+
+0 */4 * * * /home/idachev/bin/docker-rm-dangling.sh >> /tmp/cron_docker_rm_dangling.log 2>&1
+

@@ -2,7 +2,25 @@
 [ "$1" = -x ] && shift && set -x
 DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-brightnessctl set 10-
+currentBrightness=$(brightnessctl g)
+maxBrightness=$(brightnessctl m)
 
-zenity --width 300 --notification \
-  --text "Brightness level: $(cat /sys/class/backlight/intel_backlight/brightness)" --timeout 1 &
+scale=1000
+if (( ${currentBrightness} < ${maxBrightness}/50 )); then
+  scale=100
+elif (( ${currentBrightness} < ${maxBrightness}/20 )); then
+  scale=250
+elif (( ${currentBrightness} < ${maxBrightness}/10 )); then
+  scale=500
+fi
+
+if (( ${currentBrightness} <= 1 )); then
+  brightnessctl set 0
+elif (( ${currentBrightness} <= 100 )); then
+  brightnessctl set 1
+else
+  brightnessctl set ${scale}-
+fi
+
+yad --no-buttons --borders 30 --timeout 1 --text-align center --on-top --undecorated \
+  --text "<span size=\"x-large\" color=\"#000000\">Brightness\n<b>$(cat /sys/class/backlight/intel_backlight/brightness)</b></span>" &
