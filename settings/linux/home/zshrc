@@ -129,7 +129,7 @@ export BROWSER="google-chrome"
 export XTERM="aterm +sb -geometry 80x29 -fg black -bg lightgoldenrodyellow -fn -xos4-terminus-medium-*-normal-*-14-*-*-*-*-*-iso8859-15"
 
 #export VIDEO_PLAYER="totem"
-export VIDEO_PLAYER="vlc"
+export VIDEO_PLAYER="smplayer"
 
 export IMAGE_VIEW="gthumb"
 

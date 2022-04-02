@@ -15,6 +15,8 @@ sudo -H apt-add-repository -y ppa:jtaylor/keepass
 
 sudo -H add-apt-repository -y ppa:linuxuprising/shutter
 
+sudo -H add-apt-repository -y ppa:rvm/smplayer
+
 sudo -H apt update
 
 packages=( shutter gnome-web-photo unrtf antiword poppler-utils \
@@ -22,7 +24,7 @@ packages=( shutter gnome-web-photo unrtf antiword poppler-utils \
   keepass2 xdotool okular kazam ttf-dejavu-core glogg xbacklight kate \
   handbrake psensor parcellite gwenview kdiff3 x2goclient pgadmin3 \
   libreoffice gpick spotify-client font-manager python-gtk2 xdotool \
-  gconf-editor vlc )
+  gconf-editor vlc smplayer smtube smplayer-themes smplayer-skins mpv )
 
 for i in "${packages[@]}"; do
     sudo -H apt install -y "$i"

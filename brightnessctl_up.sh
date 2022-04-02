@@ -16,5 +16,6 @@ fi
 
 brightnessctl set +${scale}
 
-yad --no-buttons --borders 30 --timeout 1 --text-align center --on-top --undecorated \
-  --text "<span size=\"x-large\" color=\"#000000\">Brightness\n<b>$(cat /sys/class/backlight/intel_backlight/brightness)</b></span>" &
+yad --no-buttons --borders 30 --timeout 1 --text-align center \
+  --on-top --undecorated --skip-taskbar --sticky \
+  --text "<span size=\"x-large\">Brightness\n<b>$(cat /sys/class/backlight/intel_backlight/brightness)</b></span>" &
