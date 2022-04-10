@@ -1,0 +1,6 @@
+#!/usr/bin/env xdg-open
+[Desktop Entry]
+Type=Application
+Name=JProfiler
+Exec="/home/idachev/lib/jprofiler10/bin/jprofiler" 
+Icon=/home/idachev/lib/jprofiler10/.install4j/jprofiler.png

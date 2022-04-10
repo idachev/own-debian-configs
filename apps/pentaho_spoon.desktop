@@ -1,0 +1,22 @@
+#!/usr/bin/env xdg-open
+
+[Desktop Entry]
+Categories=Development;Pentaho;DB;SQL;
+Comment[en_US]=Pentaho Spoon
+Comment=Pentaho Spoon
+Exec=/home/idachev/lib/pdi-ce/data-integration/spoon.sh
+GenericName[en_US]=
+GenericName=
+Icon=/home/idachev/lib/pdi-ce/data-integration/spoon.png
+MimeType=
+Name=Pentaho Spoon
+Path=/home/idachev/lib/pdi-ce/data-integration/
+StartupNotify=true
+Terminal=false
+TerminalOptions=
+Type=Application
+X-DBUS-ServiceName=
+X-DBUS-StartupType=
+X-KDE-SubstituteUID=false
+X-KDE-Username=
+Name[en_US]=Dev Pentaho Spoon

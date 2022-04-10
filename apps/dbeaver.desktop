@@ -1,3 +1,5 @@
+#!/usr/bin/env xdg-open
+
 [Desktop Entry]
 Version=1.0
 Type=Application
@@ -9,3 +11,4 @@ Path=/usr/share/dbeaver/
 Exec=/usr/share/dbeaver/dbeaver
 Icon=/usr/share/dbeaver/icon.xpm
 Categories=IDE;Development
+Name[en_US]=DB DBeaver

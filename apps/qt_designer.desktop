@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Version=0.9.4
+Name=Qt Designer
+Comment=Run Qt Designer
+Icon=/home/idachev/lib/qt/Tools/QtCreator/share/qtcreator/templates/wizards/qtcreatorplugin/qtcreator_logo_24.png
+Exec=/home/idachev/lib/qt/5.8/gcc_64/bin/designer
+Terminal=false
+Name[en_US]=Dev Qt Designer

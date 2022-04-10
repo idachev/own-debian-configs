@@ -1,0 +1,11 @@
+#!/usr/bin/env xdg-open
+[Desktop Entry]
+Name=Ledger Live
+Comment=Ledger Live
+Exec=/home/idachev/lib/ledger-live/start_ledger_live.sh
+Icon=/home/idachev/lib/ledger-live/ledger-live.png
+Terminal=false
+Type=Application
+Categories=Finance;
+Keywords=Finance;
+Name[en_US]=Ledger Live

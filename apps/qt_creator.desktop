@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Version=0.9.4
+Name=Qt Creator
+Comment=Run Qt Creator
+Icon=/home/idachev/lib/qt/Tools/QtCreator/share/qtcreator/templates/wizards/qtcreatorplugin/qtcreator_logo_24.png
+Exec=/home/idachev/lib/qt/Tools/QtCreator/bin/qtcreator.sh
+Terminal=false
+Name[en_US]=Dev Qt Creator

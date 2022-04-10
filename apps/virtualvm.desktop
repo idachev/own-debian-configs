@@ -2,8 +2,8 @@
 Version=1.0
 Type=Application
 Name=Virtual VM
-Icon=/home/idachev/lib/visualvm_14/bin/visualvm.png
-Exec="/home/idachev/lib/visualvm_14/bin/visualvm"
+Icon=/home/idachev/lib/visualvm/bin/visualvm.png
+Exec="/home/idachev/lib/visualvm/bin/visualvm"
 Comment=Virtual VM
 Categories=Development;IDE;
 Terminal=false

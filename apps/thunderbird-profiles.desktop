@@ -1,11 +1,10 @@
-
 [Desktop Entry]
 Encoding=UTF-8
 Name=Thunderbird Profiles
 GenericName=Mail Client
 Comment=Read/Write Mail/News with Mozilla Thunderbird
 Exec=thunderbird_custom.sh -P %u
-Icon=thunderbird-mozilla-build
+Icon=/usr/lib/thunderbird/chrome/icons/default/default128.png
 Terminal=false
 X-MultipleArgs=false
 StartupNotify=true
