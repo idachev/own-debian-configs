@@ -1,9 +1,10 @@
 [Desktop Entry]
 Version=1.0
 Type=Application
-Name=Virtual VM
-Icon=/home/idachev/lib/visualvm/bin/visualvm.png
-Exec="/home/idachev/lib/graalvm/bin/jvisualvm"
-Comment=Virtual VM
-Categories=Development;IDE;
+Name=Visual VM
+Icon=/home/idachev/lib/icons/visualvm.svg
+Exec=/home/idachev/lib/graalvm/bin/jvisualvm
+Comment=Visual VM
+Categories=Development;IDE;Java
 Terminal=false
+Name[en_US]=Visual VM

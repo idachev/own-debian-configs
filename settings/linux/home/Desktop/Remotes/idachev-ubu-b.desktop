@@ -1,0 +1,19 @@
+[Desktop Entry]
+Comment[en_US]=Launch NX session 'idachev-ubu-b'
+Comment=Launch NX session 'idachev-ubu-b'
+Exec=/usr/NX/bin/nxclient --session "/home/idachev/.nx/config/idachev-ubu-b.nxs"
+GenericName[en_US]=
+GenericName=
+Icon=/usr/NX/share/icons/48x48/nxclient-desktop.png
+MimeType=
+Name[en_US]=idachev-ubu-b
+Name=idachev-ubu-b
+Path=
+StartupNotify=true
+Terminal=false
+TerminalOptions=
+Type=Application
+X-DBUS-ServiceName=
+X-DBUS-StartupType=
+X-KDE-SubstituteUID=false
+X-KDE-Username=

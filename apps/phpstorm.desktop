@@ -1,7 +1,6 @@
-
 [Desktop Entry]
 Type=Application
-Name=PHP Storm
+Name=Dev A3 PHP Storm
 Comment=PHP Storm
 Icon=/home/idachev/lib/phpstorm/bin/phpstorm.png
 Exec=/home/idachev/lib/phpstorm/bin/phpstorm.sh

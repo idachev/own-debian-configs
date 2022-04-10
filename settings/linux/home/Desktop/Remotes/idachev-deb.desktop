@@ -1,0 +1,11 @@
+[Desktop Entry]
+Comment=Launch NX session 'idachev-deb'
+Exec=/usr/NX/bin/nxclient --session "/home/idachev/.nx/config/idachev-deb.nxs"
+Icon=/usr/NX/share/icons/48x48/nxclient-desktop.png
+Name=idachev-deb
+Type=Application
+
+Path=
+Terminal=false
+StartupNotify=false
+GenericName=

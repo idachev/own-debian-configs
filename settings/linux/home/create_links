@@ -128,7 +128,9 @@ else
 
   link $BASEDIR/awsenv $HOME/.awsenv
 
+  link $BASEDIR/Desktop $HOME/Desktop
+
   link ~/Dropbox/fonts $HOME/.fonts
- 
+
 fi
 

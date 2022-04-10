@@ -1,13 +1,12 @@
 [Desktop Entry]
-Categories=Development;Java;
-Comment[en_US]=JD-GUI Java Decompiler
-Comment=jEdit
-Exec=/home/idachev/bin/jd-gui
+Comment[en_US]=
+Comment=
+Exec=/bin/sh "/home/idachev/lib/thinkorswim/thinkorswim"
 GenericName[en_US]=
 GenericName=
-Icon=/home/idachev/bin/jd-gui.png
+Icon=/home/idachev/lib/thinkorswim/.install4j/thinkorswim.png
 MimeType=
-Name=Dev JD-GUI
+Name=thinkorswim
 Path=
 StartupNotify=true
 Terminal=false
@@ -17,4 +16,4 @@ X-DBUS-ServiceName=
 X-DBUS-StartupType=
 X-KDE-SubstituteUID=false
 X-KDE-Username=
-Name[en_US]=Dev JD-GUI
+Name[en_US]=Finance thinkorswim

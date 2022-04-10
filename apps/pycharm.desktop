@@ -1,11 +1,11 @@
 [Desktop Entry]
 Version=1.0
 Type=Application
-Name=PyCharm
+Name=Dev A2 PyCharm
 Exec="/home/idachev/lib/pycharm/bin/pycharm.sh" %f
 Icon=/home/idachev/lib/pycharm/bin/pycharm.png
 Comment=Develop with pleasure!
-Categories=Development;IDE;
+Categories=Development;IDE;Python;
 Terminal=false
 StartupNotify=true
 StartupWMClass=jetbrains-pycharm

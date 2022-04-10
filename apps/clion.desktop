@@ -1,7 +1,7 @@
 
 [Desktop Entry]
 Type=Application
-Name=CLion
+Name=Dev A4 CLion
 Comment=CLion
 Icon=/home/idachev/lib/clion/bin/clion.png
 Exec=/home/idachev/lib/clion/bin/clion.sh

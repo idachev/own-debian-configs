@@ -1,10 +1,10 @@
 [Desktop Entry]
-Name=Postman
+Name=Dev Postman
 Comment=Postman
 Exec=/home/idachev/lib/Postman/Postman
 Icon=/home/idachev/lib/Postman/app/resources/app/assets/icon.png
 Terminal=false
 Type=Application
-Categories=Development;HTTP;
+Categories=Development;HTTP;REST;
 Keywords=REST;API;
 Name[en_US]=Dev Postman

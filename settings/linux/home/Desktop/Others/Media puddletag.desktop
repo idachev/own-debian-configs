@@ -1,0 +1,10 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=puddletag
+TryExec=puddletag
+Exec=puddletag
+Icon=puddletag
+GenericName=Audio Tag Editor
+Categories=AudioVideo;Qt;
+Name[en_US]=Media puddletag

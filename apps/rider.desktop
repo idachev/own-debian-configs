@@ -1,7 +1,7 @@
 [Desktop Entry]
 Version=1.0
 Type=Application
-Name=Rider
+Name=Dev A5 Rider
 Exec="/home/idachev/lib/rider/bin/rider.sh" %f
 Icon=/home/idachev/lib/rider/bin/rider.png
 Comment=Develop with pleasure!

@@ -1,0 +1,16 @@
+[Desktop Entry]
+Version=1.0
+Encoding=UTF-8
+Type=Application
+Categories=Network;
+
+Name=TeamViewer 12
+Comment=Remote control and meeting solution.
+Exec=/opt/teamviewer/tv_bin/script/teamviewer
+
+# This icon might be overridden by other icon themes (e.g. breeze).
+Icon=teamviewer
+
+# This icon should always be the default TeamViewer icon.
+#Icon=TeamViewer
+Name[en_US]=TeamViewer
