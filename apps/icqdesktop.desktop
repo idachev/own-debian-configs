@@ -1,0 +1,13 @@
+[Desktop Entry]
+Version=1.0
+Name=ICQ New
+Comment=Official desktop application for the ICQ New messaging service
+TryExec=/home/idachev/lib/icq/icq
+Exec=/home/idachev/lib/icq/icq -urlcommand %u
+Icon=/home/idachev/.local/share/icons/icq.png
+Terminal=false
+Type=Application
+StartupWMClass=icq
+Categories=Network;InstantMessaging;Qt;
+MimeType=x-scheme-handler/icq;x-scheme-handler/magent;
+X-Desktop-File-Install-Version=0.24

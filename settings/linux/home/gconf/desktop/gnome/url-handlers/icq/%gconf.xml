@@ -1,8 +1,8 @@
 <?xml version="1.0"?>
 <gconf>
-	<entry name="enabled" mtime="1649574878" type="bool" value="true"/>
-	<entry name="needs_terminal" mtime="1649574878" type="bool" value="false"/>
-	<entry name="command" mtime="1649574878" type="string">
-		<stringvalue>/home/idachev/lib/icq/icq -urlcommand %s</stringvalue>
+	<entry name="enabled" mtime="1649604950" type="bool" value="true"/>
+	<entry name="needs_terminal" mtime="1649604950" type="bool" value="false"/>
+	<entry name="command" mtime="1649604950" type="string">
+		<stringvalue>/home/idachev/lib/icq/t/icq -urlcommand %s</stringvalue>
 	</entry>
 </gconf>
