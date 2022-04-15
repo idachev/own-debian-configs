@@ -77,8 +77,6 @@ else
   link $BASEDIR/gitattributes $HOME/.gitattributes
   link $BASEDIR/gitk $HOME/.gitk
   link $BASEDIR/bash_git $HOME/.bash_git
-#  link $BASEDIR/gitignore $HOME/.gitignore
-#  link $BASEDIR/gitattributes $HOME/.gitattributes
 
 # OLD for ubuntu 10.10 for debian wheezy moved to ~/.config
 #  link $BASEDIR/htoprc $HOME/.htoprc
@@ -103,16 +101,27 @@ else
 
   # misc
   link $BASEDIR/aliases $HOME/.aliases
+
   link $BASEDIR/kderc $HOME/.kderc
+
   link $BASEDIR/inputrc $HOME/.inputrc
+
   link $BASEDIR/toprc $HOME/.toprc
+
   link $BASEDIR/fonts.conf $HOME/.fonts.conf
   link $BASEDIR/Fontmatrix $HOME/.Fontmatrix
+
+  link $BASEDIR/ls_dir_set_colors $HOME/.ls_dir_set_colors
   link $BASEDIR/shell_set_colors $HOME/.shell_set_colors
+
   link $BASEDIR/gtkrc-2.0 $HOME/.gtkrc-2.0
+
   link $BASEDIR/screenrc $HOME/.screenrc
+
   link $BASEDIR/oracleenv $HOME/.oracleenv
+
   link $BASEDIR/jumprc $HOME/.jumprc
+
   link $BASEDIR/vnc $HOME/.vnc
 
   link $BASEDIR/pgadmin3 $HOME/.pgadmin3

@@ -210,6 +210,10 @@ if [ -f ~/.shell_set_colors ]; then
   . ~/.shell_set_colors
 fi
 
+if [ -f ~/.ls_dir_set_colors ]; then
+  . ~/.ls_dir_set_colors
+fi
+
 if [ -f ~/.localrc ]; then
   . ~/.localrc
 fi
