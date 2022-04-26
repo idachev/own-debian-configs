@@ -6,7 +6,7 @@
 
 #1 */2 * * * /home/idachev/bin/dbus_crontab_exec.sh dbus-daemon idachev /home/idachev/bin/dropbox_restart.sh > /dev/null 2>&1
 
-15 */3 * * * /home/idachev/bin/dbus_crontab_exec.sh dbus-daemon idachev /home/idachev/bin/docker_new_version_monitor.sh maven maven:3-openjdk-11 maven@sha256:194b6c025a5d73003648a91abd44c44a099f25bd54e834e97efa535827f2a69c > /dev/null 2>&1
+15 */3 * * * /home/idachev/bin/dbus_crontab_exec.sh dbus-daemon idachev /home/idachev/bin/docker_new_version_monitor.sh maven maven:3-openjdk-11 /home/idachev/develop/personal/maven-3-openjdk-11-docker-client/maven_3-openjdk-11_sha.txt > /dev/null 2>&1
 
 5 */3 * * * /home/idachev/Dropbox/sync/sync_laptop.sh doit >> /tmp/cron_dropbox_sync.log 2>&1
 

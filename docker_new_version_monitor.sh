@@ -4,7 +4,9 @@ DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 MONITOR_IMAGE_NAME=$1
 MONITOR_IMAGE=$2
-MONITOR_SHA=$3
+MONITOR_SHA_FILE=$3
+
+MONITOR_SHA=$(cat ${MONITOR_SHA_FILE})
 
 docker pull "${MONITOR_IMAGE}"
 CURRENT_SHA=$(docker inspect --format='{{index .RepoDigests 0}}' "${MONITOR_IMAGE}")
