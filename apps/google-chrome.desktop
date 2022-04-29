@@ -3,10 +3,11 @@ Version=1.0
 Name=Google Chrome DataStork
 GenericName=Web Browser
 Comment=Access the Internet
-Exec=/usr/bin/google-chrome-beta %U --profile-directory=datastork
+Exec=/usr/bin/google-chrome-beta %U
 StartupNotify=true
 Terminal=false
 Icon=google-chrome-beta
 Type=Application
 Categories=Network;WebBrowser;
 MimeType=text/html;text/xml;application/xhtml_xml;image/webp;x-scheme-handler/http;x-scheme-handler/https;x-scheme-handler/ftp;
+Name[en_US]=Google Chrome
