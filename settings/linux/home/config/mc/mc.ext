@@ -534,24 +534,33 @@ regex/\.(odt|ott|sxw|stw|ods|ots|sxc|stc|odp|otp|sxi|sti|odg|otg|sxd|std|odb|odf
 shell/.abw
 	Open=(abiword %f &)
 
-# Microsoft Word Document
-regex/\.([Dd][oO][cCtT]|[Ww][rR][iI])$
-	Open=(abiword %f >/dev/null 2>&1 &)
+# Microsoft Word Document doc, docx, dot, dotx, wri
+regex/\.([Dd][oO][cCtT]|[Dd][oO][cCtT][xX]|[Ww][rR][iI])$
+	Open=(libreoffice %f >/dev/null 2>&1 &)
 	View=%view{ascii} antiword -t %f || catdoc -w %f || word2x -f text %f - || strings %f
 type/^Microsoft\ Word
-	Open=(abiword %f >/dev/null 2>&1 &)
+	Open=(libreoffice %f >/dev/null 2>&1 &)
 	View=%view{ascii} antiword -t %f || catdoc -w %f || word2x -f text %f - || strings %f
 
-# RTF document
-regex/\.([rR][tT][fF])$
-	Open=(abiword %f >/dev/null 2>&1 &)
+# Microfost PowerPoint Presentation ppt, pptx
+regex/\.([pP][pP][tT]|[pP][pP][tT][xX])$
+	Open=(libreoffice %f >/dev/null 2>&1 &)
+	View=%view{ascii} antiword -t %f || catdoc -w %f || word2x -f text %f - || strings %f
 
-# Microsoft Excel Worksheet
-regex/\.([xX][lL][sSwW])$
-	Open=(gnumeric %f >/dev/null 2>&1 &)
+type/^Microsoft\ Office\ Document
+	Open=(libreoffice %f >/dev/null 2>&1 &)
+	View=%view{ascii} antiword -t %f || catdoc -w %f || word2x -f text %f - || strings %f
+
+# RTF document rtf
+regex/\.([rR][tT][fF])$
+	Open=(libreoffice %f >/dev/null 2>&1 &)
+
+# Microsoft Excel Worksheet xls, xlsx, xlw, xlwx
+regex/\.([xX][lL][sSwW]|[xX][lL][sSwW][xX])$
+	Open=(libreoffice %f >/dev/null 2>&1 &)
 	View=%view{ascii} xls2csv %f || strings %f
 type/^Microsoft\ Excel
-	Open=(gnumeric %f >/dev/null 2>&1 &)
+	Open=(libreoffice %f >/dev/null 2>&1 &)
 	View=%view{ascii} xls2csv %f || strings %f
 
 # Use OpenOffice.org to open any MS Office documents

@@ -16,12 +16,22 @@ gocryptfs_mount() {
   fi
 
   MOUNT_KEY_FILE="${HOME}/.gnupg/mount/mount"$(echo "${CRYPT_DIR}" | sed -e 's/[\/\.]\+/_/g').enc
+
   if [[ -f "${MOUNT_KEY_FILE}" ]]; then
     echo -e "\n\nUsing ${MOUNT_KEY_FILE} to decrypt:"
 
+    set +e
     MOUNT_PASS=$(cat "${MOUNT_KEY_FILE}" | gpg --pinentry-mode loopback -q --decrypt)
+    set -e
+
+    if [ -z "${MOUNT_PASS}" ]; then
+      echo -e "\nMount pass decrypt failed using stdin"
+    fi
+
   else
+
     echo -e "\n\nNot found ${MOUNT_KEY_FILE} using stdin"
+
   fi
 
   if [ -z "${MOUNT_PASS}" ]; then
