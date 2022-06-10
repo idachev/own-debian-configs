@@ -98,6 +98,7 @@ else
   link $BASEDIR/config/awesome $HOME/.config/awesome
 
   link $BASEDIR/config/parcellite $HOME/.config/parcellite
+  link $BASEDIR/config/copyq $HOME/.config/copyq
 
   # misc
   link $BASEDIR/aliases $HOME/.aliases

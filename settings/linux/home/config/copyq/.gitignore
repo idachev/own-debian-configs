@@ -1,0 +1,6 @@
+*.bak
+*.dat
+*-bak.conf
+*.pub
+*.lock
+

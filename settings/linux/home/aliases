@@ -239,6 +239,8 @@ alias kdel='k delete'
 
 alias krun-busybox='k run curl --image=radial/busyboxplus:curl -i --tty'
 
+alias krun-bash='k run my-shell --rm -i --tty --image bash -- bash'
+
 keb() {
   kubectl exec -ti "${1}" -- bash
 }
