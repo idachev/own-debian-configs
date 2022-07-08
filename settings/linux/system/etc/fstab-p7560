@@ -1,0 +1,17 @@
+# /etc/fstab: static file system information.
+#
+# Use 'blkid' to print the universally unique identifier for a
+# device; this may be used with UUID= as a more robust way to name devices
+# that works even if disks are added and removed. See fstab(5).
+#
+# <file system> <mount point>   <type>  <options>       <dump>  <pass>
+/dev/mapper/vgmint-root /               ext4    errors=remount-ro 0       1
+# /boot was on /dev/nvme0n1p2 during installation
+UUID=10fa9608-f99b-4c43-8f47-f4baa0346e31 /boot           ext4    defaults        0       2
+# /boot/efi was on /dev/nvme0n1p1 during installation
+UUID=0B8B-8FB7  /boot/efi       vfat    umask=0077      0       1
+/dev/mapper/vgmint-swap_1 none            swap    sw              0       0
+#
+# Check https://github.com/trapexit/mergerfs
+/home/idachev/storage_c/.Dropbox_mergerfs_branch1:/home/idachev/storage_b/.Dropbox_mergerfs_branch2 /home/idachev/storage_c/Dropbox fuse.mergerfs allow_other,use_ino,cache.files=partial,dropcacheonclose=true 0 0
+
