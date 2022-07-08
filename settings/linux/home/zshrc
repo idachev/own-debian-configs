@@ -197,7 +197,7 @@ source ~/.zsh/zsh-history-substring-search.zsh
 ##################################################################
 # Misc
 
-fpath=(~/develop/private/zsh-completions $fpath)
+fpath=(~/.zsh/zsh-completions $fpath)
 
 # type a directory's name to cd to it
 compctl -/ cd
@@ -223,12 +223,12 @@ fi
 
 keychain -q ~/.local_ssh_key
 
-if [ -f "~/.keychain/${HOST}-sh" ]; then
-  . "~/.keychain/${HOST}-sh"
+if [ -f ~/.keychain/${HOST}-sh ]; then
+  . ~/.keychain/${HOST}-sh
 fi
 
-if [ -f "~/.keychain/${HOST}-sh-gpg" ]; then
-  . "~/.keychain/${HOST}-sh-gpg"
+if [ -f ~/.keychain/${HOST}-sh-gpg ]; then
+  . ~/.keychain/${HOST}-sh-gpg
 fi
 
 ##################################################################
@@ -248,7 +248,12 @@ export SDKMAN_DIR="${HOME}/.sdkman"
 [[ -s "${HOME}/.sdkman/bin/sdkman-init.sh" ]] && source "${HOME}/.sdkman/bin/sdkman-init.sh"
 
 
-if [ -f "~/bin/aws-vault" ]; then
+if [ -f ~/bin/aws-vault ]; then
   eval "$(aws-vault --completion-script-zsh)"
+fi
+
+
+if [ -f ~/.zsh/zsh-completions/maestral ]; then
+  . ~/.zsh/zsh-completions/maestral
 fi
 
