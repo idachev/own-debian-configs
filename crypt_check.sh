@@ -38,7 +38,7 @@ fi
 
 if [ ! -d ~/storage_c/Dropbox/Apps ]; then
   show_gpg_check
-  echo -e "DO: sudo mergerfs -o allow_other,use_ino,cache.files=partial,dropcacheonclose=true $(realpath ~/storage_c/.Dropbox_mergerfs_branch1):$(realpath ~/storage_b/.Dropbox_mergerfs_branch2) $(realpath ~/storage_c/Dropbox) && crypt_check.sh\n"
+  echo -e "DO: sudo mergerfs -o allow_other,use_ino,cache.files=partial,dropcacheonclose=true $(realpath ~/storage_c/.Dropbox_mergerfs_branch1):$(realpath ~/storage_b/.Dropbox_mergerfs_branch2) $(realpath ~/storage_c/Dropbox) && maestral start && crypt_check.sh\n"
   OK=0
 fi
 
