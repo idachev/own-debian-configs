@@ -100,7 +100,7 @@ class TestStringMethods(unittest.TestCase):
 
         dst_dir_content = self.get_dir_content_for_assert(test_dst)
 
-        self.assertEqual(dst_dir_content, [
+        self.assertEqual([
             'd1/d1_1/d1_1_f1.txt: plain file',
             'd1_1/d1_1_f1.txt: file in d1/d1_1',
             'd1_1/d2/d2_f1.txt: file in directory d2',
@@ -110,7 +110,7 @@ class TestStringMethods(unittest.TestCase):
             'd2/d2_f3_g5.txt: f3 in d2',
             'd2/d2_f4.txt: d2_f4.txt',
             'd3/d3_f1.txt: d3 f1 not existing file in source'
-        ])
+        ], dst_dir_content)
 
     def do_tests(self, tmp_dirname, recycle_duplicates=False):
         test_dst_org = path.join(BASE_PATH, "test_dst")
@@ -198,7 +198,7 @@ class TestStringMethods(unittest.TestCase):
         dst_dir_content = self.get_dir_content_for_assert(test_dst)
 
         if recycle_duplicates:
-            self.assertEqual(dst_dir_content, [
+            self.assertEqual([
                 '.working/.check/d2/d2_f2.txt: file in d2 f2 diff',
                 '.working/.check/d3/d3_f1.txt: d3 f1 not existing file in source',
                 '.working/.files_cache: <bin>',
@@ -209,9 +209,9 @@ class TestStringMethods(unittest.TestCase):
                 'd2/d2_f3.txt: f3 in d2',
                 'd2/d2_f4.txt: d2_f4.txt',
                 'f1.txt: plain file'
-            ])
+            ], dst_dir_content)
         else:
-            self.assertEqual(dst_dir_content, [
+            self.assertEqual([
                 '.working/.check/d2/d2_f2.txt: file in d2 f2 diff',
                 '.working/.check/d3/d3_f1.txt: d3 f1 not existing file in source',
                 '.working/.files_cache: <bin>',
@@ -222,7 +222,7 @@ class TestStringMethods(unittest.TestCase):
                 'd2/d2_f3.txt: f3 in d2',
                 'd2/d2_f4.txt: d2_f4.txt',
                 'f1.txt: plain file'
-            ])
+            ], dst_dir_content)
 
 
 if __name__ == '__main__':

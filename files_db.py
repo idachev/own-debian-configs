@@ -534,8 +534,8 @@ class FilesManage:
 
             return
 
-        src_dup_names = [item.name for item in src_item.duplicates]
-        dst_dup_names = [item.name for item in dst_item.duplicates]
+        src_dup_names = sorted([item.name for item in src_item.duplicates])
+        dst_dup_names = sorted([item.name for item in dst_item.duplicates])
 
         dst_dup_not_in_src = []
         for dup_item in dst_item.duplicates:
