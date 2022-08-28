@@ -242,11 +242,17 @@ alias krun-busybox='k run curl --image=radial/busyboxplus:curl -i --tty'
 alias krun-bash='k run my-shell --rm -i --tty --image bash -- bash'
 
 keb() {
-  kubectl exec -ti "${1}" -- bash
-}
+  POD_NAME=${1}
 
-kes() {
-  kubectl exec -ti "${1}" -- sh
+  CONTAINER_NAME=${2}
+
+  if [ -z "${CONTAINER_NAME}" ]; then
+    CONTAINER_ARG=""
+  else
+    CONTAINER_ARG="--container=${CONTAINER_NAME}"
+  fi
+
+  kubectl exec -ti "${POD_NAME}" ${CONTAINER_ARG} -- sh -c "(bash || ash || sh)"
 }
 
 kec() {
