@@ -39,6 +39,8 @@ DEFAULT_THREADS = 1
 
 REPORT_STATS_EACH_SECONDS = 15
 
+XATTR_IGD_SHA512_SIZE_MTIME = "user.igd.sha512_size_mtime"
+
 # ========================================
 # Defines
 
@@ -178,24 +180,70 @@ def _calculate_hash(file_path, name, file_cache_map, computed_stat=None):
 
     size = path.getsize(file_path)
     mtime = os.stat(file_path)[stat.ST_MTIME]
-    res_hash = None
 
     if name in file_cache_map:
         cache_item = file_cache_map[name]
         if cache_item.size == size and cache_item.mtime == mtime:
             res_hash = cache_item.hash
 
+            return res_hash
+
+    res_hash = _get_hash_xattr(file_path, size, mtime)
+
     if res_hash is None:
         res_hash = _calculate_hash_int_hashlib(file_path)
-        file_cache_map[name] = CacheItem(name, size, mtime, res_hash)
+
         if computed_stat is not None:
             computed_stat.size += size
+
+        _set_hash_xattr(file_path, res_hash, size, mtime)
+
+    file_cache_map[name] = CacheItem(name, size, mtime, res_hash)
 
     return res_hash
 
 
+def _build_size_mtime_padding(size, mtime):
+    return "_%d_%d" % (size, mtime)
+
+
+def _get_hash_xattr(file_path, size, mtime):
+    try:
+        size_mtime_padding = _build_size_mtime_padding(size, mtime)
+
+        xattrs = os.listxattr(file_path, follow_symlinks=False)
+
+        if XATTR_IGD_SHA512_SIZE_MTIME not in xattrs:
+            return None
+
+        v = os.getxattr(file_path, XATTR_IGD_SHA512_SIZE_MTIME, follow_symlinks=False)
+        if v is not None:
+            v = v.decode("utf-8")
+            if v.endswith(size_mtime_padding):
+                return v[0:-len(size_mtime_padding)]
+
+        return None
+    except Exception as e:
+        log_debug('Failed to get xattr path: %s, error: %s' % (file_path, e))
+        return None
+
+
+def _set_hash_xattr(file_path, hash, size, mtime):
+    try:
+        size_mtime_padding = _build_size_mtime_padding(size, mtime)
+
+        xattr_value = hash + size_mtime_padding
+
+        os.setxattr(file_path, XATTR_IGD_SHA512_SIZE_MTIME, xattr_value.encode("utf-8"),
+                    follow_symlinks=False)
+    except Exception as e:
+        log_debug('Failed to set xattr path: %s, error: %s' % (file_path, e))
+        return
+
+
 def part_multiprocess_hashes(queue, part_name, root_path, files_part, file_cache_map):
-    log_verbose("Start processing part: %s root_path: %s files: %d" % (part_name, root_path, len(files_part)))
+    log_verbose("Start processing part: %s root_path: %s files: %d" % (
+        part_name, root_path, len(files_part)))
 
     total_stat = ComputedStat()
     mark_stat = ComputedStat()

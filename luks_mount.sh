@@ -76,7 +76,7 @@ if [ -z "${MOUNT_DIR}" ]; then
 fi
 
 echo -e "\nMounting to dir: ${MOUNT_DIR}"
-mount -t ext4 ${LUKS_DEV} ${MOUNT_DIR} -o rw,noatime,nosuid,nodev,uhelper=udisks
+mount -t ext4 ${LUKS_DEV} ${MOUNT_DIR} -o rw,noatime,nosuid,nodev,user_xattr,uhelper=udisks
 
 echo -e "\nListing dir..."
 ls -hF --color=tty --group-directories-first -al ${MOUNT_DIR}
