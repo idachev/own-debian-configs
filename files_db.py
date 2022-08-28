@@ -204,16 +204,22 @@ def part_multiprocess_hashes(queue, part_name, root_path, files_part, file_cache
     hashes = {}
     for file_path in files_part:
         name = file_path[len(root_path) + 1:]
-        hashes[file_path] = _calculate_hash(file_path, name, file_cache_map, mark_stat)
+        try:
+            hashes[file_path] = _calculate_hash(file_path, name, file_cache_map, mark_stat)
+        except Exception as e:
+            log_error('Failed to calculate hash: %s, error: %s' % (file_path, e))
+            continue
+
         mark_stat.count += 1
 
         if mark_stat.elapsed_seconds() > REPORT_STATS_EACH_SECONDS:
             total_stat.size += mark_stat.size
             total_stat.count += mark_stat.count
-            log_verbose('Processed part: %s, progress: %2d%%, elapsed time: %s, processed: %d, %d MB, %d MB/s, total: %d, %d MB, %d MB/s' %
-                        (part_name, total_stat.progress(total), total_stat.elapsed_delta(),
-                         mark_stat.count, mark_stat.size_mb(), mark_stat.read_speed(),
-                         total_stat.count, total_stat.size_mb(), total_stat.read_speed()))
+            log_verbose(
+                'Processed part: %s, progress: %2d%%, elapsed time: %s, processed: %d, %d MB, %d MB/s, total: %d, %d MB, %d MB/s' %
+                (part_name, total_stat.progress(total), total_stat.elapsed_delta(),
+                 mark_stat.count, mark_stat.size_mb(), mark_stat.read_speed(),
+                 total_stat.count, total_stat.size_mb(), total_stat.read_speed()))
             mark_stat.reset()
 
     total_stat.size += mark_stat.size
