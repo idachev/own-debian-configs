@@ -31,9 +31,6 @@ export PATH=${PATH}:${MAVEN_HOME}/bin
 #export PYCHARM_JDK=${SYS_JAVA_HOME_7}
 export PYCHARM_JDK=${SYS_JAVA_HOME_8}
 
-# IDEA
-export IDEA_JDK=${SYS_JAVA_HOME_8}
-
 # PhpStorm
 export WEBIDE_JDK=${SYS_JAVA_HOME_7}
 
@@ -45,6 +42,8 @@ export PATH=${PATH}:/usr/share/fslint/fslint:${HOME}/bin
 
 # Add one binary programs to ~/lib/bin
 export PATH=${PATH}:${HOME}/lib/bin
+
+export PATH=${PATH}:${HOME}/lib/jmeter/bin
 
 # Add pip local bin
 export PATH=${PATH}:${HOME}/.local/bin

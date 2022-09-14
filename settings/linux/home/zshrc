@@ -191,8 +191,14 @@ alias -g S='&> /dev/null &'
 
 ##################################################################
 # Plugins
+
 source ~/.zsh/zsh-syntax-highlighting.zsh
+
 source ~/.zsh/zsh-history-substring-search.zsh
+
+source ~/.zsh/zsh-z.plugin.zsh
+
+zstyle ':completion:*' menu select
 
 ##################################################################
 # Misc

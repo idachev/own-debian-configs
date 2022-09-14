@@ -131,6 +131,8 @@ alias pssh='psg ssh'
 
 alias assume-role='source aws_assume_role.sh $@'
 
+alias rsync-files-db-dir='rsync -n -u -aXvhPOJ --exclude .working $@'
+
 # AWS Profiles
 
 aspl() {
