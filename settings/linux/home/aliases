@@ -112,7 +112,7 @@ dkrm() {
   done
 }
 
-dkrm-old() {
+dkrmold() {
   docker ps --filter "status=exited" --filter "status=created" --format "{{.ID}}" | \
     xargs --no-run-if-empty docker rm
   docker ps --all
@@ -124,7 +124,7 @@ dkrmi() {
   docker images
 }
 
-dkrmi-cleanup() {
+dkrmicl() {
   docker images --format "{{.ID}}" --filter "dangling=true" -q --no-trunc | \
     xargs --no-run-if-empty docker rmi -f
 }
