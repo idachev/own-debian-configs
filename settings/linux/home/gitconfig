@@ -29,6 +29,7 @@
   pub = "!f() { git pull; git fap; git brm; }; f"
   mpub = "!f() { git co master; git pub; }; f"
   qpub = "!f() { git co qa; git pub; }; f"
+  spub = "!f() { git co staging; git pub; }; f"
   ppub = "!f() { git co production; git pub; }; f"
   rescue = "!f() { \
       git fsck --full --no-reflogs --unreachable --lost-found | \

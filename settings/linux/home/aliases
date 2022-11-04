@@ -112,12 +112,22 @@ dkrm() {
   done
 }
 
+dkrm-old() {
+  docker ps --filter "status=exited" --filter "status=created" --format "{{.ID}}" | \
+    xargs --no-run-if-empty docker rm
+  docker ps --all
+}
+
 dkrmi() {
-  docker images --format "{{.Repository}}:{{.Tag}}" --filter=reference="${1}" | xargs docker rmi -f
+  docker images --format "{{.ID}}" --filter=reference="${1}" | \
+    xargs --no-run-if-empty docker rmi -f
   docker images
 }
 
-alias dkrm-old='docker ps --filter "status=exited" | awk '\''{print $1}'\'' | xargs --no-run-if-empty docker rm'
+dkrmi-cleanup() {
+  docker images --format "{{.ID}}" --filter "dangling=true" -q --no-trunc | \
+    xargs --no-run-if-empty docker rmi -f
+}
 
 # Misc
 
