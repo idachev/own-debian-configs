@@ -103,7 +103,7 @@ dkre() {
 }
 
 dkrb() {
-  docker exec -it $1 bash
+  docker exec -it $1 sh -c "clear; (bash || ash || sh)"
 }
 
 dkrm() {
