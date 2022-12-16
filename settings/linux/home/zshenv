@@ -17,7 +17,7 @@ export SYS_JAVA_HOME_7=/usr/lib/jvm/java-7-oracle
 export SYS_JAVA_HOME_8=/usr/lib/jvm/java-8-oracle
 
 #export SYS_JAVA_HOME=${SYS_JAVA_HOME_7}
-export SYS_JAVA_HOME=${SYS_JAVA_HOME_8}
+export SYS_JAVA_HOME=/usr/lib/jvm/java-1.17.0-openjdk-amd64
 
 export JAVA_HOME=${SYS_JAVA_HOME}
 
@@ -81,6 +81,6 @@ if [ -f ~/.localenv ]; then
 fi
 
 if [[ -o interactive ]]; then
-  crypt_check.sh
+ # crypt_check.sh
 fi
 
