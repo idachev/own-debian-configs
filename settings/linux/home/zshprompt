@@ -34,13 +34,13 @@ function precmd {
 	###
 	# Get APM info.
 
-	if which acpi > /dev/null 2>&1; then
-		PR_APM_RESULT=`acpi -b | head -n 1 2> /dev/null`
-	elif which ibam > /dev/null 2>&1; then
-		PR_APM_RESULT=`ibam --percentbattery 2> /dev/null`
-	elif which apm > /dev/null 2>&1; then
-		PR_APM_RESULT=`apmi 2> /dev/null`
-	fi
+#	if which acpi > /dev/null 2>&1; then
+#		PR_APM_RESULT=`acpi -b | head -n 1 2> /dev/null`
+#	elif which ibam > /dev/null 2>&1; then
+#		PR_APM_RESULT=`ibam --percentbattery 2> /dev/null`
+#	elif which apm > /dev/null 2>&1; then
+#		PR_APM_RESULT=`apmi 2> /dev/null`
+#	fi
 
   if [ "${PR_SHOW_KUBE}" = "1"  ]; then
     if which kubectl > /dev/null 2>&1; then
