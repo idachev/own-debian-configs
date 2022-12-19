@@ -20,18 +20,18 @@ https://www.youtube.com/watch?v=qPgcH6T9Tfo
 
 Create Virtual Switch:
 
-![esx_virtual_switch.png](esx_virtual_switch.png)
+![esx_virtual_switch.png](./imgs/esx_virtual_switch.png)
 
 Create a new port group and link it with the new Virtual Switch:
 
-![esx_network_port_group.png](esx_network_port_group.png)
+![esx_network_port_group.png](./imgs/esx_network_port_group.png)
 
 Add a new network adapter and assign it to the new port group for
 all VMs that you want to connect within the internal network.
 
-![esx_attach_vm_internal_net.png](esx_attach_vm_internal_net.png)
+![esx_attach_vm_internal_net.png](./imgs/esx_attach_vm_internal_net.png)
 
-You need to restart each VM after we setup OPNSense DHCP for the 
+You need to restart each VM after we setup OPNSense DHCP for the
 internal LAN to start assigning an IP address to.
 
 ## ZeroTier Setup
@@ -40,11 +40,11 @@ The ZeroTier network chosen was: `172.22.172.0/24`
 
 Configure auto assign pools: `172.22.172.10` to `172.22.172.254`
 
-![zerotier_ipv4_auto_assign.png](zerotier_ipv4_auto_assign.png)
+![zerotier_ipv4_auto_assign.png](./imgs/zerotier_ipv4_auto_assign.png)
 
 Configure static IP addresses for my laptop and OPNSense VM:
 
-![zerotier_ipv4_set_static_ips.png](zerotier_ipv4_set_static_ips.png)
+![zerotier_ipv4_set_static_ips.png](./imgs/zerotier_ipv4_set_static_ips.png)
 
 ### Adding Custom IPs
 
@@ -62,15 +62,15 @@ And I can access the ESXi from my laptop or any other ZeroTier client.
 
 LAN address and space `192.168.192.1/24`
 
-![opnsense_setup_lan.png](opnsense_setup_lan.png)
+![opnsense_setup_lan.png](./imgs/opnsense_setup_lan.png)
 
 Setup ZeroTier DHCP for LAN and auto assign.
 
-![opnsense_setup_lan_dhcp_auto_assign.png](opnsense_setup_lan_dhcp_auto_assign.png)
+![opnsense_setup_lan_dhcp_auto_assign.png](./imgs/opnsense_setup_lan_dhcp_auto_assign.png)
 
 Restart the VMs to get new LAN IPs and make them static assignments:
 
-![opnsense_setup_lan_static_assignments.png](opnsense_setup_lan_static_assignments.png)
+![opnsense_setup_lan_static_assignments.png](./imgs/opnsense_setup_lan_static_assignments.png)
 
 The easiest way to do this is via `Services -> DHCPv4 -> Leases` there is an add button.
 
@@ -78,11 +78,11 @@ The easiest way to do this is via `Services -> DHCPv4 -> Leases` there is an add
 
 ZeroTier address and space `172.22.172.2/24`
 
-![opnsense_setup_zerotier_net.png](opnsense_setup_zerotier_net.png)
+![opnsense_setup_zerotier_net.png](./imgs/opnsense_setup_zerotier_net.png)
 
 Allow Firewall rule for ZeroTier network.
 
-![opnsense_setup_zerotier_firewall.png](opnsense_setup_zerotier_firewall.png)
+![opnsense_setup_zerotier_firewall.png](./imgs/opnsense_setup_zerotier_firewall.png)
 
 ## Static Routs in VMs
 
@@ -109,4 +109,4 @@ Where the `ens192` is the network interface of the internal NIC.
 
 If you have a TrueNAS VM, you can configure the same from:
 
-![truenas_static_route.png](truenas_static_route.png)
+![truenas_static_route.png](./imgs/truenas_static_route.png)
