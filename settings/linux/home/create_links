@@ -68,7 +68,6 @@ else
 
   # vim
   link $BASEDIR/vim/vimrc $HOME/.vimrc
-  link $BASEDIR/vim/viminfo $HOME/.viminfo
   link $BASEDIR/vim/gvimrc $HOME/.gvimrc
   link $BASEDIR/vim $HOME/.vim
 
@@ -139,6 +138,8 @@ else
   link $BASEDIR/awsenv $HOME/.awsenv
 
   link $BASEDIR/Desktop $HOME/Desktop
+
+  link $BASEDIR/xbindkeysrc $HOME/.xbindkeysrc
 
   link ~/Dropbox/fonts $HOME/.fonts
 

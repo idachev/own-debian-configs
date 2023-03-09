@@ -1,6 +1,9 @@
 ! Following the suggestion from the following link:
 ! https://dev.to/0xbf/remap-keys-in-the-keyboard-in-ubuntu-5a36
 ! Check command: xev
-keycode 122 = Next NoSymbol Next
-keycode 123 = Prior NoSymbol Prior
+! For XF86ScrollDown/XF86ScrollUp we need:
+! sudo apt-get install xbindkeys xvkbd xautomation
+! Also we need the file ~/.xbindkeysrc
+keycode 122 = XF86ScrollDown
+keycode 123 = XF86ScrollUp
 

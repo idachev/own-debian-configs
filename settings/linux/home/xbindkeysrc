@@ -1,0 +1,5 @@
+"xte 'mouseclick 4'"
+  XF86ScrollUp
+
+"xte 'mouseclick 5'"
+  XF86ScrollDown
