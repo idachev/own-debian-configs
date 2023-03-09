@@ -1,0 +1,6 @@
+! Following the suggestion from the following link:
+! https://dev.to/0xbf/remap-keys-in-the-keyboard-in-ubuntu-5a36
+! Check command: xev
+keycode 122 = Next NoSymbol Next
+keycode 123 = Prior NoSymbol Prior
+
