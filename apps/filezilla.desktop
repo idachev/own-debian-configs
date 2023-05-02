@@ -1,6 +1,6 @@
 #!/usr/bin/env xdg-open
 [Desktop Entry]
-Name=FileZilla Pro
+Name=FileZilla
 GenericName=FTP client
 GenericName[da]=FTP-klient
 GenericName[de]=FTP-Client
@@ -11,7 +11,7 @@ Comment[de]=Dateien über FTP, FTPS und SFTP übertragen
 Comment[fr]=Transférer des fichiers via FTP, FTPS et SFTP
 Exec=/home/idachev/lib/filezilla3/bin/filezilla
 Terminal=false
-Icon=/home/idachev/lib/filezilla3/share/icons/hicolor/scalable/apps/filezilla_pro.svg
+Icon=/home/idachev/lib/filezilla3/share/icons/hicolor/scalable/apps/filezilla.svg
 Type=Application
 Categories=Network;FileTransfer;
 Version=1.0
