@@ -1,0 +1,19 @@
+#!/usr/bin/env xdg-open
+[Desktop Entry]
+Name=FileZilla Pro
+GenericName=FTP client
+GenericName[da]=FTP-klient
+GenericName[de]=FTP-Client
+GenericName[fr]=Client FTP
+Comment=Download and upload files via FTP, FTPS and SFTP
+Comment[da]=Download og upload filer via FTP, FTPS og SFTP
+Comment[de]=Dateien über FTP, FTPS und SFTP übertragen
+Comment[fr]=Transférer des fichiers via FTP, FTPS et SFTP
+Exec=/home/idachev/lib/filezilla3/bin/filezilla
+Terminal=false
+Icon=/home/idachev/lib/filezilla3/share/icons/hicolor/scalable/apps/filezilla_pro.svg
+Type=Application
+Categories=Network;FileTransfer;
+Version=1.0
+StartupWMClass=Filezilla
+
