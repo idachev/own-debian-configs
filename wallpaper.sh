@@ -23,15 +23,15 @@ BGNAME=`echo $IMGS | cut -d ' ' -f $N`
 
 # check and only change the desktop if file exist
 if [ -f $BGNAME ]; then
-# start of gconftool command - all on one line!
-gconftool-2 -t str --set /desktop/gnome/background/picture_filename "$BGNAME"
-# end of gconftool command
 
-gsettings set org.gnome.desktop.background picture-uri file://${BGNAME}
+  gsettings set org.gnome.desktop.background picture-uri file://${BGNAME}
 
-# start of gconftool command - all on one line!
-gconftool-2 -t str --set /desktop/gnome/background/picture_options "stretched"
-#Possible values are "none", "wallpaper" (eg tiled), "centered", "scaled", "stretched"
-# end of gconftool command
+  # start of gconftool command - all on one line!
+  gconftool-2 -t str --set /desktop/gnome/background/picture_filename "$BGNAME"
+
+  gconftool-2 -t str --set /desktop/gnome/background/picture_options "stretched"
+  # possible values are "none", "wallpaper" (eg tiled), "centered", "scaled", "stretched"
+
+  # end of gconftool command
 fi
 
