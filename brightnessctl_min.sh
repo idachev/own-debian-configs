@@ -12,6 +12,6 @@ sleep 1
 
 kill $(pgrep -P ${PID})
 
-yad --no-buttons --borders 30 --timeout 1 --text-align center \
-  --on-top --undecorated --skip-taskbar --sticky \
-  --text "<span size=\"x-large\">Brightness\n<b>$(cat /sys/class/backlight/intel_backlight/brightness)</b></span>" &
+
+${DIR}/brightnessctl_show.sh &
+

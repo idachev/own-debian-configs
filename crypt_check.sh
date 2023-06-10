@@ -32,13 +32,7 @@ fi
 
 if [ ! -d ~/storage_c/lost+found ]; then
   show_gpg_check
-  echo -e "DO: sudo ~/bin/luks_mount.sh /dev/nvme2n1 $(realpath ~/storage_c) "'${USER}'" && crypt_check.sh\n"
-  OK=0
-fi
-
-if [ ! -d ~/storage_c/Dropbox/Apps ]; then
-  show_gpg_check
-  echo -e "DO: sudo mergerfs -o allow_other,use_ino,cache.files=partial,dropcacheonclose=true $(realpath ~/storage_c/.Dropbox_mergerfs_branch1):$(realpath ~/storage_b/.Dropbox_mergerfs_branch2) $(realpath ~/storage_c/Dropbox) && maestral start && crypt_check.sh\n"
+  echo -e "DO: sudo ~/bin/luks_mount.sh /dev/nvme0n1 $(realpath ~/storage_c) "'${USER}'" && crypt_check.sh\n"
   OK=0
 fi
 
@@ -49,10 +43,6 @@ else
    gocryptfs_storage_a.sh && \
    gocryptfs_storage_private_docs.sh && \
    sudo ~/bin/luks_mount.sh /dev/nvme1n1 $(realpath ~/storage_b) "'${USER}'" && \
-   sudo ~/bin/luks_mount.sh /dev/nvme2n1 $(realpath ~/storage_c) "'${USER}'" && \
-   sudo mergerfs -o allow_other,use_ino,cache.files=partial,dropcacheonclose=true \
-   $(realpath ~/storage_c/.Dropbox_mergerfs_branch1):$(realpath ~/storage_b/.Dropbox_mergerfs_branch2) \
-   $(realpath ~/storage_c/Dropbox) && \
-   maestral start"
+   sudo ~/bin/luks_mount.sh /dev/nvme0n1 $(realpath ~/storage_c) "'${USER}'
 fi
 

@@ -6,9 +6,9 @@
 #
 # <file system> <mount point>   <type>  <options>       <dump>  <pass>
 /dev/mapper/vgmint-root /               ext4    errors=remount-ro 0       1
+/dev/mapper/vgmint-home /home               ext4    defaults 0       2
 # /boot was on /dev/nvme0n1p2 during installation
-UUID=10fa9608-f99b-4c43-8f47-f4baa0346e31 /boot           ext4    defaults        0       2
+UUID=fb34e3d1-a88a-41b6-a5dc-a72a3fc40ea5 /boot           ext4    defaults        0       2
 # /boot/efi was on /dev/nvme0n1p1 during installation
 UUID=0B8B-8FB7  /boot/efi       vfat    umask=0077      0       1
 /dev/mapper/vgmint-swap_1 none            swap    sw              0       0
-

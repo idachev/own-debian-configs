@@ -47,3 +47,6 @@ To test use:
 echo "test" | gpg -q --encrypt --armor -r key@email.com | \
   cat | gpg --pinentry-mode loopback -q --decrypt
 ```
+
+Check the USB port the Yubikey work on some only with sudo and on some without
+

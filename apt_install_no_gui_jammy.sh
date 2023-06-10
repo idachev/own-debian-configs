@@ -57,7 +57,8 @@ packages=( openjdk-8-jdk openjdk-8-dbg openjdk-8-source \
   libnss3-tools sshpass nmap python3-pyqtgraph socat lrzip p7zip p7zip-full jq apache2-utils \
   libimage-exiftool-perl ffmpeg postgresql-client python-dev fdupes gthumb mc progress \
   archivemount openssh-server maven libcurl4-openssl-dev gcc g++ make pv acpitool pavucontrol \
-  libpcsclite-dev swig docker.io azure-cli mongodb-org-shell mongodb-org-tools google-cloud-sdk )
+  libpcsclite-dev swig docker.io azure-cli mongodb-org-shell mongodb-org-tools google-cloud-sdk \
+  brightnessctl )
 
 for i in "${packages[@]}"; do
     sudo -H apt install -y "$i"
