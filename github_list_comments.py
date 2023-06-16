@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 
 import concurrent.futures
-import datetime
 import http
 import logging
 import os
 import re
+from datetime import datetime, timedelta, timezone
 
 import requests as requests
 
@@ -78,10 +78,75 @@ def get_commit_message(repo, commit_sha):
     return commit_msg
 
 
+def add_approved_review_info(res, repo, pr_number, pr_title):
+    url = f'{GITHUB_API_URL}/repos/{GITHUB_OWNER}/{repo}/pulls/{pr_number}/reviews'
+
+    response = requests.get(url, headers=github_headers)
+
+    if response.status_code != http.HTTPStatus.OK:
+        logger.warning(f"Failed to get pulls reviews: {repo}/pulls/{pr_number}, "
+                       f"Status code: {response.status_code}, "
+                       f"Response body: {response.text}")
+        return
+
+    reviews = response.json()
+    for review in reviews:
+        state = review["state"]
+
+        if review["state"] == "APPROVED":
+            user_login = review["user"]["login"]
+            approval_time = review["submitted_at"]
+
+            pr_info = PullRequestCommentInfo(pr_title, user_login, approval_time)
+
+            logger.info(f"Adding approved review: {pr_info}")
+
+            res.append(pr_info)
+
+
+def add_approved_reviews(res, repo, last_days):
+    url = f'{GITHUB_API_URL}/repos/{GITHUB_OWNER}/{repo}/pulls'
+
+    logger.info(f"Getting pull request for repo: {repo}")
+
+    time_after = datetime.now(timezone.utc) - timedelta(days=last_days)
+
+    page = 1
+
+    while True:
+        response = requests.get(url, headers=github_headers,
+                                params={"sort": "updated", "direction": "desc", "page": page})
+
+        if response.status_code != http.HTTPStatus.OK:
+            logger.warning(f"Failed to get pulls requests: {repo}, "
+                           f"Status code: {response.status_code}, "
+                           f"Response body: {response.text}")
+            return repo, []
+
+        data = response.json()
+
+        if len(data) == 0:
+            break
+
+        for pr in data:
+            pr_number = pr["number"]
+            pr_title = pr["title"]
+            updated_at = pr["updated_at"]
+
+            given_time = datetime.fromisoformat(updated_at.replace("Z", "+00:00"))
+
+            if given_time < time_after:
+                break
+
+            add_approved_review_info(res, repo, pr_number, pr_title)
+
+        page += 1
+
+
 def get_review_comments(repo, last_days):
     url = f'{GITHUB_API_URL}/repos/{GITHUB_OWNER}/{repo}/pulls/comments'
 
-    time_since = (datetime.datetime.now() - datetime.timedelta(days=last_days)).isoformat(timespec='seconds')
+    time_since = (datetime.now(timezone.utc) - timedelta(days=last_days)).isoformat(timespec='seconds')
 
     logger.info(f"Getting review comments for repo: {repo}, time_since: {time_since}")
 
@@ -109,6 +174,8 @@ def get_review_comments(repo, last_days):
                 PullRequestCommentInfo(commit_msg, pr_comment['user']['login'], pr_comment['created_at']))
 
         page += 1
+
+    add_approved_reviews(res, repo, last_days)
 
     return repo, res
 

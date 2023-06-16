@@ -1,0 +1,7 @@
+[Desktop Entry]
+Type=Application
+Terminal=false
+Exec="/home/idachev/lib/gpt4all/bin/chat"
+Name=GPT4All
+Icon=/home/idachev/lib/gpt4all/logo-48.png
+Name[en_US]=GPT4All
