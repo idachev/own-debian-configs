@@ -52,6 +52,9 @@ export PATH=${PATH}:${HOME}/.local/bin
 export PATH=${PATH}:/usr/local/go/bin
 export PATH=${PATH}:${HOME}/go/bin
 
+# Add tfenv check https://github.com/tfutils/tfenv
+export PATH=${PATH}:${HOME}/.tfenv/bin
+
 # Perforce custom envs
 export P4CONFIG=.p4config
 export P4EDITOR=vim
@@ -65,9 +68,9 @@ export RSYNC_PARTIAL_DIR=${HOME}/.rsync-tmp
 
 export HELM_HOME=${HOME}/.helm
 
-if [ -f ~/.oracleenv ]; then
-  . ~/.oracleenv
-fi
+#if [ -f ~/.oracleenv ]; then
+#  . ~/.oracleenv
+#fi
 
 if [ -f ~/.awsenv ]; then
   . ~/.awsenv

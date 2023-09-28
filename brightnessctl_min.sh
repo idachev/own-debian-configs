@@ -4,7 +4,8 @@ DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 brightnessctl set 1
 
-brightness-controller &
+# Replaced by f.lux
+# brightness-controller &
 
 PID=$(echo $!)
 
