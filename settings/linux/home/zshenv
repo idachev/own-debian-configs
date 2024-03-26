@@ -21,7 +21,7 @@ export SYS_JAVA_HOME=${SYS_JAVA_HOME_8}
 
 export JAVA_HOME=${SYS_JAVA_HOME}
 
-export MAVEN_OPTS="-Xmx4192m -Dorg.slf4j.simpleLogger.showDateTime=true -Dorg.slf4j.simpleLogger.dateTimeFormat=yyyy-MM-dd'T'HH:mm:ss.SSSZ -Duser.timezone=UTC"
+export MAVEN_OPTS="-Xmx4192m -Dorg.slf4j.simpleLogger.showDateTime=true -Dorg.slf4j.simpleLogger.dateTimeFormat=yyyy-MM-dd'T'HH:mm:ss.SSSZ -Duser.timezone=UTC -Djava.net.preferIPv4Stack=true"
 export MAVEN_HOME=${LOCAL_LIB}/maven
 
 export PATH=${PATH}:${MAVEN_HOME}/bin
@@ -68,23 +68,21 @@ export RSYNC_PARTIAL_DIR=${HOME}/.rsync-tmp
 
 export HELM_HOME=${HOME}/.helm
 
-#if [ -f ~/.oracleenv ]; then
-#  . ~/.oracleenv
-#fi
+# Do not use source instead of . in env files
+# it does not work for desktop managers env load
 
-if [ -f ~/.awsenv ]; then
-  . ~/.awsenv
-fi
+[ -s ~/.awsenv ] && . ~/.awsenv
 
 # Add local PC shell settings
 # Disable this if you use rsync and ssh or scp
-if [ -f ~/.localenv ]; then
-  # Do not use source instead of . in env files
-  # it does not work for desktop managers env load
-  . ~/.localenv
-fi
+[ -s ~/.localenv ] && . ~/.localenv
 
-if [[ -o interactive && -f ~/bin/crypt_check.sh ]]; then
+if [[ -o interactive && -s ~/bin/crypt_check.sh ]]; then
   ~/bin/crypt_check.sh
 fi
+
+export NVM_DIR="$HOME/.nvm"
+
+[ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
+[ -s "$NVM_DIR/bash_completion" ] && . "$NVM_DIR/bash_completion"
 

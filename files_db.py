@@ -312,6 +312,7 @@ class FilesManage:
     _files_db = None
     _files_src_root = None
     _files_dst_root = None
+    _files_dst_root_sub = None
     _working_dir = True
     _recycle_duplicates = False
     _dry_run = True
@@ -322,6 +323,7 @@ class FilesManage:
                  files_db,
                  files_src_root,
                  files_dst_root,
+                 files_dst_root_sub,
                  files_cache,
                  working_dir,
                  recycle_duplicates=False,
@@ -329,14 +331,19 @@ class FilesManage:
         self._files_db = files_db
         self._files_src_root = files_src_root
         self._files_dst_root = files_dst_root
+        self._files_dst_root_sub = files_dst_root_sub
         self._files_cache = files_cache
         self._working_dir = working_dir
         self._recycle_duplicates = recycle_duplicates
         self._dry_run = dry_run
 
+        if self._files_dst_root_sub is None:
+            self._files_dst_root_sub = self._files_dst_root
+
         log_verbose("files src db: %s" % self._files_db)
         log_verbose("files src root dir: %s" % self._files_src_root)
         log_verbose("files dst root dir: %s" % self._files_dst_root)
+        log_verbose("files dst root sub dir: %s" % self._files_dst_root_sub)
         log_verbose("files src/dst cache: %s" % self._files_cache)
         log_verbose("files working dir: %s" % self._working_dir)
         log_verbose("dry run: %d" % self._dry_run)
@@ -418,7 +425,7 @@ class FilesManage:
 
         return pickle_data
 
-    def _fill_db(self, root_path, db_map):
+    def _fill_db(self, root_path, filter_root_path, db_map):
         """
         Fill DB from directory.
         """
@@ -427,9 +434,14 @@ class FilesManage:
         for root, dirs, files in os.walk(root_path):
             files = (path.join(root, x) for x in files)
             for file_path in files:
+                if not file_path.startswith(filter_root_path):
+                    continue
+
                 name = file_path[len(root_path) + 1:]
+
                 if (os.sep + '.') in name or name.startswith('.'):
                     continue
+
                 all_files.append(file_path)
 
         parts = np.array_split(all_files, DEFAULT_THREADS)
@@ -467,11 +479,11 @@ class FilesManage:
     def update_db(self):
         """
         Update db with the files root content.
-        Do not cleanup old data in db.
+        Do not clean up old data in db.
         If there is existing file with same cache it is replaced.
         """
         log_verbose("Update DB")
-        self._fill_db(self._files_src_root, self._src_db_map)
+        self._fill_db(self._files_src_root, self._files_src_root, self._src_db_map)
 
         if self._dry_run:
             log_verbose("DRY RUN")
@@ -522,14 +534,14 @@ class FilesManage:
             sys.exit(102)
 
         self._dst_db_map = {}
-        self._fill_db(self._files_dst_root, self._dst_db_map)
+        self._fill_db(self._files_dst_root, self._files_dst_root_sub, self._dst_db_map)
 
         dst_items = self._dst_db_map.values()
 
         if self._recycle_duplicates:
             for dst_item in dst_items:
                 for dup_item in dst_item.duplicates:
-                    log_verbose("Found duplicate:\n  name: %s" % dup_item)
+                    log_verbose("Found duplicate:\n  name: %s" % dup_item.name)
                     self._move_to_recycle(dup_item.name)
                 dst_item.duplicates = []
 
@@ -580,6 +592,12 @@ class FilesManage:
 
         if len(dst_item.duplicates) == 0:
             return
+
+        dst_dup_match_src_name = [dup for dup in dst_item.duplicates if dup.name == src_item.name]
+        if len(dst_dup_match_src_name) > 0:
+            org_dst_item_name = dst_item.name
+            dst_item.name = dst_dup_match_src_name[0].name
+            dst_dup_match_src_name[0].name = org_dst_item_name
 
         if len(src_item.duplicates) == 0:
             log_verbose("No source duplicates recycle destination")
@@ -737,6 +755,7 @@ def parse_args():
     global FILES_DB
     global FILES_SRC_ROOT
     global FILES_DST_ROOT
+    global FILES_DST_ROOT_SUB
     global UPDATE_DB
     global UPDATE_ROOT
     global FILES_CACHE
@@ -748,6 +767,8 @@ def parse_args():
                         help='point to files source root dir')
     parser.add_argument('files_dst_root', metavar='FILES_DST_ROOT', nargs='?',
                         help='point to files destination root dir, required if -root/--update-root is used')
+    parser.add_argument('files_dst_root_sub', metavar='FILES_DST_ROOT_SUB', nargs='?',
+                        help='point to files destination sub path of root dir, used only if -root/--update-root is used')
     parser.add_argument('-q', '--quiet',
                         dest="quiet",
                         action='store_true',
@@ -799,6 +820,7 @@ def parse_args():
     FILES_DB = args.files_db
     FILES_SRC_ROOT = args.files_src_root
     FILES_DST_ROOT = args.files_dst_root
+    FILES_DST_ROOT_SUB = args.files_dst_root_sub
     UPDATE_DB = args.update_db
     UPDATE_ROOT = args.update_root
     FILES_CACHE = args.files_cache
@@ -818,21 +840,32 @@ def parse_args():
     if FILES_DST_ROOT is not None:
         FILES_DST_ROOT = path.abspath(FILES_DST_ROOT)
 
+    if FILES_DST_ROOT_SUB is not None:
+        FILES_DST_ROOT_SUB = path.abspath(FILES_DST_ROOT_SUB)
+
     if UPDATE_DB and FILES_DST_ROOT is not None:
         log_error("Destination root directory should be not set when update DB: %s" % FILES_DST_ROOT)
-        sys.exit(3)
+        sys.exit(30)
+
+    if UPDATE_DB and FILES_DST_ROOT_SUB is not None:
+        log_error("Destination root sub directory should be not set when update DB: %s" % FILES_DST_ROOT_SUB)
+        sys.exit(31)
 
     if UPDATE_ROOT and FILES_DST_ROOT is None:
         log_error("Destination root directory is required when update root")
-        sys.exit(4)
+        sys.exit(32)
 
     if not path.isdir(FILES_SRC_ROOT) or not path.exists(FILES_SRC_ROOT):
         log_error("Files source root is not a directory: %s" % FILES_SRC_ROOT)
-        sys.exit(5)
+        sys.exit(20)
 
     if FILES_DST_ROOT is not None and (not path.isdir(FILES_DST_ROOT) or not path.exists(FILES_DST_ROOT)):
         log_error("Files destination root is not a directory: %s" % FILES_DST_ROOT)
-        sys.exit(6)
+        sys.exit(33)
+
+    if FILES_DST_ROOT_SUB is not None and (not path.isdir(FILES_DST_ROOT_SUB) or not path.exists(FILES_DST_ROOT_SUB)):
+        log_error("Files destination root sub is not a directory: %s" % FILES_DST_ROOT_SUB)
+        sys.exit(34)
 
     if UPDATE_ROOT and FILES_DST_ROOT == FILES_SRC_ROOT:
         log_error("When updating root the source should be differ from destination: %s" % FILES_SRC_ROOT)
@@ -862,12 +895,16 @@ def parse_args():
     FILES_DB = path.abspath(FILES_DB)
     FILES_CACHE = path.abspath(FILES_CACHE)
 
+    if FILES_DST_ROOT_SUB is None:
+        FILES_DST_ROOT_SUB = FILES_DST_ROOT
+
 
 def main():
     parse_args()
 
     t0 = timeit.default_timer()
-    inst = FilesManage(FILES_DB, FILES_SRC_ROOT, FILES_DST_ROOT, FILES_CACHE, WORKING_DIR, RECYCLE_DUPLICATES, DRY_RUN)
+    inst = FilesManage(FILES_DB, FILES_SRC_ROOT, FILES_DST_ROOT, FILES_DST_ROOT_SUB, FILES_CACHE, WORKING_DIR,
+                       RECYCLE_DUPLICATES, DRY_RUN)
     log_verbose("Load DB for: %d seconds" % (timeit.default_timer() - t0))
 
     if UPDATE_DB:

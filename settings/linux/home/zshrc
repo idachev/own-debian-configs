@@ -200,6 +200,10 @@ source ~/.zsh/zsh-z.plugin.zsh
 
 zstyle ':completion:*' menu select
 
+export ZSH_CUSTOM="/home/idachev/.oh-my-zsh/custom"
+source "${ZSH_CUSTOM}/plugins/zsh_codex/zsh_codex.plugin.zsh"
+bindkey '^G' create_completion
+
 ##################################################################
 # Misc
 
@@ -267,4 +271,11 @@ if [ -f ~/bin/settings/linux/home/_manual_/xmodmap_g915_wheel ]; then
   xmodmap ~/bin/settings/linux/home/_manual_/xmodmap_g915_wheel
 fi
 
+source <(temporal completion zsh)
 
+
+export NVM_DIR="$HOME/.nvm"
+[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"  # This loads nvm
+[ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"  # This loads nvm bash_completion
+
+eval "$(gh copilot alias -- zsh)"

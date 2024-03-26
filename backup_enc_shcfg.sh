@@ -20,7 +20,7 @@ fi
 
 BASE_SRC_DIR=$(dirname ${BACKUP_SRC_DIR})
 
-DIR_YM_NAME=$(date -u '+%Y%m')
+DIR_YM_NAME=$(date -u '+%Y')/$(date -u '+%Y%m')
 TGZ_NAME="${BACKUP_NAME_FILE}-$(date -u '+%Y%m%d-%H%M%S').tgz"
 
 if [[ -d "${BACKUP_DIR_1}" ]]; then
@@ -53,11 +53,11 @@ echo -e "\nArchive:"
 ls -alh "${BACKUP_SRC_DIR}"
 
 if [ "${USE_SUDO}" = "1" ]; then
-  sudo "${DIR}/tar_pigz.sh" "${TGZ_FILE}" "${BACKUP_SRC_DIR}" "${BACKUP_SRC_EXCLUDE}"
+  sudo "${DIR}/tar_pigz.sh" "${TGZ_FILE}" "${BACKUP_SRC_DIR}" "${BACKUP_SRC_TAR_EXCLUDE}"
 
   sudo chown "${USER}:${USER}" "${TGZ_FILE}"
 else
-  "${DIR}/tar_pigz.sh" "${TGZ_FILE}" "${BACKUP_SRC_DIR}" "${BACKUP_SRC_EXCLUDE}" 
+  "${DIR}/tar_pigz.sh" "${TGZ_FILE}" "${BACKUP_SRC_DIR}" "${BACKUP_SRC_TAR_EXCLUDE}" 
 fi
 
 echo -e "\nCreated tgz:"

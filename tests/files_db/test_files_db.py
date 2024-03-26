@@ -43,6 +43,12 @@ class TestStringMethods(unittest.TestCase):
 
             self.do_tests(tmp_dirname, recycle_duplicates=False)
 
+    def test_files_db_with_root_sub(self):
+        with tempfile.TemporaryDirectory(prefix="files_db_test_") as tmp_dirname:
+            print("Using temporary directory: %s" % tmp_dirname)
+
+            self.do_tests(tmp_dirname, recycle_duplicates=False, root_sub=True)
+
     def test_files_db_without_duplicates(self):
         with tempfile.TemporaryDirectory(prefix="files_db_test_") as tmp_dirname:
             print("Using temporary directory: %s" % tmp_dirname)
@@ -77,6 +83,7 @@ class TestStringMethods(unittest.TestCase):
             path.abspath(path.join(test_src, WORKING_DIR, FILES_DB)),
             test_src,
             test_src,
+            test_src,
             path.abspath(path.join(test_src, WORKING_DIR, FILES_CACHE)),
             WORKING_DIR,
             recycle_duplicates=recycle_duplicates,
@@ -90,6 +97,7 @@ class TestStringMethods(unittest.TestCase):
         files_manage = FilesManage(
             path.abspath(path.join(test_src, WORKING_DIR, FILES_DB)),
             test_src,
+            test_dst,
             test_dst,
             path.abspath(path.join(test_dst, WORKING_DIR, FILES_CACHE)),
             WORKING_DIR,
@@ -104,15 +112,17 @@ class TestStringMethods(unittest.TestCase):
             'd1/d1_1/d1_1_f1.txt: plain file',
             'd1_1/d1_1_f1.txt: file in d1/d1_1',
             'd1_1/d2/d2_f1.txt: file in directory d2',
+            'd1_1/d2/d2_f1_dup_no_src.txt: file in directory d2',
             'd2/d1_1_f1.txt: file in d1/d1_1',
             'd2/d2_f1.txt: file in directory d2',
             'd2/d2_f2.txt: file in d2 f2 diff',
             'd2/d2_f3_g5.txt: f3 in d2',
             'd2/d2_f4.txt: d2_f4.txt',
-            'd3/d3_f1.txt: d3 f1 not existing file in source'
+            'd3/d3_f1.txt: d3 f1 not existing file in source',
+            'd3/d3_f1_dup.txt: d3 f1 not existing file in source',
         ], dst_dir_content)
 
-    def do_tests(self, tmp_dirname, recycle_duplicates=False):
+    def do_tests(self, tmp_dirname, recycle_duplicates=False, root_sub=False):
         test_dst_org = path.join(BASE_PATH, "test_dst")
         exec_shell_cmd("cp -a %s %s" % (test_dst_org, tmp_dirname))
 
@@ -120,12 +130,14 @@ class TestStringMethods(unittest.TestCase):
         exec_shell_cmd("cp -a %s %s" % (test_src_org, tmp_dirname))
 
         test_dst = path.join(tmp_dirname, "test_dst")
+        test_dst_sub = test_dst if not root_sub else path.join(test_dst, "d2")
         test_src = path.join(tmp_dirname, "test_src")
 
         files_db.VERBOSE = True
 
         files_manage = FilesManage(
             path.abspath(path.join(test_src, WORKING_DIR, FILES_DB)),
+            test_src,
             test_src,
             test_src,
             path.abspath(path.join(test_src, WORKING_DIR, FILES_CACHE)),
@@ -142,6 +154,7 @@ class TestStringMethods(unittest.TestCase):
             path.abspath(path.join(test_src, WORKING_DIR, FILES_DB)),
             test_src,
             test_dst,
+            test_dst_sub,
             path.abspath(path.join(test_dst, WORKING_DIR, FILES_CACHE)),
             WORKING_DIR,
             recycle_duplicates=recycle_duplicates,
@@ -149,13 +162,13 @@ class TestStringMethods(unittest.TestCase):
         )
         files_manage.update_root()
 
-        self._assert_dst_dir_content(test_dst, recycle_duplicates)
+        self._assert_dst_dir_content(test_dst, recycle_duplicates, root_sub)
 
         # test again should not change
 
         files_manage.update_root()
 
-        self._assert_dst_dir_content(test_dst, recycle_duplicates)
+        self._assert_dst_dir_content(test_dst, recycle_duplicates, root_sub)
 
         # test again read cached files from destination
 
@@ -163,6 +176,7 @@ class TestStringMethods(unittest.TestCase):
             path.abspath(path.join(test_src, WORKING_DIR, FILES_DB)),
             test_src,
             test_dst,
+            test_dst_sub,
             path.abspath(path.join(test_dst, WORKING_DIR, FILES_CACHE)),
             WORKING_DIR,
             recycle_duplicates=recycle_duplicates,
@@ -170,7 +184,7 @@ class TestStringMethods(unittest.TestCase):
         )
         files_manage.update_root()
 
-        self._assert_dst_dir_content(test_dst, recycle_duplicates)
+        self._assert_dst_dir_content(test_dst, recycle_duplicates, root_sub)
 
     def get_dir_content_for_assert(self, root_path):
         all_files = []
@@ -194,7 +208,7 @@ class TestStringMethods(unittest.TestCase):
         res.sort()
         return res
 
-    def _assert_dst_dir_content(self, test_dst, recycle_duplicates):
+    def _assert_dst_dir_content(self, test_dst, recycle_duplicates, root_sub):
         dst_dir_content = self.get_dir_content_for_assert(test_dst)
 
         if recycle_duplicates:
@@ -202,8 +216,10 @@ class TestStringMethods(unittest.TestCase):
                 '.working/.check/d2/d2_f2.txt: file in d2 f2 diff',
                 '.working/.check/d3/d3_f1.txt: d3 f1 not existing file in source',
                 '.working/.files_cache: <bin>',
-                '.working/.recycle/d1_1/d1_1_f1.txt: file in d1/d1_1',
-                '.working/.recycle/d1_1/d2/d2_f1.txt: file in directory d2',
+                '.working/.recycle/d1_1/d2/d2_f1_dup_no_src.txt: file in directory d2',
+                '.working/.recycle/d2/d1_1_f1.txt: file in d1/d1_1',
+                '.working/.recycle/d2/d2_f1.txt: file in directory d2',
+                '.working/.recycle/d3/d3_f1_dup.txt: d3 f1 not existing file in source',
                 'd1_1_f1_dup.txt: file in d1/d1_1',
                 'd2/d2_f1.txt: file in directory d2',
                 'd2/d2_f3.txt: f3 in d2',
@@ -211,18 +227,36 @@ class TestStringMethods(unittest.TestCase):
                 'f1.txt: plain file'
             ], dst_dir_content)
         else:
-            self.assertEqual([
-                '.working/.check/d2/d2_f2.txt: file in d2 f2 diff',
-                '.working/.check/d3/d3_f1.txt: d3 f1 not existing file in source',
-                '.working/.files_cache: <bin>',
-                '.working/.recycle/d1_1/d2/d2_f1.txt: file in directory d2',
-                'd1/d1_1/d1_1_f1.txt: file in d1/d1_1',
-                'd1_1_f1_dup.txt: file in d1/d1_1',
-                'd2/d2_f1.txt: file in directory d2',
-                'd2/d2_f3.txt: f3 in d2',
-                'd2/d2_f4.txt: d2_f4.txt',
-                'f1.txt: plain file'
-            ], dst_dir_content)
+            if root_sub:
+                self.assertEqual([
+                    '.working/.check/d2/d2_f2.txt: file in d2 f2 diff',
+                    '.working/.files_cache: <bin>',
+                    'd1/d1_1/d1_1_f1.txt: plain file',
+                    'd1_1/d1_1_f1.txt: file in d1/d1_1',
+                    'd1_1/d2/d2_f1.txt: file in directory d2',
+                    'd1_1/d2/d2_f1_dup_no_src.txt: file in directory d2',
+                    'd1_1_f1_dup.txt: file in d1/d1_1',
+                    'd2/d2_f1.txt: file in directory d2',
+                    'd2/d2_f3.txt: f3 in d2',
+                    'd2/d2_f4.txt: d2_f4.txt',
+                    'd3/d3_f1.txt: d3 f1 not existing file in source',
+                    'd3/d3_f1_dup.txt: d3 f1 not existing file in source'
+                ], dst_dir_content)
+            else:
+                self.assertEqual([
+                    '.working/.check/d2/d2_f2.txt: file in d2 f2 diff',
+                    '.working/.check/d3/d3_f1.txt: d3 f1 not existing file in source',
+                    '.working/.check/d3/d3_f1_dup.txt: d3 f1 not existing file in source',
+                    '.working/.files_cache: <bin>',
+                    '.working/.recycle/d1_1/d2/d2_f1.txt: file in directory d2',
+                    '.working/.recycle/d1_1/d2/d2_f1_dup_no_src.txt: file in directory d2',
+                    'd1/d1_1/d1_1_f1.txt: file in d1/d1_1',
+                    'd1_1_f1_dup.txt: file in d1/d1_1',
+                    'd2/d2_f1.txt: file in directory d2',
+                    'd2/d2_f3.txt: f3 in d2',
+                    'd2/d2_f4.txt: d2_f4.txt',
+                    'f1.txt: plain file'
+                ], dst_dir_content)
 
 
 if __name__ == '__main__':
