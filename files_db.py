@@ -767,7 +767,8 @@ def parse_args():
                         help='point to files source root dir')
     parser.add_argument('files_dst_root', metavar='FILES_DST_ROOT', nargs='?',
                         help='point to files destination root dir, required if -root/--update-root is used')
-    parser.add_argument('files_dst_root_sub', metavar='FILES_DST_ROOT_SUB', nargs='?',
+    parser.add_argument('--root-sub',
+                        dest='files_dst_root_sub',
                         help='point to files destination sub path of root dir, used only if -root/--update-root is used')
     parser.add_argument('-q', '--quiet',
                         dest="quiet",

@@ -11,5 +11,5 @@ fi
 
 cd "${DIR}/.."
 
-files_db.py -t 1 -root . "${TARGET_DIR}"
+files_db.py -t 2 -root . "${TARGET_DIR}"
 

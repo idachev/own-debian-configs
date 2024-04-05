@@ -131,6 +131,8 @@ export XTERM="aterm +sb -geometry 80x29 -fg black -bg lightgoldenrodyellow -fn -
 #export VIDEO_PLAYER="totem"
 export VIDEO_PLAYER="smplayer"
 
+export AUDIO_PLAYER="celluloid"
+
 export IMAGE_VIEW="gthumb"
 
 export OFFICE_VIEW="soffice"
@@ -149,6 +151,7 @@ alias -s org=$BROWSER
 alias -s php=$BROWSER
 alias -s com=$BROWSER
 alias -s net=$BROWSER
+
 alias -s PNG=$IMAGE_VIEW
 alias -s png=$IMAGE_VIEW
 alias -s JPG=$IMAGE_VIEW
@@ -156,20 +159,26 @@ alias -s jpg=$IMAGE_VIEW
 alias -s jpeg=$IMAGE_VIEW
 alias -s GIF=$IMAGE_VIEW
 alias -s gif=$IMAGE_VIEW
+
 alias -s sxw=$OFFICE_VIEW
 alias -s doc=$OFFICE_VIEW
 alias -s docx=$OFFICE_VIEW
 alias -s ods=$OFFICE_VIEW
 alias -s xls=$OFFICE_VIEW
 alias -s xlsx=$OFFICE_VIEW
+
 alias -s tgz=$ARCHIVE_VIEW
 alias -s gz=$ARCHIVE_VIEW
 alias -s bz2=$ARCHIVE_VIEW
 alias -s zip=$ARCHIVE_VIEW
+
 alias -s java=$EDITOR
 alias -s txt=$EDITOR
+
 alias -s PKGBUILD=$EDITOR
+
 alias -s pdf=$PDF_VIEW
+
 alias -s mov=$VIDEO_PLAYER
 alias -s mk4=$VIDEO_PLAYER
 alias -s mp4=$VIDEO_PLAYER
@@ -180,6 +189,10 @@ alias -s mvi=$VIDEO_PLAYER
 alias -s avi=$VIDEO_PLAYER
 alias -s 3gp=$VIDEO_PLAYER
 alias -s 3GP=$VIDEO_PLAYER
+
+alias -s mp3=$AUDIO_PLAYER
+alias -s ogg=$AUDIO_PLAYER
+
 alias -s log=$LOG_VIEW
 alias -s ttf=$FONT_VIEW
 

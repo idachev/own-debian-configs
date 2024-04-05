@@ -4,5 +4,5 @@ DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 cd "${DIR}/.."
 
-files_db.py -t 1 -db .
+files_db.py -t 2 -db .
 

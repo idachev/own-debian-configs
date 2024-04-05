@@ -1,4 +1,6 @@
 #!/bin/bash
+[ "$1" = -x ] && shift && set -x
+DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 # Audible aax
 BIT_RATE='64k'
@@ -33,5 +35,7 @@ for i in "$@"; do
   echo "smaple_rate: $SAMPLE_RATE"
   echo -e "bit_rate: $BIT_RATE\n"
   ffmpeg $OVERWRITE_OUT $STRIP_INPUT -i "$IN_NAME" -threads auto -ac $CHANNELS -ar $SAMPLE_RATE -ab $BIT_RATE "$OUT_NAME"
+
+  touch -r "$IN_NAME" "$OUT_NAME"
 done
 

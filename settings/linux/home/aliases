@@ -334,3 +334,8 @@ mvn() {
   command mvn "$@"
 }
 
+# Java JDK
+
+alias jdk21="sudo update-alternatives --set java /usr/lib/jvm/java-21-openjdk-amd64/bin/java && export JAVA_HOME=/usr/lib/jvm/java-21-openjdk-amd64 && java --version"
+alias jdk17="sudo update-alternatives --set java /usr/lib/jvm/java-17-openjdk-amd64/bin/java && export JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64 && java --version"
+

@@ -24,7 +24,7 @@
   l = log --all --pretty=oneline --abbrev-commit --graph --decorate=full
   lp = log --all --pretty=format:'%C(auto,yellow)%h%Creset %cn %ce %C(auto,red)%cI%Creset %s'
   quick-stats = ! /usr/local/bin/git-quick-stats
-  fap = fetch --all --prune
+  fap = fetch --all --prune --tags
   sha = log --pretty=format:'%h' -n 1
   pub = "!f() { git pull; git fap; git brm; }; f"
   mpub = "!f() { git co master; git pub; }; f"

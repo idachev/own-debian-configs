@@ -1,4 +1,6 @@
 #!/bin/bash
+[ "$1" = -x ] && shift && set -x
+DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 INPUT_FILE=${1}
 ERROR_LOG="${INPUT_FILE}-error.log"
