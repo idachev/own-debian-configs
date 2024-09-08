@@ -292,3 +292,7 @@ export NVM_DIR="$HOME/.nvm"
 [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"  # This loads nvm bash_completion
 
 eval "$(gh copilot alias -- zsh)"
+
+# tabtab source for electron-forge package
+# uninstall by removing these lines or running `tabtab uninstall electron-forge`
+[[ -f /home/idachev/.nvm/versions/node/v20.5.1/lib/node_modules/electron-forge/node_modules/tabtab/.completions/electron-forge.zsh ]] && . /home/idachev/.nvm/versions/node/v20.5.1/lib/node_modules/electron-forge/node_modules/tabtab/.completions/electron-forge.zsh

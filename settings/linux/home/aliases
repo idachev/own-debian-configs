@@ -300,6 +300,8 @@ alias kafkacat-dc="docker run -it --rm \
 
 # Software
 
+alias mvnver="n19 mvn -q -Dexec.executable=echo -Dexec.args='\${project.version}' --non-recursive exec:exec"
+
 cleanup_mvn_target_dirs() {
   DOIT=$1
   find . -type d -iname "target" | \

@@ -1,9 +1,11 @@
 [Desktop Entry]
+Version=1.0
 Type=Application
-Name=Dev A3 PHP Storm
-Comment=PHP Storm
-Icon=/home/idachev/lib/phpstorm/bin/phpstorm.png
-Exec=/home/idachev/lib/phpstorm/bin/phpstorm.sh
+Name=PhpStorm
+Icon=/home/idachev/lib/PhpStorm-242.21829.154/bin/phpstorm.svg
+Exec="/home/idachev/lib/PhpStorm-242.21829.154/bin/phpstorm" %f
+Comment=Lightning-smart PHP IDE
+Categories=Development;IDE;
 Terminal=false
-Categories=Development;IDE;PHP;
-Name[en_US]=Dev A3 PHP Storm
+StartupWMClass=jetbrains-phpstorm
+StartupNotify=true
