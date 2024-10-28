@@ -91,8 +91,6 @@ def add_approved_review_info(res, repo, pr_number, pr_title):
 
     reviews = response.json()
     for review in reviews:
-        state = review["state"]
-
         if review["state"] == "APPROVED":
             user_login = review["user"]["login"]
             approval_time = review["submitted_at"]

@@ -2,7 +2,7 @@
 Version=1.0
 Type=Application
 Name=Dev A1 Idea
-Exec="/home/idachev/lib/idea/bin/idea.sh" %f
+Exec="/home/idachev/lib/idea/bin/idea" %f
 Icon=/home/idachev/lib/idea/bin/idea.png
 Comment=Develop with pleasure!
 Categories=Development;IDE;Java;

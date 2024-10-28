@@ -2,7 +2,7 @@
 Version=1.0
 Type=Application
 Name=Dev A2 PyCharm
-Exec="/home/idachev/lib/pycharm/bin/pycharm.sh" %f
+Exec="/home/idachev/lib/pycharm/bin/pycharm" %f
 Icon=/home/idachev/lib/pycharm/bin/pycharm.png
 Comment=Develop with pleasure!
 Categories=Development;IDE;Python;
