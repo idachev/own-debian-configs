@@ -37,7 +37,7 @@ alias egrep='egrep --color'
 alias fgrep='fgrep --color'
 
 # Different directory listings
-alias ls='ls -hF --color=tty --group-directories-first'
+alias ls='ls -v -hF --color=tty --group-directories-first'
 alias ll='ls -l'
 alias la='ls -a'
 alias lc='ls -C'

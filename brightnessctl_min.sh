@@ -11,7 +11,9 @@ PID=$(echo $!)
 
 sleep 1
 
-kill $(pgrep -P ${PID})
+if [[ -n ${PID} ]]; then
+  kill $(pgrep -P ${PID})
+fi
 
 
 ${DIR}/brightnessctl_show.sh &
