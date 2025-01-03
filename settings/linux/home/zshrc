@@ -296,3 +296,8 @@ eval "$(gh copilot alias -- zsh)"
 # tabtab source for electron-forge package
 # uninstall by removing these lines or running `tabtab uninstall electron-forge`
 [[ -f /home/idachev/.nvm/versions/node/v20.5.1/lib/node_modules/electron-forge/node_modules/tabtab/.completions/electron-forge.zsh ]] && . /home/idachev/.nvm/versions/node/v20.5.1/lib/node_modules/electron-forge/node_modules/tabtab/.completions/electron-forge.zsh
+
+
+# Added by `rbenv init` on Thu Jan  2 11:42:57 PM EET 2025
+eval "$(~/.rbenv/bin/rbenv init - --no-rehash zsh)"
+
