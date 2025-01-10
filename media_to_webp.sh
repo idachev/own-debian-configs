@@ -14,8 +14,12 @@ if [ -z "${IMG_EXT}" ]; then
   IMG_EXT="jpg"
 fi
 
-command -v sqip >/dev/null 2>&1 || \
- { echo -e "sqip is missing, please install it using:\nnpm install -g sqip" && exit 1; }
+if [ -z "${WEBP_QUALITY}" ]; then
+  WEBP_QUALITY=75
+fi
+
+command -v cwebp >/dev/null 2>&1 || \
+ { echo -e "cwebp is missing, please install it using:\nsudo apt-get install webp" && exit 1; }
 
 for file in "${SEL_DIR}"/*."${IMG_EXT}"; do
   [ -e "${file}" ] || { echo "No files found ${SEL_DIR}/*.${IMG_EXT}"; exit 1; }
@@ -24,7 +28,5 @@ for file in "${SEL_DIR}"/*."${IMG_EXT}"; do
 
   echo "Processing ${file}"
 
-  sqip "${file}" -o "${SEL_DIR}/${base_name}-lqip.svg"
-
-  base64 -w 0 "${SEL_DIR}/${base_name}-lqip.svg" | sed 's/^/data:image\/svg\+xml;base64,/' > "${SEL_DIR}/${base_name}-lqip.base64"
+  cwebp -q "${WEBP_QUALITY}" "${file}" -o "${SEL_DIR}/${base_name}.webp"
 done
