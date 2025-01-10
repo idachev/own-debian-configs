@@ -25,4 +25,6 @@ for file in "${SEL_DIR}"/*."${IMG_EXT}"; do
   echo "Processing ${file}"
 
   sqip "$file" -o "${SEL_DIR}/${base_name}-lqip.svg"
+
+  base64 -w 0 "${SEL_DIR}/${base_name}-lqip.svg" | sed 's/^/data:image\/svg\+xml;base64,/' > "${SEL_DIR}/${base_name}-lqip.base64"
 done

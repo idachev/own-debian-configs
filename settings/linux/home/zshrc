@@ -159,6 +159,8 @@ alias -s jpg=$IMAGE_VIEW
 alias -s jpeg=$IMAGE_VIEW
 alias -s GIF=$IMAGE_VIEW
 alias -s gif=$IMAGE_VIEW
+alias -s WEBP=$IMAGE_VIEW
+alias -s webp=$IMAGE_VIEW
 
 alias -s sxw=$OFFICE_VIEW
 alias -s doc=$OFFICE_VIEW
