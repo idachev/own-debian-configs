@@ -1,0 +1,13 @@
+[Desktop Entry]
+Encoding=UTF-8
+Name=Telegram
+GenericName=Chat Client
+Comment=Chat
+Exec=/home/idachev/lib/bin/Telegram
+Icon=/home/idachev/lib/bin/Telegram.png
+Terminal=false
+X-MultipleArgs=false
+StartupNotify=true
+StartupWMClass=Telegram-bin
+Type=Application
+Categories=Network;Chat;

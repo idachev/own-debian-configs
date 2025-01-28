@@ -2,7 +2,7 @@
 
 ###########################################################
 # Setting local gtest
-LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/lib
+LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/lib:/home/idachev/lib/openssl/lib
 export LD_LIBRARY_PATH
 
 ###########################################################
