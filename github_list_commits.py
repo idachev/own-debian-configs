@@ -97,6 +97,10 @@ def get_commit_messages(repo, last_days):
 
         for commit in data:
             commit_msg = commit['commit']['message']
+
+            if commit['author'] is None:
+                continue
+
             author = commit['author']['login']
             commit_time = commit['commit']['author']['date']
 
