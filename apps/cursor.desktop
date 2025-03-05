@@ -1,0 +1,11 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Cursor Code Editor
+Exec="/home/idachev/lib/bin/cursor.AppImage" --no-sandbox %f
+Icon=/home/idachev/lib/bin/cursor.png
+Comment=AI-powered code editor
+Categories=Development;IDE;TextEditor
+Terminal=false
+StartupNotify=true
+Name[en_US]=Cursor Code Editor
