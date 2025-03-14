@@ -1,0 +1,30 @@
+{
+  "editor.bracketPairColorization.enabled": true,
+  "editor.guides.bracketPairs": true,
+  "files.autoSave": "afterDelay",
+  "files.autoSaveDelay": 2500,
+  "editor.formatOnSaveMode": "modificationsIfAvailable",
+  "editor.formatOnSave": true,
+  "[python]": {
+    "editor.tabSize": 4,
+    "editor.insertSpaces": true,
+    "editor.rulers": [
+      79,
+      120
+    ],
+    "editor.defaultFormatter": "ms-python.autopep8"
+  },
+  "autopep8.args": [
+    "--aggressive",
+    "--in-place"
+  ],
+  "workbench.tree.indent": 20,
+  "window.zoomLevel": 0.75,
+  "files.trimTrailingWhitespace": true,
+  "files.trimFinalNewlines": true,
+  "trailing-spaces.trimOnSave": true,
+  "cSpell.words": [
+    "LLMCV",
+    "mongomock"
+  ]
+}
