@@ -67,6 +67,7 @@
 [core]
   autocrlf = false
   safecrlf = warn
+	pager = diff-so-fancy | less --tabs=4 -RFX
 [http]
   postBuffer = 524288000
 [credential]
@@ -79,3 +80,5 @@
 [credential "https://git-codecommit.eu-west-2.amazonaws.com/"]
   helper = !aws --region eu-west-2 codecommit credential-helper $@
   UseHttpPath = true
+[interactive]
+	diffFilter = diff-so-fancy --patch
