@@ -49,3 +49,9 @@ apt_install_all_goodies.sh
 
 Check `settings/linux/home/_manual_/gnome-terminal`
 
+# External Tools
+
+* https://github.com/so-fancy/diff-so-fancy
+* https://github.com/junegunn/fzf
+* https://github.com/rupa/z
+
