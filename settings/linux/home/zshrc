@@ -303,3 +303,7 @@ eval "$(gh copilot alias -- zsh)"
 # Added by `rbenv init` on Thu Jan  2 11:42:57 PM EET 2025
 eval "$(~/.rbenv/bin/rbenv init - --no-rehash zsh)"
 
+if [ -f ~/bin/z.sh ]; then
+  . ~/bin/z.sh
+fi
+
