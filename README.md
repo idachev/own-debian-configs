@@ -51,7 +51,11 @@ Check `settings/linux/home/_manual_/gnome-terminal`
 
 # External Tools
 
+> Some of the tools are extracted in ~/lib/bin
+
 * https://github.com/so-fancy/diff-so-fancy
 * https://github.com/junegunn/fzf
 * https://github.com/rupa/z
+* https://github.com/eza-community/eza
+* https://github.com/sharkdp/fd?tab=readme-ov-file
 

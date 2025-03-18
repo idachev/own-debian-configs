@@ -48,6 +48,18 @@ alias lsa='ls -ld .*'
 alias ltr='l -tr'
 alias lt='l -t'
 
+# eza
+alias eza='eza -hF --group-directories-first'
+alias le='eza -al'
+alias lel='eza -l'
+
+# fzf
+alias fv="fzf --bind 'enter:become(vim {})'"
+alias pf="ps aux | fzf"
+alias spf="sudo ps aux | fzf"
+alias fp="fzf --style full --preview 'fzf-preview.sh {}' --bind 'focus:transform-header:file --brief {}'"
+alias fh="fd . --max-depth 1 | fzf"
+
 # Git related
 alias gitka='gitk --all'
 alias gitga='gitg --all'
