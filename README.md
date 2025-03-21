@@ -58,4 +58,6 @@ Check `settings/linux/home/_manual_/gnome-terminal`
 * https://github.com/rupa/z
 * https://github.com/eza-community/eza
 * https://github.com/sharkdp/fd?tab=readme-ov-file
+* https://github.com/phiresky/ripgrep-all
+* https://github.com/BurntSushi/ripgrep
 

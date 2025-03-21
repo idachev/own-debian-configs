@@ -60,6 +60,18 @@ alias spf="sudo ps aux | fzf"
 alias fp="fzf --style full --preview 'fzf-preview.sh {}' --bind 'focus:transform-header:file --brief {}'"
 alias fh="fd . --max-depth 1 | fzf"
 
+rfif() {
+  if [ ! "$#" -gt 0 ]; then echo "Need a string to search for!"; return 1; fi
+  rg --files-with-matches --no-messages "$1" | fzf --preview "highlight -O ansi -l {} 2> /dev/null | rg --colors 'match:bg:yellow' --ignore-case --pretty --context 10 '$1' || rg --ignore-case --pretty --context 10 '$1' {}"
+}
+
+fif() {
+    if [ ! "$#" -gt 0 ]; then echo "Need a string to search for!"; return 1; fi
+    local file
+    file="$(rga --max-count=1 --ignore-case --files-with-matches --no-messages "$@" | fzf-tmux +m --preview="rga --ignore-case --pretty --context 10 '"$@"' {}")" && open "$file"
+}
+
+
 # Git related
 alias gitka='gitk --all'
 alias gitga='gitg --all'
@@ -145,7 +157,7 @@ dkrmicl() {
 
 alias tmux="tmux -2"
 
-alias ktmux='ps ax | grep tmux | awk '\''{ print $1 }'\'' | xargs kill'
+alias ktmux='kill $(pgrep tmux)'
 
 alias prettyjson='python -m json.tool'
 
