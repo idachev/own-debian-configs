@@ -60,4 +60,5 @@ Check `settings/linux/home/_manual_/gnome-terminal`
 * https://github.com/sharkdp/fd?tab=readme-ov-file
 * https://github.com/phiresky/ripgrep-all
 * https://github.com/BurntSushi/ripgrep
+* https://github.com/unixorn/fzf-zsh-plugin?tab=readme-ov-file
 
