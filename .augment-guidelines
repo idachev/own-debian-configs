@@ -1,0 +1,65 @@
+# Development Guidelines for GitHub PR Comments and Approvals Tool
+
+When making changes to the GitHub PR Comments and Approvals Tool, please follow these guidelines:
+
+## Code Style Guidelines
+
+1. **Avoid Inline Comments**: 
+   - Keep the code clean by avoiding inline comments
+   - Use descriptive function and variable names instead
+   - Use docstrings for function documentation rather than inline comments
+
+2. **Function Documentation**: 
+   - Use docstrings to document functions
+   - Include parameter descriptions and return value information
+   - Example:
+     ```python
+     def get_pr_approvals(repo, pr_number, pr_info):
+         """Get approval information for a specific pull request
+         
+         Args:
+             repo: Repository name
+             pr_number: Pull request number
+             pr_info: PullRequestInfo object to update with approvals
+         """
+     ```
+
+3. **Class Structure**: 
+   - `PullRequestInfo`: Represents a pull request with title, URL, author, number, and approvals
+   - `ApprovalInfo`: Stores approval details (approver and approval time)
+   - `PullRequestCommentInfo`: Stores comment information
+   - Add new classes as needed to represent data structures
+
+4. **Error Handling**: 
+   - Always include proper error handling for API calls and data processing
+   - Use the logger to record errors and warnings
+
+5. **Logging**: 
+   - Use the existing logger for informational and error messages
+   - Be consistent with log levels (INFO, WARNING, ERROR)
+
+6. **Command-line Arguments**: 
+   - Use the argparse module for adding new command-line options
+   - Update the help text to clearly describe each option
+
+7. **Code Style**: 
+   - Follow PEP 8 guidelines for Python code style
+   - Use consistent indentation (4 spaces)
+   - Keep line length reasonable (< 100 characters)
+
+## Adding New Features
+
+When adding new features:
+
+1. Create new classes as needed to represent data structures
+2. Add new functions with descriptive names and docstrings
+3. Update the argument parser if adding command-line options
+4. Update documentation with information about the new features
+
+## Testing
+
+Before submitting changes:
+
+1. Test with different repositories and branches
+2. Verify that all command-line options work as expected
+3. Check error handling by testing with invalid inputs

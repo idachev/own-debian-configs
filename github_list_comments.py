@@ -34,6 +34,12 @@ class PullRequestInfo:
         self.url = url
         self.author = author
 
+    def __str__(self):
+        return f"title: {self.title}, url: {self.url}, author: {self.author}"
+
+    def __repr__(self):
+        return self.__str__()
+
 
 class PullRequestCommentInfo:
     def __init__(self, commit_msg, author, comment_time):
@@ -95,7 +101,6 @@ def add_approved_review_info(res, repo, pr_number, pr_title, merge_commit_sha=No
             user_login = review["user"]["login"]
             approval_time = review["submitted_at"]
 
-            # If merge_commit_sha is provided, use it to get the commit message
             if merge_commit_sha:
                 commit_msg = get_commit_message(repo, merge_commit_sha)
             else:
@@ -229,10 +234,8 @@ def add_merge_commits(res, repo, last_days):
             if given_time < time_after:
                 break
 
-            # Get the commit message for the merge commit
             commit_msg = get_commit_message(repo, merge_commit_sha)
 
-            # Get the reviews for this PR to find who approved it
             url_reviews = f'{GITHUB_API_URL}/repos/{GITHUB_OWNER}/{repo}/pulls/{pr_number}/reviews'
             reviews_response = requests.get(url_reviews, headers=github_headers)
 
@@ -248,7 +251,6 @@ def add_merge_commits(res, repo, last_days):
                     user_login = review["user"]["login"]
                     approval_time = review["submitted_at"]
 
-                    # Only add if the user is the one we're looking for
                     if user_login == GITHUB_AUTHOR:
                         pr_info = PullRequestCommentInfo(commit_msg, user_login, approval_time)
                         logger.info(f"Adding merge commit review: {pr_info}")
@@ -301,31 +303,6 @@ def get_commit_messages(repo, base_branch, compare_branch):
                        for commit in data['commits']]
 
     return commit_messages
-
-
-def get_pull_requests_to_branch(repo, to_branch):
-    url = f"{GITHUB_API_URL}/repos/{GITHUB_OWNER}/{repo}/pulls"
-    params = {"state": "open", "base": f"{to_branch}"}
-
-    response = requests.get(url, headers=github_headers, params=params)
-
-    if response.status_code != http.HTTPStatus.OK:
-        logger.warning(f"Failed to get pull requests, "
-                       f"repo: {repo}, {to_branch}, "
-                       f"Status code: {response.status_code}, "
-                       f"Response body: {response.text}")
-        return []
-
-    pull_requests = response.json()
-
-    pr_infos = []
-    for pr in pull_requests:
-        pr_infos.append(
-            PullRequestInfo(pr["title"],
-                            pr['html_url'],
-                            pr['user']['login']))
-
-    return pr_infos
 
 
 def extract_jira_ticket_numbers(commit_messages):
