@@ -78,7 +78,7 @@ def get_commit_message(repo, commit_sha):
     return commit_msg
 
 
-def add_approved_review_info(res, repo, pr_number, pr_title):
+def add_approved_review_info(res, repo, pr_number, pr_title, merge_commit_sha=None):
     url = f'{GITHUB_API_URL}/repos/{GITHUB_OWNER}/{repo}/pulls/{pr_number}/reviews'
 
     response = requests.get(url, headers=github_headers)
@@ -95,7 +95,13 @@ def add_approved_review_info(res, repo, pr_number, pr_title):
             user_login = review["user"]["login"]
             approval_time = review["submitted_at"]
 
-            pr_info = PullRequestCommentInfo(pr_title, user_login, approval_time)
+            # If merge_commit_sha is provided, use it to get the commit message
+            if merge_commit_sha:
+                commit_msg = get_commit_message(repo, merge_commit_sha)
+            else:
+                commit_msg = pr_title
+
+            pr_info = PullRequestCommentInfo(commit_msg, user_login, approval_time)
 
             logger.info(f"Adding approved review: {pr_info}")
 
@@ -113,7 +119,7 @@ def add_approved_reviews(res, repo, last_days):
 
     while True:
         response = requests.get(url, headers=github_headers,
-                                params={"sort": "updated", "direction": "desc", "page": page})
+                                params={"sort": "updated", "direction": "desc", "page": page, "state": "all"})
 
         if response.status_code != http.HTTPStatus.OK:
             logger.warning(f"Failed to get pulls requests: {repo}, "
@@ -130,13 +136,14 @@ def add_approved_reviews(res, repo, last_days):
             pr_number = pr["number"]
             pr_title = pr["title"]
             updated_at = pr["updated_at"]
+            merge_commit_sha = pr.get("merge_commit_sha")
 
             given_time = datetime.fromisoformat(updated_at.replace("Z", "+00:00"))
 
             if given_time < time_after:
                 break
 
-            add_approved_review_info(res, repo, pr_number, pr_title)
+            add_approved_review_info(res, repo, pr_number, pr_title, merge_commit_sha)
 
         page += 1
 
@@ -173,9 +180,81 @@ def get_review_comments(repo, last_days):
 
         page += 1
 
+    # Add approved reviews (including merge commits)
     add_approved_reviews(res, repo, last_days)
 
+    # Add merge commits
+    add_merge_commits(res, repo, last_days)
+
     return repo, res
+
+
+def add_merge_commits(res, repo, last_days):
+    url = f'{GITHUB_API_URL}/repos/{GITHUB_OWNER}/{repo}/pulls'
+
+    logger.info(f"Getting merge commits for repo: {repo}")
+
+    time_after = datetime.now(timezone.utc) - timedelta(days=last_days)
+
+    page = 1
+
+    while True:
+        response = requests.get(url, headers=github_headers,
+                                params={"direction": "desc", "page": page,
+                                        "state": "closed", "sort": "updated"})
+
+        if response.status_code != http.HTTPStatus.OK:
+            logger.warning(f"Failed to get closed pull requests: {repo}, "
+                           f"Status code: {response.status_code}, "
+                           f"Response body: {response.text}")
+            return
+
+        data = response.json()
+
+        if len(data) == 0:
+            break
+
+        for pr in data:
+            # Skip PRs that don't have a merge commit
+            if not pr.get("merge_commit_sha") or not pr.get("merged_at"):
+                continue
+
+            pr_number = pr["number"]
+            pr_title = pr["title"]
+            merge_commit_sha = pr["merge_commit_sha"]
+            merged_at = pr["merged_at"]
+
+            given_time = datetime.fromisoformat(merged_at.replace("Z", "+00:00"))
+
+            if given_time < time_after:
+                break
+
+            # Get the commit message for the merge commit
+            commit_msg = get_commit_message(repo, merge_commit_sha)
+
+            # Get the reviews for this PR to find who approved it
+            url_reviews = f'{GITHUB_API_URL}/repos/{GITHUB_OWNER}/{repo}/pulls/{pr_number}/reviews'
+            reviews_response = requests.get(url_reviews, headers=github_headers)
+
+            if reviews_response.status_code != http.HTTPStatus.OK:
+                logger.warning(f"Failed to get reviews for PR: {repo}/pulls/{pr_number}, "
+                               f"Status code: {reviews_response.status_code}, "
+                               f"Response body: {reviews_response.text}")
+                continue
+
+            reviews = reviews_response.json()
+            for review in reviews:
+                if review["state"] == "APPROVED":
+                    user_login = review["user"]["login"]
+                    approval_time = review["submitted_at"]
+
+                    # Only add if the user is the one we're looking for
+                    if user_login == GITHUB_AUTHOR:
+                        pr_info = PullRequestCommentInfo(commit_msg, user_login, approval_time)
+                        logger.info(f"Adding merge commit review: {pr_info}")
+                        res.append(pr_info)
+
+        page += 1
 
 
 def get_review_comments_concurrent(repos, last_days):

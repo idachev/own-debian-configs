@@ -63,12 +63,96 @@ def get_commits_messages_concurrent(repos, last_days):
             futures.append(executor.submit(get_commit_messages,
                                            repo=repo,
                                            last_days=last_days))
+            futures.append(executor.submit(get_merge_commits,
+                                           repo=repo,
+                                           last_days=last_days))
 
         for future in concurrent.futures.as_completed(futures):
             logging.info(f"Future create connectors result: {future.result()}")
             all_res.append(future.result())
 
     return all_res
+
+
+def get_commit_message(repo, commit_sha):
+    url = f'{GITHUB_API_URL}/repos/{GITHUB_OWNER}/{repo}/commits/{commit_sha}'
+
+    response = requests.get(url, headers=github_headers)
+
+    if response.status_code != http.HTTPStatus.OK:
+        logger.warning(f"Failed to get commit message, "
+                       f"repo: {repo}, sha: {commit_sha}, "
+                       f"Status code: {response.status_code}, "
+                       f"Response body: {response.text}")
+        return ""
+
+    data = response.json()
+
+    commit_msg = data['commit']['message']
+
+    return commit_msg
+
+
+def get_merge_commits(repo, last_days):
+    url = f'{GITHUB_API_URL}/repos/{GITHUB_OWNER}/{repo}/pulls'
+
+    logger.info(f"Getting merge commits for repo: {repo}")
+
+    time_after = datetime.now(timezone.utc) - timedelta(days=last_days)
+
+    page = 1
+    res = []
+
+    while True:
+        response = requests.get(url, headers=github_headers,
+                                params={"direction": "desc", "page": page,
+                                        "state": "closed", "sort": "updated"})
+
+        if response.status_code != http.HTTPStatus.OK:
+            logger.warning(f"Failed to get closed pull requests: {repo}, "
+                           f"Status code: {response.status_code}, "
+                           f"Response body: {response.text}")
+            return repo, []
+
+        data = response.json()
+
+        if len(data) == 0:
+            break
+
+        for pr in data:
+            if not pr.get("merge_commit_sha") or not pr.get("merged_at"):
+                continue
+
+            pr_number = pr["number"]
+            merge_commit_sha = pr["merge_commit_sha"]
+            merged_at = pr["merged_at"]
+
+            given_time = datetime.fromisoformat(merged_at.replace("Z", "+00:00"))
+
+            if given_time < time_after:
+                break
+
+            commit_msg = get_commit_message(repo, merge_commit_sha)
+            url_reviews = f'{GITHUB_API_URL}/repos/{GITHUB_OWNER}/{repo}/pulls/{pr_number}/reviews'
+            reviews_response = requests.get(url_reviews, headers=github_headers)
+
+            if reviews_response.status_code != http.HTTPStatus.OK:
+                logger.warning(f"Failed to get reviews for PR: {repo}/pulls/{pr_number}, "
+                               f"Status code: {reviews_response.status_code}, "
+                               f"Response body: {reviews_response.text}")
+                continue
+
+            reviews = reviews_response.json()
+            for review in reviews:
+                if review["state"] == "APPROVED":
+                    user_login = review["user"]["login"]
+                    approval_time = review["submitted_at"]
+
+                    res.append(CommitInfo(f"[MERGE] {commit_msg}", user_login, approval_time))
+
+        page += 1
+
+    return repo, res
 
 
 def get_commit_messages(repo, last_days):
