@@ -28,6 +28,7 @@
   sha = log --pretty=format:'%h' -n 1
   pub = "!f() { git pull; git fap; git brm; }; f"
   mpub = "!f() { git co master; git pub; }; f"
+  dpub = "!f() { git co dev; git pub; }; f"
   mnpub = "!f() { git co main; git pub; }; f"
   qpub = "!f() { git co qa; git pub; }; f"
   spub = "!f() { git co staging; git pub; }; f"
