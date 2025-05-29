@@ -145,7 +145,7 @@ dkrmold() {
 dkrmi() {
   docker images --format "{{.ID}}" --filter=reference="${1}" | \
     xargs --no-run-if-empty docker rmi -f
-  docker images
+  docker images | sort -k7 -h
 }
 
 dkrmicl() {
