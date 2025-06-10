@@ -16,6 +16,8 @@ SIZE_BEFORE=$(getAvailableSize)
 
 echo -e "\nCleanup..."
 
+docker system prune --volumes -f
+
 docker volume ls -qf dangling=true | xargs -r docker volume rm
 
 docker images --no-trunc | grep '<none>' | awk '{ print $3 }' | xargs -r docker rmi

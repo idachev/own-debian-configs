@@ -5,3 +5,6 @@
 *.lock
 .copyq_s
 copyq.sec
+copyq_geometry.ini
+copyq_no_session.ini
+copyq-monitor.ini
