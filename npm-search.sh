@@ -17,7 +17,7 @@ else
     echo "Using clipboard content: $content"
 fi
 
-maven_search_url="https://mvnrepository.com/search?q=${content}"
+maven_search_url="https://www.npmjs.com/search?q=${content}"
 
 echo "Opening browser with URL: ${maven_search_url}"
 open_url "${maven_search_url}"
