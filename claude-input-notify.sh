@@ -10,9 +10,15 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 #
 # Debug mode: Set DEBUG_MODE=1 environment variable to enable debug output
 # Example: DEBUG_MODE=1 ./claude-input-notify.sh
+#
+# Test mode: Set TEST_MODE=1 to always show notification (bypass terminal check)
+# Example: TEST_MODE=1 ./claude-input-notify.sh
 
 # Debug mode flag (set to 1 to enable debug output)
 DEBUG_MODE=${DEBUG_MODE:-0}
+
+# Test mode flag (set to 1 to always show notification, even if already in terminal)
+TEST_MODE=${TEST_MODE:-0}
 
 # Visual settings for notification window
 WINDOW_WIDTH=450
@@ -95,11 +101,15 @@ echo "Found terminal ID: ${TERMINAL_ID}"
 CURRENT_WINDOW_ID=$(xdotool getactivewindow 2>/dev/null)
 debug_msg "Current active window ID: ${CURRENT_WINDOW_ID}"
 
-# Check if we're already in the terminal window
-if [ -n "$TERMINAL_ID" ] && [ -n "$CURRENT_WINDOW_ID" ] && [ "$TERMINAL_ID" = "$CURRENT_WINDOW_ID" ]; then
+# Check if we're already in the terminal window (skip check if in test mode)
+if [ "$TEST_MODE" -eq 0 ] && [ -n "$TERMINAL_ID" ] && [ -n "$CURRENT_WINDOW_ID" ] && [ "$TERMINAL_ID" = "$CURRENT_WINDOW_ID" ]; then
   debug_msg "Already in terminal window, skipping notification"
   echo "Already in terminal window, skipping notification"
   exit 0
+fi
+
+if [ "$TEST_MODE" -eq 1 ]; then
+  debug_msg "Test mode enabled - showing notification regardless of current window"
 fi
 
 
