@@ -91,6 +91,17 @@ fi
 debug_msg "Final terminal ID: ${TERMINAL_ID}"
 echo "Found terminal ID: ${TERMINAL_ID}"
 
+# Get the currently active window
+CURRENT_WINDOW_ID=$(xdotool getactivewindow 2>/dev/null)
+debug_msg "Current active window ID: ${CURRENT_WINDOW_ID}"
+
+# Check if we're already in the terminal window
+if [ -n "$TERMINAL_ID" ] && [ -n "$CURRENT_WINDOW_ID" ] && [ "$TERMINAL_ID" = "$CURRENT_WINDOW_ID" ]; then
+  debug_msg "Already in terminal window, skipping notification"
+  echo "Already in terminal window, skipping notification"
+  exit 0
+fi
+
 
 # Get the directory where this script is located
 # Look for a 64x64 version first, fallback to original
