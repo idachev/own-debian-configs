@@ -133,35 +133,26 @@ if [ "$DEBUG_MODE" -eq 1 ] && [ -n "$DEBUG_LOG" ]; then
 fi
 
 # Show popup notification when Claude Code is waiting for user input
-# Check if icon exists and add it to the command
+# Build image parameters if icon exists
+IMAGE_PARAMS=""
 if [ -f "$ICON_PATH" ]; then
-  yad --button="<span size=\"large\">  <b>OK</b>  </span>:0" \
-    --borders=$WINDOW_BORDERS \
-    --text-align=center \
-    --on-top \
-    --undecorated \
-    --skip-taskbar \
-    --sticky \
-    --center \
-    --width=$WINDOW_WIDTH \
-    --no-escape \
-    --image="$ICON_PATH" \
-    --image-on-top \
-    --text="$NOTIFICATION_TEXT"
-else
-  # Fallback without icon if file not found
-  yad --button="<span size=\"large\">  <b>OK</b>  </span>:0" \
-    --borders=$WINDOW_BORDERS \
-    --text-align=center \
-    --on-top \
-    --undecorated \
-    --skip-taskbar \
-    --sticky \
-    --center \
-    --width=$WINDOW_WIDTH \
-    --no-escape \
-    --text="$NOTIFICATION_TEXT"
+  IMAGE_PARAMS="--image=$ICON_PATH --image-on-top"
 fi
+
+# Show the notification dialog
+yad --button="<span size=\"large\">  <b>OK</b>  </span>:0" \
+  --button="<span size=\"large\">  <b>Cancel</b>  </span>:1" \
+  --borders=$WINDOW_BORDERS \
+  --text-align=center \
+  --on-top \
+  --undecorated \
+  --skip-taskbar \
+  --sticky \
+  --center \
+  --width=$WINDOW_WIDTH \
+  --no-escape \
+  $IMAGE_PARAMS \
+  --text="$NOTIFICATION_TEXT"
 
 # If OK was clicked and terminal ID was found, focus the terminal
 if [ $? -eq 0 ] && [ -n "$TERMINAL_ID" ]; then

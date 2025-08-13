@@ -36,6 +36,9 @@ alias grep='grep --color'
 alias egrep='egrep --color'
 alias fgrep='fgrep --color'
 
+# AI
+alias sgpt='sgpt --temperature=1'
+
 # Different directory listings
 alias ls='ls -v -hF --color=tty --group-directories-first'
 alias ll='ls -l'
