@@ -7,6 +7,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # and switches focus back to the terminal window when OK is clicked
 #
 # Usage: claude-input-notify.sh [terminal_window_id]
+#        Can also read JSON from stdin to extract a message field
 #
 # Debug mode: Set DEBUG_MODE=1 environment variable to enable debug output
 # Example: DEBUG_MODE=1 ./claude-input-notify.sh
@@ -37,6 +38,24 @@ debug_msg() {
     DEBUG_LOG="${DEBUG_LOG}[DEBUG] $msg\n"
   fi
 }
+
+# Read JSON from stdin if available and extract message
+STDIN_MESSAGE=""
+if [ ! -t 0 ]; then
+  # stdin is available (not a terminal)
+  STDIN_DATA=$(cat)
+  debug_msg "Received stdin data: '$STDIN_DATA'"
+  
+  # Try to extract message field from JSON using jq if available
+  if command -v jq >/dev/null 2>&1 && [ -n "$STDIN_DATA" ]; then
+    STDIN_MESSAGE=$(echo "$STDIN_DATA" | jq -r '.message // empty' 2>/dev/null)
+    debug_msg "Extracted message using jq: '$STDIN_MESSAGE'"
+  elif [ -n "$STDIN_DATA" ]; then
+    # Fallback: try basic regex extraction if jq not available
+    STDIN_MESSAGE=$(echo "$STDIN_DATA" | sed -n 's/.*"message"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p')
+    debug_msg "Extracted message using sed: '$STDIN_MESSAGE'"
+  fi
+fi
 
 # Get terminal window ID from first argument or try to detect it
 TERMINAL_ID="$1"
@@ -123,7 +142,14 @@ fi
 # Prepare the notification text
 NOTIFICATION_TEXT="<span size=\"xx-large\" weight=\"bold\" foreground=\"${TEXT_COLOR_PRIMARY}\">Claude Code</span>\n\n"
 NOTIFICATION_TEXT="${NOTIFICATION_TEXT}<span size=\"large\">━━━━━━━━━━━━━━━━━━━━━━━━━━━</span>\n\n"
-NOTIFICATION_TEXT="${NOTIFICATION_TEXT}<span size=\"x-large\">✨ <b>Waiting for your input...</b> ✨</span>\n\n"
+
+# Use stdin message if available, otherwise default message
+if [ -n "$STDIN_MESSAGE" ]; then
+  NOTIFICATION_TEXT="${NOTIFICATION_TEXT}<span size=\"x-large\">✨ <b>$STDIN_MESSAGE</b> ✨</span>\n\n"
+else
+  NOTIFICATION_TEXT="${NOTIFICATION_TEXT}<span size=\"x-large\">✨ <b>Waiting for your input...</b> ✨</span>\n\n"
+fi
+
 NOTIFICATION_TEXT="${NOTIFICATION_TEXT}<span size=\"medium\" style=\"italic\">Click OK to return to terminal</span>"
 
 # Add debug info if debug mode is enabled
@@ -150,7 +176,6 @@ yad --button="<span size=\"large\">  <b>OK</b>  </span>:0" \
   --sticky \
   --center \
   --width=$WINDOW_WIDTH \
-  --no-escape \
   $IMAGE_PARAMS \
   --text="$NOTIFICATION_TEXT"
 
