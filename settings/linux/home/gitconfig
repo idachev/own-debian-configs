@@ -3,6 +3,7 @@
 [alias]
   m = merge
   ci = commit
+  cinv = commit --no-verify
   st = status
   s = status
   co = checkout

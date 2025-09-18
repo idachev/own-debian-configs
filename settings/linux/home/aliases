@@ -37,7 +37,11 @@ alias egrep='egrep --color'
 alias fgrep='fgrep --color'
 
 # AI
-alias sgpt='sgpt --temperature=1'
+alias sgpt5='sgpt -m "gpt-5"'
+alias sgptn='sgpt -m "gpt-5-nano"'
+alias sgptsh='sgpt sh'
+alias sgptch='sgpt --chat'
+alias sgptcd='sgpt code'
 
 # Different directory listings
 alias ls='ls -v -hF --color=tty --group-directories-first'
@@ -74,6 +78,8 @@ fif() {
     file="$(rga --max-count=1 --ignore-case --files-with-matches --no-messages "$@" | fzf-tmux +m --preview="rga --ignore-case --pretty --context 10 '"$@"' {}")" && open "$file"
 }
 
+alias rgnf='rg --files-without-match'
+alias rgnfx='xargs rg --files-without-match'
 
 # Git related
 alias gitka='gitk --all'
@@ -160,7 +166,7 @@ dkrmicl() {
 
 alias tmux="tmux -2"
 
-alias ktmux='kill $(pgrep tmux)'
+alias ktmux='pkill tmux 2>/dev/null || echo "no tmux sessions"'
 
 alias prettyjson='python -m json.tool'
 

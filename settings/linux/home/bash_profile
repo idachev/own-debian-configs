@@ -16,3 +16,4 @@ if [ -f $BASHRC ]; then
   . $BASHRC
 fi
 
+. "$HOME/.cargo/env"

@@ -290,18 +290,31 @@ source <(temporal completion zsh)
 
 export PYENV_ROOT="$HOME/.pyenv"
 [[ -d $PYENV_ROOT/bin ]] && export PATH="$PYENV_ROOT/bin:$PATH"
-eval "$(pyenv init - bash)"
+eval "$(pyenv init - zsh)"
+
+######################################################################
+# nvm
 
 export NVM_DIR="$HOME/.nvm"
+
 [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"  # This loads nvm
+
 [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"  # This loads nvm bash_completion
 
+######################################################################
+# gh
+
 eval "$(gh copilot alias -- zsh)"
+
+######################################################################
+# forge
 
 # tabtab source for electron-forge package
 # uninstall by removing these lines or running `tabtab uninstall electron-forge`
 [[ -f /home/idachev/.nvm/versions/node/v20.5.1/lib/node_modules/electron-forge/node_modules/tabtab/.completions/electron-forge.zsh ]] && . /home/idachev/.nvm/versions/node/v20.5.1/lib/node_modules/electron-forge/node_modules/tabtab/.completions/electron-forge.zsh
 
+######################################################################
+# rbenv
 
 # Added by `rbenv init` on Thu Jan  2 11:42:57 PM EET 2025
 eval "$(~/.rbenv/bin/rbenv init - --no-rehash zsh)"
@@ -338,4 +351,15 @@ _fzf_compgen_dir() {
 
 source <(fzf --zsh)
 
+######################################################################
+# bun
+
+[ -s "$HOME/.bun/_bun" ] && . "$HOME/.bun/_bun"
+
+######################################################################
+# crypt
+
+if [[ -o interactive && -s ~/bin/crypt_check.sh ]]; then
+  ~/bin/crypt_check.sh
+fi
 

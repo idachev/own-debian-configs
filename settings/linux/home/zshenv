@@ -2,13 +2,12 @@
 
 ###########################################################
 # Setting local gtest
-LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/lib:/home/idachev/lib/openssl/lib
-export LD_LIBRARY_PATH
+export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/lib:/home/idachev/lib/openssl/lib
 
 ###########################################################
 # Export vars
 
-export LOCAL_LIB=${HOME}/lib
+export LOCAL_LIB=$HOME/lib
 
 #export LOCAL_JAVA_HOME_32=$LOCAL_LIB/java/jre1.6.0_34
 #export LOCAL_JAVA_HOME_64=$LOCAL_LIB/java/jre1.6.0_34_x64
@@ -16,47 +15,47 @@ export LOCAL_LIB=${HOME}/lib
 #export SYS_JAVA_HOME_7=/usr/lib/jvm/java-7-oracle
 #export SYS_JAVA_HOME_8=/usr/lib/jvm/java-8-oracle
 
-#export SYS_JAVA_HOME=${SYS_JAVA_HOME_7}
-#export SYS_JAVA_HOME=${SYS_JAVA_HOME_8}
+#export SYS_JAVA_HOME=$SYS_JAVA_HOME_7
+#export SYS_JAVA_HOME=$SYS_JAVA_HOME_8
 
-#export JAVA_HOME=${SYS_JAVA_HOME}
+#export JAVA_HOME=$SYS_JAVA_HOME
 
 export MAVEN_OPTS="-Xmx4192m -Dorg.slf4j.simpleLogger.showDateTime=true -Dorg.slf4j.simpleLogger.dateTimeFormat=yyyy-MM-dd'T'HH:mm:ss.SSSZ -Duser.timezone=UTC -Djava.net.preferIPv4Stack=true"
-export MAVEN_HOME=${LOCAL_LIB}/maven
+export MAVEN_HOME=$LOCAL_LIB/maven
 
-export PATH=${PATH}:${MAVEN_HOME}/bin
+export PATH=$PATH:$MAVEN_HOME/bin
 
 # PyCharm
 #export PYCHARM_JDK=$LOCAL_JAVA_HOME_32
-#export PYCHARM_JDK=${SYS_JAVA_HOME_7}
-export PYCHARM_JDK=${SYS_JAVA_HOME_8}
+#export PYCHARM_JDK=$SYS_JAVA_HOME_7
+#export PYCHARM_JDK=$SYS_JAVA_HOME_8
 
 # PhpStorm
-export WEBIDE_JDK=${SYS_JAVA_HOME_7}
+#export WEBIDE_JDK=$SYS_JAVA_HOME_7
 
 # ThisnkOrSwim
-#export INSTALL4J_JAVA_HOME=${SYS_JAVA_HOME_8}
+#export INSTALL4J_JAVA_HOME=$SYS_JAVA_HOME_8
 
 # Add custom scripts to ~/bin
-export PATH=${PATH}:/usr/share/fslint/fslint:${HOME}/bin
+export PATH=$PATH:/usr/share/fslint/fslint:$HOME/bin
 
 # Add one binary programs to ~/lib/bin
-export PATH=${PATH}:${HOME}/lib/bin
+export PATH=$PATH:$HOME/lib/bin
 
-export PATH=${PATH}:${HOME}/lib/jmeter/bin
+export PATH=$PATH:$HOME/lib/jmeter/bin
 
 # Add pip local bin
-export PATH=${PATH}:${HOME}/.local/bin
+export PATH=$PATH:$HOME/.local/bin
 
 # Add go bin
-export PATH=${PATH}:/usr/local/go/bin
-export PATH=${PATH}:${HOME}/go/bin
+export PATH=$PATH:/usr/local/go/bin
+export PATH=$PATH:$HOME/go/bin
 
 # Add tfenv check https://github.com/tfutils/tfenv
-export PATH=${PATH}:${HOME}/.tfenv/bin
+export PATH=$PATH:$HOME/.tfenv/bin
 
 # Add cargo bin
-export PATH=${PATH}:${HOME}/.cargo/bin
+export PATH=$PATH:$HOME/.cargo/bin
 
 # Perforce custom envs
 export P4CONFIG=.p4config
@@ -65,27 +64,35 @@ export P4MERGE=kdiff3
 
 export PYTHONPATH=$PYTHONPATH:~/lib/pywikipedia/
 
-export GTEST_DIR=${HOME}/develop/private/gtest/gtest-1.6.0
+export GTEST_DIR=$HOME/develop/private/gtest/gtest-1.6.0
 
-export RSYNC_PARTIAL_DIR=${HOME}/.rsync-tmp
+export RSYNC_PARTIAL_DIR=$HOME/.rsync-tmp
 
-export HELM_HOME=${HOME}/.helm
+export HELM_HOME=$HOME/.helm
 
 # Do not use source instead of . in env files
 # it does not work for desktop managers env load
 
 [ -s ~/.awsenv ] && . ~/.awsenv
 
-# Add local PC shell settings
-# Disable this if you use rsync and ssh or scp
-[ -s ~/.localenv ] && . ~/.localenv
-
-if [[ -o interactive && -s ~/bin/crypt_check.sh ]]; then
-  ~/bin/crypt_check.sh
-fi
+######################################################################
+# nvm
 
 export NVM_DIR="$HOME/.nvm"
 
-[ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
-[ -s "$NVM_DIR/bash_completion" ] && . "$NVM_DIR/bash_completion"
+[ -s "$HOME/.cargo/env" ] && . "$HOME/.cargo/env"
+
+######################################################################
+# bun
+
+export BUN_INSTALL="$HOME/.bun"
+
+export PATH="$BUN_INSTALL/bin:$PATH"
+
+######################################################################
+# !!! KEEP THIS AT THE END OF .zshenv
+
+# Add local PC shell settings
+# Disable this if you use rsync and ssh or scp
+[ -s ~/.localenv ] && . ~/.localenv
 
