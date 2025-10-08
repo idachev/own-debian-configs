@@ -4,4 +4,5 @@ Type=Application
 Name=OpenAudible
 Exec="/home/idachev/OpenAudible/OpenAudible"  %U
 Icon=/home/idachev/OpenAudible/.install4j/OpenAudible.png
+Categories=Application;
 StartupWMClass=install4j-org-openaudible-desktop-Application

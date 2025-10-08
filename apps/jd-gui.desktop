@@ -1,3 +1,4 @@
+#!/usr/bin/env xdg-open
 [Desktop Entry]
 Categories=Development;Java;
 Comment[en_US]=JD-GUI Java Decompiler

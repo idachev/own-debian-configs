@@ -1,0 +1,10 @@
+#!/bin/true
+[Desktop Entry]
+Type=Application
+Categories=Application;Citrix-subscribed
+X-Citrix-Store=Bosch Cloud Workplace
+Name=ivandsf3v1_S
+StartupWMClass=ivandsf3v1_S
+Icon=/home/idachev/.ICAClient/cache/Icons/VWP_CTXXD_DE_SL4.ivandsf3v1_S $P432.png
+Description=Citrix subscribed application from Bosch Cloud Workplace
+Exec=/opt/Citrix/ICAClient/util/storebrowse -L "VWP_CTXXD_DE_SL4.ivandsf3v1_S \\$P432" -f %k https://rb-cloudworkplace-external-emea.bosch.com/citrix/boschcloudworkplace/discovery

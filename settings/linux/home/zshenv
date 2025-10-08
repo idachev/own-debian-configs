@@ -44,6 +44,8 @@ export PATH=$PATH:$HOME/lib/bin
 
 export PATH=$PATH:$HOME/lib/jmeter/bin
 
+export PATH=$PATH:$HOME/lib/jmeter/bin
+
 # Add pip local bin
 export PATH=$PATH:$HOME/.local/bin
 

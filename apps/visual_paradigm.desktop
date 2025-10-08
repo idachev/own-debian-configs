@@ -1,4 +1,4 @@
-
+#!/usr/bin/env xdg-open
 [Desktop Entry]
 Categories=Development;UML;
 Comment[en_US]=Visual Paradigm

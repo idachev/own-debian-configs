@@ -1,4 +1,4 @@
-
+#!/usr/bin/env xdg-open
 [Desktop Entry]
 Categories=Development;
 Comment[en_US]=Log MX

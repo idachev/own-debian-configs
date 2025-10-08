@@ -1,3 +1,4 @@
+#!/usr/bin/env xdg-open
 [Desktop Entry]
 Type=Application
 Exec=/usr/bin/flatpak run --branch=stable --arch=x86_64 --command=otpclient com.github.paolostivanin.OTPClient

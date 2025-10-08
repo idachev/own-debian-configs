@@ -1,0 +1,8 @@
+#!/usr/bin/env xdg-open
+[Desktop Entry]
+Type=Application
+Name=Trader Workstation
+Exec="/home/idachev/lib/jts/tws" %U
+Icon=/home/idachev/lib/jts/.install4j/tws.png
+Categories=Application;
+StartupWMClass=install4j-jclient-Launcher

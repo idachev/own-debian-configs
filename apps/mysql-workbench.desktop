@@ -1,3 +1,4 @@
+#!/usr/bin/env xdg-open
 [Desktop Entry]
 Name=MySQL Workbench
 Comment=MySQL Database Design, Administration and Development Tool

@@ -1,13 +1,22 @@
 [Desktop Entry]
-Encoding=UTF-8
 Name=Telegram
-GenericName=Chat Client
-Comment=Chat
-Exec=/home/idachev/lib/bin/Telegram
-Icon=/home/idachev/lib/bin/Telegram.png
+Comment=New era of messaging
+TryExec=/home/idachev/lib/bin/Telegram
+Exec=/home/idachev/lib/bin/Telegram -- %u
+Icon=telegram
 Terminal=false
-X-MultipleArgs=false
-StartupNotify=true
-StartupWMClass=Telegram-bin
+StartupWMClass=TelegramDesktop
 Type=Application
-Categories=Network;Chat;
+Categories=Chat;Network;InstantMessaging;Qt;
+MimeType=x-scheme-handler/tg;x-scheme-handler/tonsite;
+Keywords=tg;chat;im;messaging;messenger;sms;tdesktop;
+Actions=quit;
+DBusActivatable=true
+SingleMainWindow=true
+X-GNOME-UsesNotifications=true
+X-GNOME-SingleWindow=true
+
+[Desktop Action quit]
+Exec=/home/idachev/lib/bin/Telegram -quit
+Name=Quit Telegram
+Icon=application-exit
