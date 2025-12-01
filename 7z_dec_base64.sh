@@ -1,4 +1,4 @@
-#/bin/bash
+#!/bin/bash
 
 INPUT=$1
 TMP=$(mktemp "/tmp/7z_dec_base64.XXXXXXXXXX")

@@ -1,4 +1,4 @@
-#/bin/bash
+#!/bin/bash
 
 SRC_PATH=$1
 DST_PATH=$2
