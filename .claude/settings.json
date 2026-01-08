@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(command grep:*)",
+      "Bash(find:*)",
+      "Bash(wmctrl:*)",
+      "Bash(xdotool search:*)",
+      "WebFetch(domain:docs.claude.com)",
+      "WebSearch"
+    ]
+  },
+  "enableAllProjectMcpServers": true
+}

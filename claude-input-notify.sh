@@ -39,21 +39,29 @@ debug_msg() {
   fi
 }
 
-# Read JSON from stdin if available and extract message
+# Read JSON from stdin if available and extract message and other fields
 STDIN_MESSAGE=""
+STDIN_CWD=""
+STDIN_SESSION_ID=""
 if [ ! -t 0 ]; then
   # stdin is available (not a terminal)
   STDIN_DATA=$(cat)
   debug_msg "Received stdin data: '$STDIN_DATA'"
-  
-  # Try to extract message field from JSON using jq if available
+
+  # Try to extract fields from JSON using jq if available
   if command -v jq >/dev/null 2>&1 && [ -n "$STDIN_DATA" ]; then
     STDIN_MESSAGE=$(echo "$STDIN_DATA" | jq -r '.message // empty' 2>/dev/null)
+    STDIN_CWD=$(echo "$STDIN_DATA" | jq -r '.cwd // empty' 2>/dev/null)
+    STDIN_SESSION_ID=$(echo "$STDIN_DATA" | jq -r '.session_id // empty' 2>/dev/null)
     debug_msg "Extracted message using jq: '$STDIN_MESSAGE'"
+    debug_msg "Extracted cwd using jq: '$STDIN_CWD'"
+    debug_msg "Extracted session_id using jq: '$STDIN_SESSION_ID'"
   elif [ -n "$STDIN_DATA" ]; then
     # Fallback: try basic regex extraction if jq not available
     STDIN_MESSAGE=$(echo "$STDIN_DATA" | sed -n 's/.*"message"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p')
+    STDIN_CWD=$(echo "$STDIN_DATA" | sed -n 's/.*"cwd"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p')
     debug_msg "Extracted message using sed: '$STDIN_MESSAGE'"
+    debug_msg "Extracted cwd using sed: '$STDIN_CWD'"
   fi
 fi
 
@@ -63,14 +71,21 @@ debug_msg "Initial TERMINAL_ID from arg: '$TERMINAL_ID'"
 
 # If no terminal ID provided, try to detect the parent terminal window
 if [ -z "$TERMINAL_ID" ]; then
-  # Method 1: Try to find gnome-terminal using xdotool (most reliable for Mint)
-  TERMINAL_ID=$(xdotool search --onlyvisible --class "gnome-terminal" 2>/dev/null | head -n1)
-  debug_msg "Method 1 - xdotool search for gnome-terminal: '$TERMINAL_ID'"
+  # Method 1: Try to find terminal using xdotool (most reliable for Mint)
+  # Use exact match "^kitty$" to avoid matching kitty-panel
+  TERMINAL_ID=$(xdotool search --onlyvisible --class "^kitty$" 2>/dev/null | head -n1)
+  debug_msg "Method 1 - xdotool search for kitty: '$TERMINAL_ID'"
+
+  if [ -z "$TERMINAL_ID" ]; then
+    TERMINAL_ID=$(xdotool search --onlyvisible --class "gnome-terminal" 2>/dev/null | head -n1)
+    debug_msg "Method 1 - xdotool search for gnome-terminal: '$TERMINAL_ID'"
+  fi
 
   # Method 2: If not found, try wmctrl to list all windows and find terminal
   if [ -z "$TERMINAL_ID" ]; then
     # Get list of all windows with their class names
-    TERMINAL_INFO=$(wmctrl -lx 2>/dev/null | grep -i -E 'gnome-terminal|terminal\.Terminal|xfce4-terminal|mate-terminal' | head -n1)
+    # Use kitty\.kitty to match main kitty window, not kitty-panel
+    TERMINAL_INFO=$(wmctrl -lx 2>/dev/null | grep -i -E 'kitty\.kitty|gnome-terminal|terminal\.Terminal|xfce4-terminal|mate-terminal' | head -n1)
     debug_msg "Method 2 - wmctrl output: '$TERMINAL_INFO'"
 
     if [ -n "$TERMINAL_INFO" ]; then
@@ -103,7 +118,8 @@ if [ -z "$TERMINAL_ID" ]; then
         debug_msg "Full WM_CLASS: '$FULL_WM_CLASS'"
 
         # Check for common terminal class names (case sensitive for better matching)
-        if echo "$FULL_WM_CLASS" | grep -E '"gnome-terminal"|"Gnome-terminal"|"xfce4-terminal"|"Xfce4-terminal"|"mate-terminal"|"Mate-terminal"|"Terminal"|"terminal"' > /dev/null 2>&1; then
+        # Use exact match for kitty to avoid matching kitty-panel
+        if echo "$FULL_WM_CLASS" | grep -E '"kitty", "kitty"|"Kitty", "Kitty"|"gnome-terminal"|"Gnome-terminal"|"xfce4-terminal"|"Xfce4-terminal"|"mate-terminal"|"Mate-terminal"|"Terminal"|"terminal"' > /dev/null 2>&1; then
           TERMINAL_ID="$WINDOW_ID"
           debug_msg "Found terminal! Setting TERMINAL_ID=$TERMINAL_ID"
           break
@@ -179,11 +195,64 @@ yad --button="<span size=\"large\">  <b>OK</b>  </span>:0" \
   $IMAGE_PARAMS \
   --text="$NOTIFICATION_TEXT"
 
+# Store yad exit code before defining functions
+YAD_EXIT_CODE=$?
+
+# Function to focus kitty internal window using remote control
+focus_kitty_window() {
+  local target_cwd="$1"
+  debug_msg "Attempting to focus kitty window with cwd: '$target_cwd'"
+
+  # Find kitty socket
+  local kitty_socket=$(ls /tmp/kitty-* 2>/dev/null | command head -1)
+  if [ -z "$kitty_socket" ]; then
+    debug_msg "No kitty socket found"
+    return 1
+  fi
+  debug_msg "Found kitty socket: $kitty_socket"
+
+  # Get kitty windows info
+  local kitty_info=$(kitty @ --to "unix:$kitty_socket" ls 2>/dev/null)
+  if [ -z "$kitty_info" ]; then
+    debug_msg "Failed to get kitty window info"
+    return 1
+  fi
+
+  # Find window running claude with matching cwd
+  local kitty_window_id=""
+  if [ -n "$target_cwd" ] && command -v jq >/dev/null 2>&1; then
+    # First try to match by cwd
+    kitty_window_id=$(echo "$kitty_info" | jq -r --arg cwd "$target_cwd" '
+      .[0].tabs[].windows[] |
+      select(.foreground_processes[]? | (.cmdline[]? | test("claude"; "i")) and .cwd == $cwd) |
+      .id' 2>/dev/null | command head -1)
+    debug_msg "Kitty window ID matched by cwd: '$kitty_window_id'"
+  fi
+
+  # If no match by cwd, find any window running claude
+  if [ -z "$kitty_window_id" ] && command -v jq >/dev/null 2>&1; then
+    kitty_window_id=$(echo "$kitty_info" | jq -r '
+      .[0].tabs[].windows[] |
+      select(.foreground_processes[]? | .cmdline[]? | test("claude"; "i")) |
+      .id' 2>/dev/null | command head -1)
+    debug_msg "Kitty window ID (any claude): '$kitty_window_id'"
+  fi
+
+  if [ -n "$kitty_window_id" ]; then
+    debug_msg "Focusing kitty internal window ID: $kitty_window_id"
+    kitty @ --to "unix:$kitty_socket" focus-window --match "id:$kitty_window_id" 2>/dev/null
+    return $?
+  fi
+
+  debug_msg "No claude window found in kitty"
+  return 1
+}
+
 # If OK was clicked and terminal ID was found, focus the terminal
-if [ $? -eq 0 ] && [ -n "$TERMINAL_ID" ]; then
+if [ $YAD_EXIT_CODE -eq 0 ] && [ -n "$TERMINAL_ID" ]; then
   debug_msg "Attempting to focus terminal with ID: $TERMINAL_ID"
 
-  # Method 1: Try wmctrl first (often more reliable)
+  # Method 1: Try wmctrl first (often more reliable for X11 window focus)
   if wmctrl -i -a "$TERMINAL_ID" 2>/dev/null; then
     debug_msg "wmctrl -i -a succeeded"
   else
@@ -196,15 +265,20 @@ if [ $? -eq 0 ] && [ -n "$TERMINAL_ID" ]; then
       debug_msg "xdotool windowactivate failed, trying wmctrl by class"
 
       # Method 3: Try activating by class name as last resort
-      if wmctrl -xa "gnome-terminal" 2>/dev/null; then
+      if wmctrl -xa "kitty" 2>/dev/null; then
+        debug_msg "wmctrl -xa kitty succeeded"
+      elif wmctrl -xa "gnome-terminal" 2>/dev/null; then
         debug_msg "wmctrl -xa gnome-terminal succeeded"
       else
         debug_msg "All focus methods failed"
       fi
     fi
   fi
+
+  # For kitty: also focus the specific internal window running claude
+  focus_kitty_window "$STDIN_CWD"
 else
-  debug_msg "Not focusing terminal - exit code: $?, TERMINAL_ID: '$TERMINAL_ID'"
+  debug_msg "Not focusing terminal - exit code: $YAD_EXIT_CODE, TERMINAL_ID: '$TERMINAL_ID'"
 fi
 
 # Exit 0 to allow normal operation to continue
