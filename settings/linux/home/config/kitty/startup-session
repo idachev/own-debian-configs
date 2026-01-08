@@ -1,14 +1,26 @@
 
-new_tab
+new_tab work
 layout grid
 enabled_layouts fat,grid,horizontal,splits,stack,tall,vertical
-set_layout_state {"biased_cols": {}, "biased_rows": {}, "opts": {}, "class": "Grid", "all_windows": {"active_group_idx": 0, "active_group_history": [1, 2, 3, 4], "window_groups": [{"id": 1, "window_ids": [1]}, {"id": 2, "window_ids": [2]}, {"id": 3, "window_ids": [3]}, {"id": 4, "window_ids": [4]}]}}
+set_layout_state {"biased_cols": {"0": 0.015625}, "biased_rows": {"1": 0.0}, "opts": {}, "class": "Grid", "all_windows": {"active_group_idx": 1, "active_group_history": [4, 1, 2, 3], "window_groups": [{"id": 1, "window_ids": [1]}, {"id": 2, "window_ids": [2]}, {"id": 3, "window_ids": [3]}, {"id": 4, "window_ids": [4]}]}}
 cd ../../develop/amplifier
 
 launch 'kitty-unserialize-data={"id": 1}'
-focus
 launch 'kitty-unserialize-data={"id": 2}'
+focus
 launch 'kitty-unserialize-data={"id": 3}'
 launch 'kitty-unserialize-data={"id": 4}'
+
+new_tab storybook
+layout tall
+enabled_layouts fat,grid,horizontal,splits,stack,tall,vertical
+set_layout_state {"main_bias": [0.5, 0.5], "biased_map": {}, "opts": {"full_size": 1, "bias": 50, "mirrored": "n"}, "class": "Tall", "all_windows": {"active_group_idx": 0, "active_group_history": [5, 6, 7], "window_groups": [{"id": 5, "window_ids": [5]}, {"id": 6, "window_ids": [6]}, {"id": 7, "window_ids": [7]}, {"id": 8, "window_ids": [8]}]}}
+cd ../../develop/amplifier
+
+launch 'kitty-unserialize-data={"id": 5}'
+focus
+launch 'kitty-unserialize-data={"id": 6}'
+launch 'kitty-unserialize-data={"id": 7}' --cwd=../../develop/amplifier/storybook-generator
+launch 'kitty-unserialize-data={"id": 8}' --cwd=../../develop/amplifier/storybook-generator
 
 focus_tab 0
