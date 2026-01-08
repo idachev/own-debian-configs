@@ -1,0 +1,9 @@
+#!/usr/bin/env xdg-open
+[Desktop Entry]
+Version=1.0
+Terminal=false
+Type=Application
+Name=Snapchat
+Exec=/opt/google/chrome-beta/google-chrome-beta "--profile-directory=Profile 31" --app-id=gfgbgjphjkdhefmnmbhogcpckgpapbag
+Icon=chrome-gfgbgjphjkdhefmnmbhogcpckgpapbag-Profile_31
+StartupWMClass=crx_gfgbgjphjkdhefmnmbhogcpckgpapbag
