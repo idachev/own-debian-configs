@@ -61,4 +61,4 @@ Check `settings/linux/home/_manual_/gnome-terminal`
 * https://github.com/phiresky/ripgrep-all
 * https://github.com/BurntSushi/ripgrep
 * https://github.com/unixorn/fzf-zsh-plugin?tab=readme-ov-file
-
+* https://github.com/5hubham5ingh/js-util - build for local machine
