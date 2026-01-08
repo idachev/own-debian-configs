@@ -3,6 +3,7 @@
     "allow": [
       "Bash(command grep:*)",
       "Bash(find:*)",
+      "Bash(git -C * status)",
       "Bash(wmctrl:*)",
       "Bash(xdotool search:*)",
       "WebFetch(domain:docs.claude.com)",
