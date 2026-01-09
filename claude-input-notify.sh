@@ -241,13 +241,7 @@ focus_kitty_window() {
   if [ -n "$kitty_window_id" ]; then
     debug_msg "Focusing kitty internal window ID: $kitty_window_id"
     kitty @ --to "unix:$kitty_socket" focus-window --match "id:$kitty_window_id" 2>/dev/null
-    local focus_result=$?
-
-    # Switch to stack layout to maximize the focused window (full OS window)
-    debug_msg "Switching to stack layout for full window"
-    kitty @ --to "unix:$kitty_socket" goto-layout stack 2>/dev/null
-
-    return $focus_result
+    return $?
   fi
 
   debug_msg "No claude window found in kitty"
