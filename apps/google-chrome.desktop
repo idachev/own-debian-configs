@@ -1,7 +1,7 @@
 #!/usr/bin/env xdg-open
 [Desktop Entry]
 Version=1.0
-Name=Google Chrome DataStork
+Name=Google Chrome
 GenericName=Web Browser
 Comment=Access the Internet
 Exec=/usr/bin/google-chrome-beta %U
