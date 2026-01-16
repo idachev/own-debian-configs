@@ -15,8 +15,8 @@ if [ -z "${INPUT_ARG}" ]; then
   echo "  WEBP_QUALITY  - WebP quality 0-100 (default: 75)"
   echo "  MAX_SIZE      - Max dimension for longer side in pixels (default: no resize)"
   echo "                  e.g., MAX_SIZE=2048 resizes so longest side is 2048px"
-  echo "  STORE_HASH    - Set to 1 to store SHA512 of original in XMP metadata (requires exiftool)"
-  echo "                  Useful for sync to detect already-converted files"
+  echo "  STORE_HASH    - Store SHA512 of original in XMP metadata (default: 1)"
+  echo "                  Set to 0 to disable. Useful for sync to detect already-converted files"
   echo "  PARALLEL      - Number of parallel conversions (default: 1)"
   echo ""
   echo "Required dependencies: cwebp, convert (ImageMagick), exiftool"
@@ -39,6 +39,10 @@ fi
 
 if [ -z "${PARALLEL}" ]; then
   PARALLEL=1
+fi
+
+if [ -z "${STORE_HASH}" ]; then
+  STORE_HASH=1
 fi
 
 # Check required dependencies
