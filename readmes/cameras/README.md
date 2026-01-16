@@ -120,6 +120,82 @@ Use this to copy media file metadata:
 media_copy_info.sh ./source.jpg ./target.jpg
 ```
 
+# Convert to WebP
+
+Convert images to WebP format with optional resize and metadata preservation.
+
+**Dependencies:** `cwebp`, `convert` (ImageMagick), `exiftool`
+
+```bash
+# Install dependencies
+sudo apt-get install webp imagemagick libimage-exiftool-perl
+```
+
+## Basic Conversion
+
+```bash
+# Convert single file
+media_to_webp.sh image.jpg
+
+# Convert all images in directory
+media_to_webp.sh ./photos
+```
+
+## With Resize (for document photos)
+
+```bash
+# Resize longest side to 2048px and convert
+MAX_SIZE=2048 media_to_webp.sh ./photos
+
+# Custom quality (0-100, default: 75)
+MAX_SIZE=2048 WEBP_QUALITY=85 media_to_webp.sh ./photos
+
+# Parallel processing (8 concurrent conversions)
+PARALLEL=8 MAX_SIZE=2048 media_to_webp.sh ./photos
+```
+
+## With Hash Storage (for sync detection)
+
+```bash
+# Store SHA512 of original in webp metadata
+STORE_HASH=1 MAX_SIZE=2048 media_to_webp.sh ./photos
+
+# Check stored hash
+exiftool -XMP:OriginalDocumentID image.webp
+```
+
+## Rotate WebP
+
+Rotate webp images while preserving EXIF metadata and timestamp.
+
+```bash
+# Rotate 90, 180, or 270 degrees clockwise
+media_rotate_webp.sh image.webp 90
+media_rotate_webp.sh image.webp 180
+media_rotate_webp.sh image.webp 270
+
+# Custom quality
+WEBP_QUALITY=85 media_rotate_webp.sh image.webp 90
+```
+
+## Cleanup Converted Originals
+
+Safely move original files to `./for-cleanup` after verifying they were converted.
+
+Only moves files where:
+1. Matching `.webp` file exists
+2. SHA512 hash matches the hash stored in webp metadata
+
+```bash
+# Dry run first (recommended)
+DRY_RUN=1 media_cleanup_converted.sh ./photos
+
+# Actually move verified originals
+media_cleanup_converted.sh ./photos
+```
+
+Files are moved to `./photos/for-cleanup/` - review before deleting.
+
 # Video Tips
 
 To convert `*.mov` from Cannon we use these settings for Any Video Converter.
