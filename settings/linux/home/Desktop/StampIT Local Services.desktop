@@ -1,0 +1,9 @@
+[Desktop Entry]
+Version=1.0
+Name=StampIT Local Services
+GenericName=Java Web Start Application
+Comment=StampIT Local Services
+Type=Application
+Icon=/home/idachev/.config/icedtea-web/icons/0237f248-b633-4b3e-b2cb-18125763ee59
+X-Vendor=Information Services JSC.
+Exec="/opt/OpenWebStart/javaws" "https://portal.nra.bg/ls/stampitls_test.jnlp"
