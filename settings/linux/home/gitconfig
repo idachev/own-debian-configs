@@ -70,6 +70,7 @@
   autocrlf = false
   safecrlf = warn
 	pager = diff-so-fancy | less --tabs=4 -RFX
+	hooksPath = /home/idachev/.githooks
 [http]
   postBuffer = 524288000
 [credential]
