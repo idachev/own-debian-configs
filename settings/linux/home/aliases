@@ -43,8 +43,10 @@ alias sgptsh='sgpt sh'
 alias sgptch='sgpt --chat'
 alias sgptcd='sgpt code'
 
+alias claudep='claude --model claude-sonnet-4-6 -p'
+
 # Different directory listings
-alias ls='ls -v -hF --color=tty --group-directories-first --hyperlink=always'
+alias ls='ls -v -hF --color=tty --group-directories-first'
 alias ll='ls -l'
 alias la='ls -a'
 alias lc='ls -C'
