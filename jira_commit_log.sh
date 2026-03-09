@@ -5,9 +5,9 @@ DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 LOG_FILE="${HOME}/.local/share/jira-commit-log/commits.log"
 
 # --- Defaults ---
-MODE="today"
+MODE="days"
 FILTER_DATE=""
-FILTER_DAYS=""
+FILTER_DAYS="14"
 FILTER_PROJECT=""
 RAW=0
 
