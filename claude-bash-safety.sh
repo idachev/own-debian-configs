@@ -91,11 +91,19 @@ if [ -z "$CMD" ]; then
 fi
 
 # ---- Fast denylist ---------------------------------------------------------
-# Obviously dangerous patterns. Match anywhere in the command, including
-# inside pipelines and command substitutions - denylist beats compound check.
-# We return "ask" (not "deny") so the user can still approve case-by-case.
+# Policy: this list enumerates commands that are ALWAYS unsafe regardless
+# of flags or subcommands. Parameterized tools (gh, docker, kubectl, npm,
+# yarn, pnpm, pip, apt, terraform, systemctl, journalctl, …) are
+# deliberately NOT listed — they route to the Haiku classifier, which sees
+# the full command and won't go stale as those tools add new verbs. For
+# `git` and `gh` we keep a narrower pattern: `git` has a stable mutation
+# verb set (and it's hot enough that the fast path is worth it), and `gh`
+# has a small "known-safe" allowlist (ALLOW_GH_*) defined below. Match
+# anywhere in the command, so `ls && rm -rf /tmp/foo` still escalates.
+# Returns "ask" (not "deny") so the user can still approve case-by-case.
 DENY_PATTERNS=(
   '\brm\b'                                  # any rm - too risky to fast-allow
+  '\bunlink\b'                              # single-file delete
   '\bsudo\b'
   '\bsu\b'
   '\beval\b'
@@ -127,22 +135,12 @@ DENY_PATTERNS=(
   '\bgit[[:space:]]+clean\b.*-f'
   '\bgit[[:space:]]+checkout\b.*--[[:space:]]*\.'
   '\bgit[[:space:]]+(commit|add|push|pull|merge|rebase|cherry-pick|tag|stash|branch[[:space:]]+-[dD])\b'
-  '\bnpm[[:space:]]+(install|uninstall|publish|run)\b'
-  '\byarn[[:space:]]+(add|remove|publish)\b'
-  '\bpnpm[[:space:]]+(add|remove|publish)\b'
-  '\bpip[23]?[[:space:]]+(install|uninstall)\b'
-  '\bapt(-get)?[[:space:]]+(install|remove|purge|update|upgrade)\b'
-  '\bdocker[[:space:]]+(run|rm|rmi|kill|stop|exec|build|push|pull)\b'
-  '\bkubectl[[:space:]]+(apply|delete|create|edit|patch|exec)\b'
-  '\bgh[[:space:]]+[a-z]+[[:space:]]+(create|delete|edit|merge|close|reopen|update|comment|review|rerun|cancel|enable|disable|login|logout|fork|clone|patch|transfer|archive|add|remove|set|unset)\b'
-  '\bgh[[:space:]]+api\b'                   # gh api can do anything
-  '\bdate[[:space:]]+[^|;&]*-(-set|s)\b'    # date setting system time
-  '\bmvn\b'
+  '\bdate[[:space:]]+[^|;&]*-(-set|s)\b'    # date setting system time (flag-specific)
+  '\bmvn\b'                                 # always executes project code
   '\bgradle\b'
   '\b\./mvnw\b'
   '\b\./gradlew\b'
-  '\bterraform\b'
-  '\bmake\b'
+  '\bmake\b'                                # always runs Makefile target
   '\b(env|printenv|set|export|unset)\b'     # env var readout / mutation
   '\bps\b[[:space:]]+[a-z]*e[a-z]*\b'       # ps BSD flag cluster w/ `e` = show process env
   '\bssh\b'                                 # remote execution
@@ -152,8 +150,6 @@ DENY_PATTERNS=(
   '\bnetcat\b'
   '\btee\b'                                 # writes files from stdin
   '\bcrontab\b'
-  '\bsystemctl\b'
-  '\bjournalctl\b'                          # may dump secrets from logs
   '\bfind\b[[:space:]].*(-delete|-exec|-execdir|-ok|-okdir)\b'
   '\bawk\b.*\bsystem[[:space:]]*\('         # awk shellout
   '\bawk\b.*\|[[:space:]]*getline\b'        # "cmd" | getline — awk reading from shell
@@ -212,6 +208,33 @@ ALLOW_GIT_SUBCMDS=(
   ls-files ls-tree blame reflog shortlog
 )
 
+# gh (GitHub CLI) safe-pattern allowlist. Rather than chase every new
+# unsafe `gh` verb in the denylist (a moving target), we assert what we
+# know is read-only and route everything else to Haiku. Two shapes:
+#
+#   ALLOW_GH_SINGLE — `gh <sub>` where args don't affect safety
+#                     (e.g. `gh status`, `gh search repos foo`)
+#   ALLOW_GH_PAIRS  — `gh <sub> <action>` pairs (e.g. `gh pr list`)
+#
+# The check mirrors ALLOW_GIT_SUBCMDS below.
+ALLOW_GH_SINGLE=(
+  status version help search
+)
+
+ALLOW_GH_PAIRS=(
+  "pr list" "pr view" "pr status" "pr checks" "pr diff"
+  "issue list" "issue view" "issue status"
+  "repo list" "repo view"
+  "release list" "release view"
+  "run list" "run view" "run watch"
+  "workflow list" "workflow view"
+  "auth status"
+  "gist list" "gist view"
+  "label list"
+  "alias list"
+  "extension list"
+)
+
 if [ "$IS_COMPOUND" = "0" ]; then
   # Extract first token
   read -r FIRST REST <<<"$CMD_STRIPPED"
@@ -233,6 +256,27 @@ if [ "$IS_COMPOUND" = "0" ]; then
         break
       fi
     done
+  fi
+
+  # Special-case: gh with a known safe single-sub or <sub> <action> pair.
+  # See ALLOW_GH_SINGLE / ALLOW_GH_PAIRS above for the policy rationale.
+  if [ "$SIMPLE_ALLOW" = "0" ] && [ "$FIRST" = "gh" ]; then
+    read -r SUB THIRD _ <<<"$REST"
+    for s in "${ALLOW_GH_SINGLE[@]}"; do
+      if [ "$SUB" = "$s" ]; then
+        SIMPLE_ALLOW=1
+        break
+      fi
+    done
+    if [ "$SIMPLE_ALLOW" = "0" ]; then
+      gh_pair="$SUB $THIRD"
+      for p in "${ALLOW_GH_PAIRS[@]}"; do
+        if [ "$gh_pair" = "$p" ]; then
+          SIMPLE_ALLOW=1
+          break
+        fi
+      done
+    fi
   fi
 
   if [ "$SIMPLE_ALLOW" = "1" ]; then
@@ -288,7 +332,13 @@ if [ -n "$API_ERROR" ]; then
   emit_decision "ask" "API error: $API_ERROR"
 fi
 
-VERDICT=$(printf '%s' "$RESPONSE" | jq -r '.content[0].text // empty' 2>/dev/null | tr -d '[:space:]' | tr '[:lower:]' '[:upper:]')
+# Strip whitespace AND punctuation so that trailing `.`, `!`, quotes, or
+# other incidental characters don't defeat the strict match below. Then
+# require an EXACT "SAFE" or "UNSAFE" verdict — anything else (including
+# "not safe", "probably safe", truncated output, extra words) falls
+# through to the unknown branch, which returns ask. Fuzzy *SAFE* matching
+# previously would have mis-allowed responses like "NOT SAFE".
+VERDICT=$(printf '%s' "$RESPONSE" | jq -r '.content[0].text // empty' 2>/dev/null | tr -d '[:space:][:punct:]' | tr '[:lower:]' '[:upper:]')
 
 if [ -z "$VERDICT" ]; then
   log "API-NO-VERDICT response='$RESPONSE' cmd: $CMD"
@@ -296,11 +346,11 @@ if [ -z "$VERDICT" ]; then
 fi
 
 case "$VERDICT" in
-  *UNSAFE*)
+  UNSAFE)
     log "HAIKU-UNSAFE: $CMD"
     emit_decision "ask" "Haiku classified as potentially mutating"
     ;;
-  *SAFE*)
+  SAFE)
     log "HAIKU-SAFE: $CMD"
     emit_decision "allow" "Haiku classified as read-only"
     ;;

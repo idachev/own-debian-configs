@@ -29,22 +29,32 @@ The hook runs the following pipeline in order. First match wins.
 
 3. **Fast denylist** — `/dev/null` redirects are stripped first (harmless,
    anchored so `/dev/null.bak` is NOT stripped), then the remaining command
-   is grep'd against a set of dangerous regex patterns: bare `rm`/`mv`/`cp`,
-   any `ln` (symlink or hard link), `eval`/`exec`/`source`, POSIX
-   dot-source at command start (`. foo`, `. ./foo`, `. /foo`), `sudo`,
-   `git (commit|add|push|pull|merge|rebase|cherry-pick|tag|stash|branch -d)`,
-   `git push --force`, `git reset --hard`, `curl | sh`,
-   `npm|yarn|pnpm install`, `pip|pip2|pip3 install`,
-   `docker run`, `kubectl apply`, `gh <x> (create|delete|merge|close|…)`,
-   `gh api`, `date -s`/`date --set` (system time), `mvn`, `./gradlew`,
-   `env`/`printenv`/`set`/`export`/`unset` (env var readout/mutation),
-   `ssh`/`scp`/`rsync`/`nc`/`netcat` (remote execution and I/O),
-   `tee` (writes files from stdin), `crontab`/`systemctl`/`journalctl`,
-   `find ... -delete`/`-exec`/`-execdir`/`-ok`/`-okdir` (find-as-shell),
-   `awk ... system(`/`awk ... | getline`/`awk ... print > file`
-   (awk-as-shell), redirects to `/`, etc. On match returns `ask` — user
-   can still approve case-by-case. Denylist is checked first, so
-   `ls && rm -rf /tmp/foo` still escalates.
+   is grep'd against a set of "always unsafe regardless of flags"
+   patterns: bare `rm`/`unlink`/`mv`/`cp`, any `ln` (symlink or hard
+   link), `eval`/`exec`/`source`, POSIX dot-source at command start
+   (`. foo`, `. ./foo`, `. /foo`), `sudo`, `git push --force`,
+   `git reset --hard`, `git (commit|add|push|pull|merge|rebase|
+   cherry-pick|tag|stash|branch -d)`, `curl | sh`, `date -s`/`--set`
+   (system time, flag-specific), `mvn`/`gradle`/`./mvnw`/`./gradlew`
+   (always executes project code), `make`, `env`/`printenv`/`set`/
+   `export`/`unset` (env var readout/mutation), `ps e*` (BSD flag
+   cluster leaks process env), `ssh`/`scp`/`rsync`/`nc`/`netcat`
+   (remote execution and I/O), `tee` (writes files from stdin),
+   `crontab`, `find ... -delete/-exec/-execdir/-ok/-okdir`
+   (find-as-shell), `awk ... system(`/`awk ... | getline`/
+   `awk ... print > file` (awk-as-shell), redirects to `/`, etc.
+   On match returns `ask` — user can still approve case-by-case.
+   Denylist is checked first, so `ls && rm -rf /tmp/foo` still
+   escalates.
+
+   **What's deliberately NOT on the denylist**: parameterized tools
+   whose safety depends on verbs or flags — `gh`, `docker`, `kubectl`,
+   `npm`/`yarn`/`pnpm`, `pip[23]?`, `apt`, `terraform`, `systemctl`,
+   `journalctl`. These all route to the Haiku classifier, which sees
+   the full command and won't go stale as those tools add new verbs.
+   An earlier version enumerated unsafe `gh <verb>`s, but the list
+   kept drifting; the current policy is "denylist = always unsafe,
+   allowlist = known safe, Haiku = everything else".
 
 4. **Compound detection** — if the command contains any of
    `| ; & \` $( < > (` or a literal newline, skip the fast allowlist and
@@ -64,12 +74,35 @@ The hook runs the following pipeline in order. First match wins.
    outer command line will reliably catch. `ps` is excluded because the
    BSD `e` flag cluster (`ps e`, `ps auxe`) discloses process environment,
    leaking secrets like `ANTHROPIC_API_KEY`. All three instead roundtrip
-   the Haiku classifier (~1s) for read-only invocations. If the first token is `git`, the second token is
-   checked against a list of read-only subcommands (`status`, `log`,
-   `diff`, `show`, `branch`, `remote`, `describe`, `rev-parse`,
-   `ls-files`, `ls-tree`, `blame`, `reflog`, `shortlog`). No regex prefix
-   games, no word-boundary tricks — simple string equality.
-   If matched, returns `allow` **with no LLM call** (fast, free).
+   the Haiku classifier (~1s) for read-only invocations.
+
+   **Tool-specific subcommand allowlists** apply after the tokenwise
+   check for two tools that are used heavily enough to justify a fast
+   path:
+
+   - **`git`**: if the first token is `git`, the second token is checked
+     against a read-only subcommand list (`status`, `log`, `diff`,
+     `show`, `branch`, `remote`, `describe`, `rev-parse`, `ls-files`,
+     `ls-tree`, `blame`, `reflog`, `shortlog`).
+   - **`gh`** (GitHub CLI): safe-pattern allowlist in two shapes:
+     - `ALLOW_GH_SINGLE` = `status version help search` — `gh <sub>`
+       where args don't affect safety.
+     - `ALLOW_GH_PAIRS` = `pr list|view|status|checks|diff`,
+       `issue list|view|status`, `repo list|view`,
+       `release list|view`, `run list|view|watch`,
+       `workflow list|view`, `auth status`, `gist list|view`,
+       `label list`, `alias list`, `extension list`.
+
+     Policy: `gh` adds new unsafe verbs constantly (a moving target).
+     Rather than chase them in the denylist, we assert what we know
+     is read-only and route everything else (`gh pr create`,
+     `gh api -X POST`, future verbs) to Haiku. `gh api /user` (a
+     plain GET) routes through Haiku and is typically classified
+     `SAFE`, while `gh api -X POST …` is classified `UNSAFE`.
+
+   No regex prefix games, no word-boundary tricks — simple string
+   equality. If matched, returns `allow` **with no LLM call** (fast,
+   free).
 
 6. **Haiku classifier** — the fallback for anything not caught by the
    fast paths. Builds a JSON request with `jq -n --arg` (safe from
@@ -77,9 +110,12 @@ The hook runs the following pipeline in order. First match wins.
    `curl` with `max_tokens: 4` (hard cap against runaway output —
    the model physically cannot emit the full "Ignore previous
    instructions…" payload). Model: `claude-haiku-4-5` (floating alias).
-   Classifies as `SAFE` or `UNSAFE`; verdict case-statement checks
-   `*UNSAFE*` before `*SAFE*` so a verbose "SAFE but actually UNSAFE"
-   still resolves to UNSAFE.
+   The verdict is normalized (whitespace + punctuation stripped,
+   uppercased) and then **strict-matched** against `SAFE` or `UNSAFE`.
+   Anything else — "not safe", "probably safe", truncated output,
+   extra words — falls through to an unknown branch that returns
+   `ask`. This replaces an older fuzzy `*SAFE*` wildcard that could
+   mis-allow phrases like "NOT SAFE".
    On any error (missing API key, missing curl, timeout, HTTP non-zero,
    empty response, API error JSON, malformed content, unknown verdict)
    defaults to `ask`. Never fails open.
