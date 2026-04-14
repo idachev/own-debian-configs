@@ -27,12 +27,16 @@ The hook runs the following pipeline in order. First match wins.
    to prevent loops and to harden against the env var being set in the
    outer shell.
 
-3. **Fast denylist** — `/dev/null` redirects are stripped first (harmless),
-   then the remaining command is grep'd against a set of dangerous regex
-   patterns: bare `rm`/`mv`/`cp`, `eval`/`exec`/`source`, POSIX dot-source
-   at command start (`. foo`, `. ./foo`, `. /foo`), `sudo`,
-   `git push --force`, `git reset --hard`, `curl | sh`, `npm install`,
-   `docker run`, `kubectl apply`, `mvn`, `./gradlew`,
+3. **Fast denylist** — `/dev/null` redirects are stripped first (harmless,
+   anchored so `/dev/null.bak` is NOT stripped), then the remaining command
+   is grep'd against a set of dangerous regex patterns: bare `rm`/`mv`/`cp`,
+   any `ln` (symlink or hard link), `eval`/`exec`/`source`, POSIX
+   dot-source at command start (`. foo`, `. ./foo`, `. /foo`), `sudo`,
+   `git (commit|add|push|pull|merge|rebase|cherry-pick|tag|stash|branch -d)`,
+   `git push --force`, `git reset --hard`, `curl | sh`,
+   `npm|yarn|pnpm install`, `pip|pip2|pip3 install`,
+   `docker run`, `kubectl apply`, `gh <x> (create|delete|merge|close|…)`,
+   `gh api`, `date -s`/`date --set` (system time), `mvn`, `./gradlew`,
    `env`/`printenv`/`set`/`export`/`unset` (env var readout/mutation),
    `ssh`/`scp`/`rsync`/`nc`/`netcat` (remote execution and I/O),
    `tee` (writes files from stdin), `crontab`/`systemctl`/`journalctl`,
@@ -53,12 +57,14 @@ The hook runs the following pipeline in order. First match wins.
    `ls`, `cat`, `pwd`, `stat`, `file`, `tree`, `du`, `df`,
    `less`, `more`, `head`, `tail`, `wc`, `whoami`, `hostname`, `uname`,
    `uptime`, `date`, `id`, `type`, `which`, `grep`, `rg`, `fd`, `jq`,
-   `yq`, `sort`, `uniq`, `cut`, `tr`, `basename`, `dirname`, `ps`, etc.
-   **`find` and `awk` are intentionally excluded** from the fast allowlist
-   because they can shell out (`find -delete`/`-exec`, `awk 'system(…)'`)
-   in ways no regex on the outer command line will reliably catch.
-   Read-only `find`/`awk` invocations instead roundtrip the Haiku
-   classifier (~1s). If the first token is `git`, the second token is
+   `yq`, `sort`, `uniq`, `cut`, `tr`, `basename`, `dirname`, `realpath`,
+   `readlink`, etc. **`ps`, `find`, and `awk` are intentionally excluded**
+   from the fast allowlist. `find` and `awk` can shell out
+   (`find -delete`/`-exec`, `awk 'system(…)'`) in ways no regex on the
+   outer command line will reliably catch. `ps` is excluded because the
+   BSD `e` flag cluster (`ps e`, `ps auxe`) discloses process environment,
+   leaking secrets like `ANTHROPIC_API_KEY`. All three instead roundtrip
+   the Haiku classifier (~1s) for read-only invocations. If the first token is `git`, the second token is
    checked against a list of read-only subcommands (`status`, `log`,
    `diff`, `show`, `branch`, `remote`, `describe`, `rev-parse`,
    `ls-files`, `ls-tree`, `blame`, `reflog`, `shortlog`). No regex prefix

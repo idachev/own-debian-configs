@@ -114,7 +114,7 @@ DENY_PATTERNS=(
   '\breboot\b'
   '\bhalt\b'
   '\btruncate\b'
-  '\bln[[:space:]]+-[a-zA-Z]*s'             # symlink creation
+  '\bln[[:space:]]+'                        # any ln: symlink or hard link
   '\bmv\b'
   '\bcp\b'
   '>[[:space:]]*/'                          # redirect to absolute path
@@ -126,14 +126,17 @@ DENY_PATTERNS=(
   '\bgit[[:space:]]+reset[[:space:]]+--hard\b'
   '\bgit[[:space:]]+clean\b.*-f'
   '\bgit[[:space:]]+checkout\b.*--[[:space:]]*\.'
-  '\bgit[[:space:]]+(commit|add|push|pull|merge|rebase|cherry-pick|tag|branch[[:space:]]+-[dD])\b'
+  '\bgit[[:space:]]+(commit|add|push|pull|merge|rebase|cherry-pick|tag|stash|branch[[:space:]]+-[dD])\b'
   '\bnpm[[:space:]]+(install|uninstall|publish|run)\b'
   '\byarn[[:space:]]+(add|remove|publish)\b'
   '\bpnpm[[:space:]]+(add|remove|publish)\b'
-  '\bpip[[:space:]]+(install|uninstall)\b'
+  '\bpip[23]?[[:space:]]+(install|uninstall)\b'
   '\bapt(-get)?[[:space:]]+(install|remove|purge|update|upgrade)\b'
   '\bdocker[[:space:]]+(run|rm|rmi|kill|stop|exec|build|push|pull)\b'
   '\bkubectl[[:space:]]+(apply|delete|create|edit|patch|exec)\b'
+  '\bgh[[:space:]]+[a-z]+[[:space:]]+(create|delete|edit|merge|close|reopen|update|comment|review|rerun|cancel|enable|disable|login|logout|fork|clone|patch|transfer|archive|add|remove|set|unset)\b'
+  '\bgh[[:space:]]+api\b'                   # gh api can do anything
+  '\bdate[[:space:]]+[^|;&]*-(-set|s)\b'    # date setting system time
   '\bmvn\b'
   '\bgradle\b'
   '\b\./mvnw\b'
@@ -159,7 +162,10 @@ DENY_PATTERNS=(
 
 # Strip harmless redirects to /dev/null before checking deny patterns.
 # Matches: >/dev/null, 2>/dev/null, &>/dev/null, 2>&1 >/dev/null, etc.
-CMD_STRIPPED=$(printf '%s' "$CMD" | sed -E 's#([0-9]*&?)>[[:space:]]*/dev/null([[:space:]]+2>&1)?##g')
+# The trailing [[:space:]]|$ anchor ensures /dev/null is a complete token —
+# without it, >/dev/null.bak would strip to just .bak and bypass the
+# >[[:space:]]*/ denylist check.
+CMD_STRIPPED=$(printf '%s' "$CMD" | sed -E 's#([0-9]*&?)>[[:space:]]*/dev/null([[:space:]]+2>&1)?([[:space:]]|$)#\3#g')
 
 for pat in "${DENY_PATTERNS[@]}"; do
   if printf '%s' "$CMD_STRIPPED" | grep -qE "$pat"; then

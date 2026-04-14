@@ -43,10 +43,11 @@ run_case() {
   TOTAL=$((TOTAL + 1))
 
   local output
+  # Here-string avoids brittle shell-quoting of $input through bash -c.
   if [ -n "$env_prefix" ]; then
-    output=$(env $env_prefix bash -c "echo '$input' | '$SCRIPT'" 2>/dev/null)
+    output=$(env $env_prefix "$SCRIPT" <<<"$input" 2>/dev/null)
   else
-    output=$(echo "$input" | "$SCRIPT" 2>/dev/null)
+    output=$("$SCRIPT" <<<"$input" 2>/dev/null)
   fi
 
   local actual
@@ -82,6 +83,8 @@ run_case "git diff"                       allow   '{"tool_name":"Bash","tool_inp
 run_case "git log"                        allow   '{"tool_name":"Bash","tool_input":{"command":"git log --oneline -5"}}'
 run_case "wc -l file"                     allow   '{"tool_name":"Bash","tool_input":{"command":"wc -l /etc/hosts"}}'
 run_case "ls >/dev/null (stripped)"       allow   '{"tool_name":"Bash","tool_input":{"command":"ls >/dev/null"}}'
+run_case "ls 2>/dev/null"                 allow   '{"tool_name":"Bash","tool_input":{"command":"ls 2>/dev/null"}}'
+run_case "ls >/dev/null 2>&1"             allow   '{"tool_name":"Bash","tool_input":{"command":"ls >/dev/null 2>&1"}}'
 
 echo
 echo "=== Fast denylist (dangerous patterns, skip LLM) ==="
@@ -113,6 +116,22 @@ run_case "ssh host cmd"                   ask     '{"tool_name":"Bash","tool_inp
 run_case "scp file"                       ask     '{"tool_name":"Bash","tool_input":{"command":"scp a host:b"}}'
 run_case "crontab -e"                     ask     '{"tool_name":"Bash","tool_input":{"command":"crontab -e"}}'
 run_case "systemctl restart"              ask     '{"tool_name":"Bash","tool_input":{"command":"systemctl restart nginx"}}'
+run_case "pip3 install (regression)"      ask     '{"tool_name":"Bash","tool_input":{"command":"pip3 install requests"}}'
+run_case "pip2 install (regression)"      ask     '{"tool_name":"Bash","tool_input":{"command":"pip2 install requests"}}'
+run_case "git stash"                      ask     '{"tool_name":"Bash","tool_input":{"command":"git stash"}}'
+run_case "git stash pop"                  ask     '{"tool_name":"Bash","tool_input":{"command":"git stash pop"}}'
+run_case "gh pr create"                   ask     '{"tool_name":"Bash","tool_input":{"command":"gh pr create --title x --body y"}}'
+run_case "gh issue close"                 ask     '{"tool_name":"Bash","tool_input":{"command":"gh issue close 123"}}'
+run_case "gh api"                         ask     '{"tool_name":"Bash","tool_input":{"command":"gh api /user"}}'
+run_case "date -s (system time)"          ask     '{"tool_name":"Bash","tool_input":{"command":"date -s \"2020-01-01\""}}'
+run_case "date --set (system time)"       ask     '{"tool_name":"Bash","tool_input":{"command":"date --set=\"now\""}}'
+run_case "ln hard link (regression)"      ask     '{"tool_name":"Bash","tool_input":{"command":"ln /tmp/src /tmp/dst"}}'
+# /dev/null stripping bypass regression: unanchored strip would have
+# allowed writes to /dev/null.bak (a different file) via a fast-allowed
+# `cat`. The anchor fix keeps the redirect visible to the denylist.
+run_case ">/dev/null.bak bypass"          ask     '{"tool_name":"Bash","tool_input":{"command":"cat /etc/passwd >/dev/null.bak"}}'
+run_case ">/dev/nullX bypass"             ask     '{"tool_name":"Bash","tool_input":{"command":"cat /etc/hosts >/dev/nullX"}}'
+run_case "2>/dev/null.bak bypass"         ask     '{"tool_name":"Bash","tool_input":{"command":"cat /etc/hosts 2>/dev/null.bak"}}'
 
 echo
 echo "=== Non-Bash passthrough ==="
