@@ -77,12 +77,15 @@ if [ "$TOOL_NAME" != "Bash" ]; then
 fi
 
 # ---- Recursion guard -------------------------------------------------------
-# If the classifier subprocess somehow re-entered this hook, fail closed.
-# The classifier only needs to output one word and should never invoke Bash.
-# Denying here also hardens against the env var being set accidentally in the
-# outer shell.
+# Outer-shell hardening: nothing in this hook actually sets
+# CLAUDE_BASH_SAFETY_INFLIGHT — the classifier runs via curl, not Bash —
+# so this guard only fires when the variable is set externally (accidental
+# export in the outer shell, a misconfigured test fixture, a wrapper script
+# that leaks env). Fail closed with deny because deny cannot be bypassed
+# even with --dangerously-skip-permissions, making it the strongest response
+# available when the environment already looks compromised.
 if [ "${CLAUDE_BASH_SAFETY_INFLIGHT:-0}" = "1" ]; then
-  emit_decision "deny" "safety-check subprocess should not invoke Bash"
+  emit_decision "deny" "CLAUDE_BASH_SAFETY_INFLIGHT set in outer shell"
 fi
 
 if [ -z "$CMD" ]; then
@@ -134,7 +137,14 @@ DENY_PATTERNS=(
   '\bgit[[:space:]]+reset[[:space:]]+--hard\b'
   '\bgit[[:space:]]+clean\b.*-f'
   '\bgit[[:space:]]+checkout\b.*--[[:space:]]*\.'
-  '\bgit[[:space:]]+(commit|add|push|pull|merge|rebase|cherry-pick|tag|stash|branch[[:space:]]+-[dD])\b'
+  '\bgit[[:space:]]+(commit|add|push|pull|merge|rebase|cherry-pick|tag|branch[[:space:]]+-[dD])\b'
+  # `git stash` itself mutates (pushes working tree onto stash stack); only
+  # `git stash list` and `git stash show` are read-only and pass through to
+  # the allowlist below. Match mutating verbs, any dash-flag form, or bare
+  # `git stash` terminated by end-of-string or a shell metachar.
+  '\bgit[[:space:]]+stash[[:space:]]+(push|pop|drop|apply|save|clear|create|store|branch)\b'
+  '\bgit[[:space:]]+stash[[:space:]]+-'
+  '\bgit[[:space:]]+stash[[:space:]]*($|[;&|])'
   '\bdate[[:space:]]+[^|;&]*-(-set|s)\b'    # date setting system time (flag-specific)
   '\bmvn\b'                                 # always executes project code
   '\bgradle\b'
@@ -142,7 +152,14 @@ DENY_PATTERNS=(
   '\b\./gradlew\b'
   '\bmake\b'                                # always runs Makefile target
   '\b(env|printenv|set|export|unset)\b'     # env var readout / mutation
-  '\bps\b[[:space:]]+[a-z]*e[a-z]*\b'       # ps BSD flag cluster w/ `e` = show process env
+  # BSD-style `ps` clusters (no leading dash) containing `e` show process
+  # env, leaking secrets like ANTHROPIC_API_KEY. Matches `ps e`, `ps eww`,
+  # `ps auxe`; deliberately does NOT match GNU-style `ps -e`, `ps -ef`
+  # (where `-e` means "select all"), `ps aux`, or `ps --version`. The
+  # `(^|[^-[:alnum:]])` prefix prevents the engine from sliding the match
+  # past a leading dash, which the original `\bps\b…` pattern allowed.
+  # Haiku doesn't reliably know these BSD semantics, so we catch them here.
+  '(^|[^-[:alnum:]])ps[[:space:]]+(e|[a-z]+e)[a-z]*($|[[:space:]])'
   '\bssh\b'                                 # remote execution
   '\bscp\b'
   '\brsync\b'
@@ -249,13 +266,22 @@ if [ "$IS_COMPOUND" = "0" ]; then
 
   # Special-case: git with a read-only subcommand.
   if [ "$SIMPLE_ALLOW" = "0" ] && [ "$FIRST" = "git" ]; then
-    read -r SUB _ <<<"$REST"
+    read -r SUB THIRD _ <<<"$REST"
     for s in "${ALLOW_GIT_SUBCMDS[@]}"; do
       if [ "$SUB" = "$s" ]; then
         SIMPLE_ALLOW=1
         break
       fi
     done
+    # git stash list / git stash show are read-only. Mutating stash verbs
+    # (push, pop, drop, apply, …) and bare `git stash` were caught by the
+    # denylist above, so reaching here with SUB=stash means a read-only
+    # subcommand follows.
+    if [ "$SIMPLE_ALLOW" = "0" ] && [ "$SUB" = "stash" ]; then
+      case "$THIRD" in
+        list|show) SIMPLE_ALLOW=1 ;;
+      esac
+    fi
   fi
 
   # Special-case: gh with a known safe single-sub or <sub> <action> pair.

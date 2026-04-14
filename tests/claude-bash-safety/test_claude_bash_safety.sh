@@ -45,6 +45,7 @@ run_case() {
   local output
   # Here-string avoids brittle shell-quoting of $input through bash -c.
   if [ -n "$env_prefix" ]; then
+    # shellcheck disable=SC2086  # intentional word-split of KEY=VAL pairs
     output=$(env $env_prefix "$SCRIPT" <<<"$input" 2>/dev/null)
   else
     output=$("$SCRIPT" <<<"$input" 2>/dev/null)
@@ -81,6 +82,9 @@ run_case "cat /etc/hostname"              allow   '{"tool_name":"Bash","tool_inp
 run_case "git status"                     allow   '{"tool_name":"Bash","tool_input":{"command":"git status"}}'
 run_case "git diff"                       allow   '{"tool_name":"Bash","tool_input":{"command":"git diff HEAD~1"}}'
 run_case "git log"                        allow   '{"tool_name":"Bash","tool_input":{"command":"git log --oneline -5"}}'
+run_case "git branch (bare listing)"      allow   '{"tool_name":"Bash","tool_input":{"command":"git branch"}}'
+run_case "git stash list"                 allow   '{"tool_name":"Bash","tool_input":{"command":"git stash list"}}'
+run_case "git stash show"                 allow   '{"tool_name":"Bash","tool_input":{"command":"git stash show"}}'
 run_case "wc -l file"                     allow   '{"tool_name":"Bash","tool_input":{"command":"wc -l /etc/hosts"}}'
 run_case "ls >/dev/null (stripped)"       allow   '{"tool_name":"Bash","tool_input":{"command":"ls >/dev/null"}}'
 run_case "ls 2>/dev/null"                 allow   '{"tool_name":"Bash","tool_input":{"command":"ls 2>/dev/null"}}'
@@ -114,8 +118,11 @@ run_case "tee /etc/foo"                   ask     '{"tool_name":"Bash","tool_inp
 run_case "ssh host cmd"                   ask     '{"tool_name":"Bash","tool_input":{"command":"ssh host uptime"}}'
 run_case "scp file"                       ask     '{"tool_name":"Bash","tool_input":{"command":"scp a host:b"}}'
 run_case "crontab -e"                     ask     '{"tool_name":"Bash","tool_input":{"command":"crontab -e"}}'
-run_case "git stash"                      ask     '{"tool_name":"Bash","tool_input":{"command":"git stash"}}'
+run_case "git stash (bare mutates)"       ask     '{"tool_name":"Bash","tool_input":{"command":"git stash"}}'
 run_case "git stash pop"                  ask     '{"tool_name":"Bash","tool_input":{"command":"git stash pop"}}'
+run_case "git stash push"                 ask     '{"tool_name":"Bash","tool_input":{"command":"git stash push -m wip"}}'
+run_case "git stash -u (flag form)"       ask     '{"tool_name":"Bash","tool_input":{"command":"git stash -u"}}'
+run_case "git branch -d feature"          ask     '{"tool_name":"Bash","tool_input":{"command":"git branch -d feature"}}'
 run_case "date -s (system time)"          ask     '{"tool_name":"Bash","tool_input":{"command":"date -s \"2020-01-01\""}}'
 run_case "date --set (system time)"       ask     '{"tool_name":"Bash","tool_input":{"command":"date --set=\"now\""}}'
 run_case "ln hard link (regression)"      ask     '{"tool_name":"Bash","tool_input":{"command":"ln /tmp/src /tmp/dst"}}'
@@ -178,6 +185,9 @@ run_case "ps e (env leak)"                ask     '{"tool_name":"Bash","tool_inp
 run_case "ls | head (compound)"           allow   '{"tool_name":"Bash","tool_input":{"command":"ls -la | head -n 5"}}'
 run_case "grep | wc (compound)"           allow   '{"tool_name":"Bash","tool_input":{"command":"grep -r TODO src | wc -l"}}'
 run_case "git log | head (compound)"      allow   '{"tool_name":"Bash","tool_input":{"command":"git log --oneline | head -n 10"}}'
+# Embedded newline forces IS_COMPOUND=1 even though CMD_STRIPPED has no
+# metachars — both lines are read-only so Haiku should classify SAFE.
+run_case "newline forces compound"        allow   '{"tool_name":"Bash","tool_input":{"command":"ls\nwhoami"}}'
 # C2 bypass attempt: command substitution must NOT fast-allow.
 # Haiku tends to be conservative on $(...) and classifies UNSAFE - correct outcome.
 run_case "ls \$(whoami) (C2 bypass)"      ask     '{"tool_name":"Bash","tool_input":{"command":"ls $(whoami)"}}'
