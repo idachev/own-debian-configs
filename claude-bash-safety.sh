@@ -2,15 +2,18 @@
 # Claude Code PreToolUse hook: auto-approve safe read-only Bash commands
 #
 # Reads PreToolUse JSON from stdin. For Bash tool calls, decides:
-#   - allow: command is clearly safe / read-only
-#   - ask:   command is potentially mutating, user must confirm
-#   - deny:  recursion guard tripped
+#   - allow:       command is clearly safe / read-only
+#   - passthrough: fall through to Claude Code's built-in permission checks
+#   - deny:        recursion guard tripped
 # Decision is emitted on stdout as hookSpecificOutput JSON.
+# Passthrough emits NO JSON — Claude Code sees no hook output and applies
+# its own allow/ask/deny logic as if this hook didn't exist.
 #
 # Flow:
 #   1. Non-Bash tool calls pass through untouched
 #   2. Recursion guard (fails closed with deny)
-#   3. Fast denylist of obviously dangerous patterns - straight to ask
+#   3. Fast denylist of obviously dangerous patterns - passthrough to
+#      Claude Code's built-in permission checks
 #   4. If command contains any compound/redirect/substitution characters
 #      (| ; & ` $( < >  newline), skip the allowlist and go straight
 #      to the Haiku classifier. The allowlist is too easy to fool in
@@ -18,7 +21,8 @@
 #   5. Simple single-token command: tokenwise allowlist match -> allow
 #   6. Fall back to Haiku classifier via direct Anthropic API
 #
-# On any error, defaults to "ask" (fail-safe).
+# On any error, defaults to passthrough (fail-safe to Claude Code's
+# built-in checks).
 #
 # Test manually:
 #   echo '{"tool_name":"Bash","tool_input":{"command":"ls -la"}}' | \
@@ -54,16 +58,26 @@ emit_decision() {
   exit 0
 }
 
+# Fall through to Claude Code's built-in permission checks.
+# Emits no JSON so the hook is invisible to the decision engine —
+# Claude Code then applies its own allow/ask/deny logic as if this
+# hook didn't exist.
+passthrough() {
+  local reason="$1"
+  log "PASSTHROUGH REASON=$reason"
+  exit 0
+}
+
 # ---- Parse stdin -----------------------------------------------------------
 INPUT=$(cat)
 if [ -z "$INPUT" ]; then
   log "ERROR empty stdin"
-  emit_decision "ask" "empty hook input"
+  passthrough "empty hook input"
 fi
 
 if ! command -v jq >/dev/null 2>&1; then
   log "ERROR jq not installed"
-  emit_decision "ask" "jq not installed on host"
+  passthrough "jq not installed on host"
 fi
 
 TOOL_NAME=$(printf '%s' "$INPUT" | jq -r '.tool_name // empty' 2>/dev/null)
@@ -90,7 +104,7 @@ fi
 
 if [ -z "$CMD" ]; then
   log "ERROR bash tool call with empty command"
-  emit_decision "ask" "empty command"
+  passthrough "empty command"
 fi
 
 # ---- Fast denylist ---------------------------------------------------------
@@ -183,7 +197,7 @@ CMD_STRIPPED=$(printf '%s' "$CMD" | sed -E 's#([0-9]*&?)>[[:space:]]*/dev/null([
 for pat in "${DENY_PATTERNS[@]}"; do
   if printf '%s' "$CMD_STRIPPED" | grep -qE "$pat"; then
     log "DENY-PATTERN matched '$pat' for: $CMD"
-    emit_decision "ask" "matched risky pattern: $pat"
+    passthrough "matched risky pattern: $pat"
   fi
 done
 
@@ -314,12 +328,12 @@ fi
 # ---- Haiku classifier fallback (direct Anthropic API via curl) -------------
 if [ -z "${ANTHROPIC_API_KEY:-}" ]; then
   log "ERROR ANTHROPIC_API_KEY not set"
-  emit_decision "ask" "ANTHROPIC_API_KEY not set"
+  passthrough "ANTHROPIC_API_KEY not set"
 fi
 
 if ! command -v curl >/dev/null 2>&1; then
   log "ERROR curl not installed"
-  emit_decision "ask" "curl not available"
+  passthrough "curl not available"
 fi
 
 # Strip the bash `command` builtin before sending to Haiku. `command foo`
@@ -356,13 +370,13 @@ RC=$?
 
 if [ $RC -ne 0 ] || [ -z "$RESPONSE" ]; then
   log "API-ERROR rc=$RC cmd: $CMD"
-  emit_decision "ask" "classifier HTTP call failed (rc=$RC)"
+  passthrough "classifier HTTP call failed (rc=$RC)"
 fi
 
 API_ERROR=$(printf '%s' "$RESPONSE" | jq -r '.error.message // empty' 2>/dev/null)
 if [ -n "$API_ERROR" ]; then
   log "API-ERROR '$API_ERROR' cmd: $CMD"
-  emit_decision "ask" "API error: $API_ERROR"
+  passthrough "API error: $API_ERROR"
 fi
 
 # Strip whitespace AND punctuation so that trailing `.`, `!`, quotes, or
@@ -375,13 +389,13 @@ VERDICT=$(printf '%s' "$RESPONSE" | jq -r '.content[0].text // empty' 2>/dev/nul
 
 if [ -z "$VERDICT" ]; then
   log "API-NO-VERDICT response='$RESPONSE' cmd: $CMD"
-  emit_decision "ask" "classifier returned no verdict"
+  passthrough "classifier returned no verdict"
 fi
 
 case "$VERDICT" in
   UNSAFE)
     log "HAIKU-UNSAFE: $CMD"
-    emit_decision "ask" "Haiku classified as potentially mutating"
+    passthrough "Haiku classified as potentially mutating"
     ;;
   SAFE)
     log "HAIKU-SAFE: $CMD"
@@ -389,6 +403,6 @@ case "$VERDICT" in
     ;;
   *)
     log "HAIKU-UNKNOWN verdict='$VERDICT' cmd: $CMD"
-    emit_decision "ask" "Haiku returned unexpected verdict: $VERDICT"
+    passthrough "Haiku returned unexpected verdict: $VERDICT"
     ;;
 esac
