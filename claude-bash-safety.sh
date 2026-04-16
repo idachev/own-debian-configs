@@ -322,6 +322,13 @@ if ! command -v curl >/dev/null 2>&1; then
   emit_decision "ask" "curl not available"
 fi
 
+# Strip the bash `command` builtin before sending to Haiku. `command foo`
+# is semantically identical to `foo` (it just bypasses aliases/functions),
+# but the word "command" confuses the classifier into thinking something
+# dangerous is being executed. Strip at pipe-segment boundaries too, so
+# `git diff | command head -n 50` becomes `git diff | head -n 50`.
+CMD_FOR_CLASSIFIER=$(printf '%s' "$CMD" | sed -E 's/(^|[|;&])[[:space:]]*command[[:space:]]+/\1 /g')
+
 PROMPT_TEXT="You are a shell command safety classifier. Classify the following command.
 
 Reply with EXACTLY ONE WORD, nothing else:
@@ -329,7 +336,7 @@ Reply with EXACTLY ONE WORD, nothing else:
 - UNSAFE  otherwise, or if you are unsure.
 
 Command:
-$CMD"
+$CMD_FOR_CLASSIFIER"
 
 REQUEST_BODY=$(jq -n \
   --arg model "$HAIKU_MODEL" \
