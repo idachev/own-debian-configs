@@ -31,7 +31,7 @@ if git --no-optional-locks rev-parse --git-dir > /dev/null 2>&1; then
     untracked=""
     untracked_count=$(git --no-optional-locks ls-files --others --exclude-standard 2>/dev/null | wc -l)
     if [ "$untracked_count" -gt 0 ]; then
-        untracked="?${untracked_count}"
+        untracked=" ?${untracked_count}"
     fi
 
     # Ahead/behind vs upstream
@@ -41,8 +41,8 @@ if git --no-optional-locks rev-parse --git-dir > /dev/null 2>&1; then
         if [ -n "$counts" ]; then
             behind=$(echo "$counts" | awk '{print $1}')
             ahead=$(echo "$counts" | awk '{print $2}')
-            [ "$ahead" != "0" ] && ahead_behind="${ahead_behind}↑${ahead}"
-            [ "$behind" != "0" ] && ahead_behind="${ahead_behind}↓${behind}"
+            [ "$ahead" != "0" ] && ahead_behind="${ahead_behind} ↑${ahead}"
+            [ "$behind" != "0" ] && ahead_behind="${ahead_behind} ↓${behind}"
         fi
     fi
 
@@ -128,6 +128,7 @@ if [ "$added" != "0" ] || [ "$removed" != "0" ]; then
 fi
 
 # Build the status line with dimmed colors (without user@host, date, or time)
-# Show: cwd git_info [model] ctx cost lines
-printf "\033[2;34m%s\033[0m \033[2;33m%s\033[0m \033[2;36m[%s]\033[0m%b%b%b" \
+# Line 1: cwd git_info
+# Line 2: [model] ctx cost lines
+printf "\033[2;34m%s\033[0m \033[2;33m%s\033[0m\n\033[2;36m[%s]\033[0m%b%b%b" \
     "$cwd" "$git_info" "$model" "$ctx_info" "$cost_info" "$lines_info"
