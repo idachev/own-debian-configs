@@ -2,7 +2,9 @@
 
 A Claude Code `statusLine` command that renders a two-row status
 line with the current working directory, full git state, active
-model, context-window usage, session cost, and lines changed.
+model, context-window usage, session cost, session duration, and
+lines changed. Each field is prefixed with a compact emoji icon
+(📁 🌿 💰 ⏱️ ✏️) so sections are visually scannable at a glance.
 
 ## Files
 
@@ -16,9 +18,12 @@ model, context-window usage, session cost, and lines changed.
 Two rows, separated by `\n`:
 
 ```
-~/bin [master● ?6 ↑2] {submodule:branch✓,...}
-[Opus 4.7] ▰▰▰▰▱▱▱▱▱▱(42%) $0.83 +120/-45
+📁~/bin 🌿[master● ?6 ↑2] {submodule:branch✓,...}
+[Opus 4.7] ▰▰▰▰▱▱▱▱▱▱(42%) 💰$0.83 ⏱️2h23m ✏️+120/-45
 ```
+
+Icons sit flush against their values (no gap) so each `icon+value`
+reads as a single unit.
 
 Live example (outlined in red):
 
@@ -26,32 +31,36 @@ Live example (outlined in red):
 
 ### Row 1 — path and git
 
-- **cwd** — workspace path with `$HOME` collapsed to `~` (dim blue).
-- **git block** `[branch<markers>]` (dim yellow), only when inside a
-  git repo:
-  - `●` before the space — staged changes.
+- **📁 cwd** — workspace path with `$HOME` collapsed to `~` (dim
+  blue).
+- **🌿 git block** `[branch<markers>]` (dim yellow), only when
+  inside a git repo:
+  - `●` first — staged changes.
   - `●` second — unstaged changes.
   - ` ?N` — count of untracked files.
   - ` ↑N` / ` ↓N` — commits ahead/behind the upstream branch.
 - **submodule block** `{name:branch<status>, ...}` — one entry per
   submodule listed in `.gitmodules`. `✓` = clean, `●` = dirty.
 
-### Row 2 — model, context, cost, lines
+### Row 2 — model, context, cost, duration, lines
 
 - **`[model]`** (dim cyan) — `.model.display_name` from the stdin
   JSON.
-- **Context bar** — 10 `▰`/`▱` blocks + `(N%)` label, color-coded by
-  `.context_window.used_percentage`:
+- **Context bar** — 10 `▰`/`▱` blocks + `(N%)` label, color-coded
+  by `.context_window.used_percentage`:
   - green when < 60%
   - yellow when 60–84%
   - red when ≥ 85%
-- **`$X.XX`** (dim magenta) — session cost from
+- **💰 `$X.XX`** (dim magenta) — session cost from
   `.cost.total_cost_usd`. Hidden when absent.
-- **`+A/-R`** (green/red) — `.cost.total_lines_added` and
+- **⏱️ duration** (dim cyan) — wall-clock time since the session
+  started, from `.cost.total_duration_ms`. Auto-scales:
+  `45s` → `2m5s` → `1h2m`. Hidden when absent.
+- **✏️ `+A/-R`** (green/red) — `.cost.total_lines_added` and
   `.cost.total_lines_removed`. Hidden when both are zero.
 
-Everything except cwd is conditional — fields quietly disappear when
-their source data isn't in the JSON payload.
+Everything except cwd is conditional — fields quietly disappear
+when their source data isn't in the JSON payload.
 
 ## How it works
 
@@ -99,7 +108,12 @@ echo '{
   "workspace": {"current_dir": "/home/idachev/bin"},
   "model": {"display_name": "Opus 4.7"},
   "context_window": {"used_percentage": 42},
-  "cost": {"total_cost_usd": 0.83, "total_lines_added": 120, "total_lines_removed": 45}
+  "cost": {
+    "total_cost_usd": 0.83,
+    "total_duration_ms": 8580000,
+    "total_lines_added": 120,
+    "total_lines_removed": 45
+  }
 }' | ~/bin/claude-statusline.sh; echo
 ```
 
@@ -110,7 +124,10 @@ green/yellow/red thresholds.
 
 - `jq` (JSON parsing)
 - `git` (branch, diff, `rev-list`, `ls-files`)
-- A terminal that renders Unicode blocks (`▰▱●✓`) and ANSI colors.
+- A terminal that renders Unicode blocks (`▰▱●✓`), ANSI colors, and
+  emoji presentation for `📁 🌿 💰 ⏱️ ✏️`. Glyphs that default to
+  text (stopwatch, pencil) carry the VS16 variation selector so they
+  consistently render as emoji.
 
 ## Caveats
 
