@@ -119,16 +119,34 @@ if [ -n "$cost_usd" ] && [ "$cost_usd" != "null" ]; then
     cost_info=$(printf " \033[2;35m💰 \$%.2f\033[0m" "$cost_usd")
 fi
 
+# Session duration (wall-clock since session start)
+duration_info=""
+duration_ms=$(echo "$input" | jq -r '.cost.total_duration_ms // empty')
+if [ -n "$duration_ms" ] && [ "$duration_ms" != "null" ]; then
+    duration_sec=$(( duration_ms / 1000 ))
+    d_h=$(( duration_sec / 3600 ))
+    d_m=$(( (duration_sec % 3600) / 60 ))
+    d_s=$(( duration_sec % 60 ))
+    if [ "$d_h" -gt 0 ]; then
+        duration_fmt="${d_h}h${d_m}m"
+    elif [ "$d_m" -gt 0 ]; then
+        duration_fmt="${d_m}m${d_s}s"
+    else
+        duration_fmt="${d_s}s"
+    fi
+    duration_info=$(printf " \033[2;36m⏱ %s\033[0m" "$duration_fmt")
+fi
+
 # Lines added/removed this session
 lines_info=""
 added=$(echo "$input" | jq -r '.cost.total_lines_added // 0')
 removed=$(echo "$input" | jq -r '.cost.total_lines_removed // 0')
 if [ "$added" != "0" ] || [ "$removed" != "0" ]; then
-    lines_info=$(printf " ✏ \033[2;32m+%s\033[0m/\033[2;31m-%s\033[0m" "$added" "$removed")
+    lines_info=$(printf " ✏️\033[2;32m+%s\033[0m/\033[2;31m-%s\033[0m" "$added" "$removed")
 fi
 
 # Build the status line with dimmed colors (without user@host, date, or time)
 # Line 1: 📁 cwd 🌿 git_info
-# Line 2: [model] ctx 💰 cost ✏ lines
-printf "📁 \033[2;34m%s\033[0m \033[2;33m%s\033[0m\n\033[2;36m[%s]\033[0m%b%b%b" \
-    "$cwd" "$git_info" "$model" "$ctx_info" "$cost_info" "$lines_info"
+# Line 2: [model] ctx 💰 cost ⏱ duration ✏ lines
+printf "📁 \033[2;34m%s\033[0m \033[2;33m%s\033[0m\n\033[2;36m[%s]\033[0m%b%b%b%b" \
+    "$cwd" "$git_info" "$model" "$ctx_info" "$cost_info" "$duration_info" "$lines_info"
