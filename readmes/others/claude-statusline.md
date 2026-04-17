@@ -20,6 +20,10 @@ Two rows, separated by `\n`:
 [Opus 4.7] ▰▰▰▰▱▱▱▱▱▱(42%) $0.83 +120/-45
 ```
 
+Live example (outlined in red):
+
+![claude-statusline example](imgs/claude-statusline-example.png)
+
 ### Row 1 — path and git
 
 - **cwd** — workspace path with `$HOME` collapsed to `~` (dim blue).
