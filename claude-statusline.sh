@@ -85,7 +85,7 @@ if git --no-optional-locks rev-parse --git-dir > /dev/null 2>&1; then
     fi
 
     if [ -n "$branch" ]; then
-        git_info="🌿 [$branch$staged$unstaged$untracked$ahead_behind]$submodule_info"
+        git_info="🌿[$branch$staged$unstaged$untracked$ahead_behind]$submodule_info"
     fi
 fi
 
@@ -116,7 +116,7 @@ fi
 cost_info=""
 cost_usd=$(echo "$input" | jq -r '.cost.total_cost_usd // empty')
 if [ -n "$cost_usd" ] && [ "$cost_usd" != "null" ]; then
-    cost_info=$(printf " \033[2;35m💰 \$%.2f\033[0m" "$cost_usd")
+    cost_info=$(printf " \033[2;35m💰\$%.2f\033[0m" "$cost_usd")
 fi
 
 # Session duration (wall-clock since session start)
@@ -134,7 +134,7 @@ if [ -n "$duration_ms" ] && [ "$duration_ms" != "null" ]; then
     else
         duration_fmt="${d_s}s"
     fi
-    duration_info=$(printf " \033[2;36m⏱ %s\033[0m" "$duration_fmt")
+    duration_info=$(printf " \033[2;36m⏱️%s\033[0m" "$duration_fmt")
 fi
 
 # Lines added/removed this session
@@ -148,5 +148,5 @@ fi
 # Build the status line with dimmed colors (without user@host, date, or time)
 # Line 1: 📁 cwd 🌿 git_info
 # Line 2: [model] ctx 💰 cost ⏱ duration ✏ lines
-printf "📁 \033[2;34m%s\033[0m \033[2;33m%s\033[0m\n\033[2;36m[%s]\033[0m%b%b%b%b" \
+printf "📁\033[2;34m%s\033[0m \033[2;33m%s\033[0m\n\033[2;36m[%s]\033[0m%b%b%b%b" \
     "$cwd" "$git_info" "$model" "$ctx_info" "$cost_info" "$duration_info" "$lines_info"
