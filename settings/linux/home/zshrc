@@ -302,11 +302,6 @@ export NVM_DIR="$HOME/.nvm"
 [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"  # This loads nvm bash_completion
 
 ######################################################################
-# gh
-
-eval "$(gh copilot alias -- zsh)"
-
-######################################################################
 # forge
 
 # tabtab source for electron-forge package
