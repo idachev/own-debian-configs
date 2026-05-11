@@ -76,14 +76,19 @@ TOTAL=$(du -ch "${PARTS[@]}" | tail -1 | cut -f1)
 notify "Saved $COUNT part(s), $TOTAL total — $BASE" "emblem-default"
 
 # Optional: upload all parts of this session to cloud if rclone configured.
+# rclone copy accepts only one SOURCE + DEST. Use --include to filter the
+# recordings dir down to just this session's parts in a single command.
 if command -v rclone >/dev/null 2>&1 && [[ -f "$HOME/.config/rclone/rclone.conf" ]]; then
   REMOTE="${ZOOM_REC_REMOTE:-}"
   if [[ -n "$REMOTE" ]]; then
+    UPLOAD_LOG="$REC_DIR/.upload-$BASE.log"
     notify "Uploading $COUNT part(s) to $REMOTE..." "network-transmit"
-    if rclone copy --quiet "${PARTS[@]}" "$REMOTE/$BASE/"; then
+    if rclone copy "$REC_DIR" "$REMOTE/$BASE/" \
+         --include "${BASE}-part*.mp4" \
+         --log-file "$UPLOAD_LOG" --log-level INFO; then
       notify "Uploaded $COUNT part(s) to $REMOTE/$BASE" "emblem-default"
     else
-      notify "Upload to $REMOTE failed" "dialog-error"
+      notify "Upload to $REMOTE failed — see $UPLOAD_LOG" "dialog-error"
     fi
   fi
 fi
