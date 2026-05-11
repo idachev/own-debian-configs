@@ -266,6 +266,31 @@ echo "free disk:  $(df -h ~/recordings | awk "NR==2{print \$4}") on $(df -h ~/re
 '
 ```
 
+### Post-reboot health check
+
+After a VM reboot, run this to confirm the whole stack came back cleanly:
+
+```bash
+ssh <vm> '
+echo "uptime    : $(uptime -p)"
+echo "vncserver : $(systemctl --user is-active vncserver@:1) (NRestarts=$(systemctl --user show -p NRestarts --value vncserver@:1))"
+echo "Xvnc      : $(pgrep -af Xtigervnc | grep -v grep | head -1 | cut -c1-90)"
+echo "monitor   : $(pgrep -af zoom-recorder-monitor.sh | grep -v grep | head -1 | cut -c1-80 || echo NONE)"
+echo "env       : $(systemctl --user show-environment | grep ZOOM_REC_REMOTE)"
+echo "tailscale : $(sudo tailscale ip -4 2>/dev/null)"
+echo "rclone    : $(rclone listremotes 2>/dev/null)"
+echo "5901      : $(ss -tln | grep 5901 | head -1)"
+echo "sinks     : $(pactl list short sinks | grep -c zoom_sink) zoom_sink module(s)"
+'
+```
+
+Want to see:
+
+- `NRestarts=0` (the unit didn't fall into a restart loop)
+- `monitor` shows a running PID (not `NONE`)
+- `env` shows `ZOOM_REC_REMOTE=…` if rclone upload is configured
+- `sinks` shows `1 zoom_sink module(s)` (idempotent xstartup is doing its job)
+
 ### Tail the monitor log live
 
 ```bash
