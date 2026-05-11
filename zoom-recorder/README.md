@@ -437,6 +437,7 @@ larger).
 | `dpkg interrupted` during apt          | `sudo dpkg --configure -a`, then re-run setup. |
 | Public IP changed after EC2 stop/start | Update `HostName` in `~/.ssh/config`, or assign an Elastic IP. Tailscale IP stays the same. |
 | VNC viewer "End of stream" after VM reboot | `vncserver@:1` should auto-start via systemd `--user` with linger. If it didn't: `ssh <vm> 'systemctl --user start vncserver@:1'` and inspect `systemctl --user status vncserver@:1 --no-pager`. Confirm linger: `loginctl show-user ubuntu \| grep Linger`. |
+| Zoom keeps closing every ~90 seconds; multiple short recordings appear | `vncserver@:1` is in a restart loop. Check `journalctl --user -u vncserver@:1 -n 50`. The unit deliberately does **NOT** set `PIDFile=` because TigerVNC names its pidfile with `hostname` output (e.g. `<host>:1.pid`), which can change at runtime (Tailscale's MagicDNS rewrites the hostname). If you add `PIDFile=`, the pattern will eventually mismatch and systemd's start operation will time out → `Restart=on-failure` kicks → Xvnc + Zoom + ffmpeg get killed every ~90 s. Trade-off: `MainPID=0`, but the cgroup still tracks all children correctly. |
 
 ---
 

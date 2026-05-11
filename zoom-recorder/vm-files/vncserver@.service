@@ -4,13 +4,11 @@ After=network.target sound.target
 
 [Service]
 Type=forking
-Restart=on-failure
-RestartSec=5
-
-# PIDFile lets systemd track the actual Xvnc process (not the perl wrapper).
-# Without this, MainPID=0 and Restart=on-failure never fires on Xvnc crashes.
-# TigerVNC writes <hostname>:<display>.pid here, e.g. ip-XX:1.pid.
-PIDFile=%h/.config/tigervnc/%H%i.pid
+# No Restart= — TigerVNC writes its pidfile using the FQDN from `hostname`,
+# which can change at runtime (e.g. Tailscale MagicDNS). A PIDFile= pattern
+# that doesn't match causes systemd to time out the start and trigger a
+# restart loop. Skip PIDFile and accept MainPID=0; the cgroup still holds
+# every child correctly for stop/status, and reboot-time auto-start works.
 
 # Always clean up any stale display before starting
 ExecStartPre=-/usr/bin/vncserver -kill %i
