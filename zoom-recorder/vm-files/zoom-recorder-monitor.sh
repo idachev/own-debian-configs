@@ -19,14 +19,18 @@ START_SCRIPT="$HOME/bin/zoom-record-start.sh"
 
 mkdir -p "$REC_DIR"
 
-# Hold an exclusive flock for the lifetime of the monitor. Prevents two
-# instances racing past the PID-file check from autostart + manual launch.
+# Hold an exclusive flock for the lifetime of the monitor. The kernel
+# releases stale flocks automatically on process death (including reboot),
+# so this is robust against the previous PID-file check which broke after
+# reboot when the old PID got reassigned to some other process.
 exec 8>"$SELF_LOCK"
 if ! flock -n 8; then
-  printf '[%s] another monitor instance is starting; exiting\n' \
+  printf '[%s] another monitor instance is running; exiting\n' \
     "$(date '+%Y-%m-%d %H:%M:%S')" >> "$LOG"
   exit 0
 fi
+echo $$ > "$SELF_PID"
+trap 'rm -f "$SELF_PID"' EXIT
 
 export DISPLAY=:1
 [[ -z "${DBUS_SESSION_BUS_ADDRESS:-}" ]] && \
@@ -35,14 +39,6 @@ export DISPLAY=:1
 log() {
   printf '[%s] %s\n' "$(date '+%Y-%m-%d %H:%M:%S')" "$*" >> "$LOG"
 }
-
-# Refuse to run twice — keep only one monitor instance.
-if [[ -f "$SELF_PID" ]] && kill -0 "$(cat "$SELF_PID")" 2>/dev/null; then
-  log "monitor already running as PID $(cat "$SELF_PID"); exiting"
-  exit 0
-fi
-echo $$ > "$SELF_PID"
-trap 'rm -f "$SELF_PID"' EXIT
 
 # Returns 0 if we believe a Zoom meeting is in progress.
 # Multiple signals — any one triggers detection.
