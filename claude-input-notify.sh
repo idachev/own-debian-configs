@@ -81,11 +81,21 @@ if [ -z "$TERMINAL_ID" ]; then
     debug_msg "Method 1 - xdotool search for gnome-terminal: '$TERMINAL_ID'"
   fi
 
+  if [ -z "$TERMINAL_ID" ]; then
+    TERMINAL_ID=$(xdotool search --onlyvisible --class "dev.warp.Warp" 2>/dev/null | head -n1)
+    debug_msg "Method 1 - xdotool search for dev.warp.Warp: '$TERMINAL_ID'"
+  fi
+
+  if [ -z "$TERMINAL_ID" ]; then
+    TERMINAL_ID=$(xdotool search --onlyvisible --class "warp" 2>/dev/null | head -n1)
+    debug_msg "Method 1 - xdotool search for warp: '$TERMINAL_ID'"
+  fi
+
   # Method 2: If not found, try wmctrl to list all windows and find terminal
   if [ -z "$TERMINAL_ID" ]; then
     # Get list of all windows with their class names
     # Use kitty\.kitty to match main kitty window, not kitty-panel
-    TERMINAL_INFO=$(wmctrl -lx 2>/dev/null | grep -i -E 'kitty\.kitty|gnome-terminal|terminal\.Terminal|xfce4-terminal|mate-terminal' | head -n1)
+    TERMINAL_INFO=$(wmctrl -lx 2>/dev/null | grep -i -E 'kitty\.kitty|gnome-terminal|terminal\.Terminal|xfce4-terminal|mate-terminal|dev\.warp\.Warp|warp\.warp' | head -n1)
     debug_msg "Method 2 - wmctrl output: '$TERMINAL_INFO'"
 
     if [ -n "$TERMINAL_INFO" ]; then
@@ -119,7 +129,7 @@ if [ -z "$TERMINAL_ID" ]; then
 
         # Check for common terminal class names (case sensitive for better matching)
         # Use exact match for kitty to avoid matching kitty-panel
-        if echo "$FULL_WM_CLASS" | grep -E '"kitty", "kitty"|"Kitty", "Kitty"|"gnome-terminal"|"Gnome-terminal"|"xfce4-terminal"|"Xfce4-terminal"|"mate-terminal"|"Mate-terminal"|"Terminal"|"terminal"' > /dev/null 2>&1; then
+        if echo "$FULL_WM_CLASS" | grep -E '"kitty", "kitty"|"Kitty", "Kitty"|"gnome-terminal"|"Gnome-terminal"|"xfce4-terminal"|"Xfce4-terminal"|"mate-terminal"|"Mate-terminal"|"Terminal"|"terminal"|"dev.warp.Warp"|"warp", "warp"|"Warp", "Warp"' > /dev/null 2>&1; then
           TERMINAL_ID="$WINDOW_ID"
           debug_msg "Found terminal! Setting TERMINAL_ID=$TERMINAL_ID"
           break
@@ -269,6 +279,10 @@ if [ $YAD_EXIT_CODE -eq 0 ] && [ -n "$TERMINAL_ID" ]; then
         debug_msg "wmctrl -xa kitty succeeded"
       elif wmctrl -xa "gnome-terminal" 2>/dev/null; then
         debug_msg "wmctrl -xa gnome-terminal succeeded"
+      elif wmctrl -xa "dev.warp.Warp" 2>/dev/null; then
+        debug_msg "wmctrl -xa dev.warp.Warp succeeded"
+      elif wmctrl -xa "warp" 2>/dev/null; then
+        debug_msg "wmctrl -xa warp succeeded"
       else
         debug_msg "All focus methods failed"
       fi
