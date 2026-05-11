@@ -46,8 +46,8 @@ export PATH=$PATH:$HOME/lib/jmeter/bin
 
 export PATH=$PATH:$HOME/lib/jmeter/bin
 
-# Add pip local bin
-export PATH=$PATH:$HOME/.local/bin
+# Add pip local bin (prepended so user-installed binaries shadow system ones)
+export PATH=$HOME/.local/bin:$PATH
 
 # Add go bin
 export PATH=$PATH:/usr/local/go/bin
