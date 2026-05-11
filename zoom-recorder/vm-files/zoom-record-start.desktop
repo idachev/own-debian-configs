@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Version=1.0
+Name=Start Recording
+Comment=Start a new Zoom screen recording
+Exec=/home/ubuntu/bin/zoom-record-start.sh
+Icon=media-record
+Terminal=false
+StartupNotify=false
+Categories=AudioVideo;Recorder;

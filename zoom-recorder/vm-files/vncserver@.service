@@ -1,0 +1,25 @@
+[Unit]
+Description=TigerVNC server on display %i
+After=network.target sound.target
+
+[Service]
+Type=forking
+Restart=on-failure
+RestartSec=5
+
+# PIDFile lets systemd track the actual Xvnc process (not the perl wrapper).
+# Without this, MainPID=0 and Restart=on-failure never fires on Xvnc crashes.
+# TigerVNC writes <hostname>:<display>.pid here, e.g. ip-XX:1.pid.
+PIDFile=%h/.config/tigervnc/%H%i.pid
+
+# Always clean up any stale display before starting
+ExecStartPre=-/usr/bin/vncserver -kill %i
+
+# vncserver from TigerVNC reads ~/.config/tigervnc/{config,xstartup,passwd}.
+# It forks Xvnc + the xstartup session (which starts XFCE → autostart → monitor).
+ExecStart=/usr/bin/vncserver %i
+
+ExecStop=/usr/bin/vncserver -kill %i
+
+[Install]
+WantedBy=default.target

@@ -1,0 +1,11 @@
+[Desktop Entry]
+Type=Application
+Version=1.0
+Name=Zoom Recorder Monitor
+Comment=Auto-start a recording when a Zoom meeting is detected
+Exec=/home/ubuntu/bin/zoom-recorder-monitor.sh
+Icon=media-record
+Terminal=false
+StartupNotify=false
+X-GNOME-Autostart-enabled=true
+NoDisplay=true

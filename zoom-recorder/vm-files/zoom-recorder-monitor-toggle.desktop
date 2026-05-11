@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Version=1.0
+Name=Auto-Record Toggle
+Comment=Enable or disable the Zoom meeting auto-recording monitor
+Exec=/home/ubuntu/bin/zoom-recorder-monitor-toggle.sh
+Icon=preferences-system
+Terminal=false
+StartupNotify=false
+Categories=AudioVideo;Recorder;

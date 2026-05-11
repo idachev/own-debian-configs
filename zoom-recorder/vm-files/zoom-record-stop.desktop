@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Version=1.0
+Name=Stop Recording
+Comment=Stop the current Zoom recording
+Exec=/home/ubuntu/bin/zoom-record-stop.sh
+Icon=media-playback-stop
+Terminal=false
+StartupNotify=false
+Categories=AudioVideo;Recorder;
