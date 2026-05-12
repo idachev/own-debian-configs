@@ -19,17 +19,17 @@ HOST="${ZOOM_VM_HOST:-zoom-recorder-aws}"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 TARBALL="${1:-}"
 
-# Resolve latest tarball if none passed
+# Resolve latest tarball if none passed. Missing tarball is not fatal —
+# the orchestrator just skips the restore step (fresh setup mode).
 if [[ -z "$TARBALL" ]]; then
   TARBALL="$(ls -t "$HOME"/zoom-recorder-vm-state-*.tar.gz 2>/dev/null | head -1 || true)"
-  if [[ -z "$TARBALL" ]]; then
-    echo "ERROR: no backup tarball found at ~/zoom-recorder-vm-state-*.tar.gz" >&2
-    echo "       pass one explicitly: $0 /path/to/backup.tar.gz" >&2
-    exit 1
+  if [[ -n "$TARBALL" ]]; then
+    echo "Using latest backup: $TARBALL"
   fi
-  echo "Using latest backup: $TARBALL"
 fi
-[[ -r "$TARBALL" ]] || { echo "Cannot read $TARBALL" >&2; exit 1; }
+if [[ -n "$TARBALL" && ! -r "$TARBALL" ]]; then
+  echo "Cannot read $TARBALL" >&2; exit 1
+fi
 
 step()  { printf '\n\033[1;36m==> Step %s\033[0m\n' "$*"; }
 warn()  { printf '\033[1;33m!! %s\033[0m\n' "$*" >&2; }
@@ -56,8 +56,22 @@ echo "  output streamed below; full log on VM at /tmp/setup-vm-*.log"
 ssh -t "$HOST" 'cd ~/zoom-recorder && ./setup-vm.sh 2>&1 | tee /tmp/setup-vm-$(date +%Y%m%d-%H%M%S).log'
 
 # ---------------------------------------------------------------------------
-step "4/6 — restore state tarball ($TARBALL)"
-"$SCRIPT_DIR/restore-vm-state.sh" "$TARBALL"
+if [[ -n "$TARBALL" ]]; then
+  step "4/6 — restore state tarball ($TARBALL)"
+  "$SCRIPT_DIR/restore-vm-state.sh" "$TARBALL"
+else
+  step "4/6 — SKIPPED (no backup tarball found; fresh setup)"
+  warn "Manual follow-ups you'll need to do after this script finishes:"
+  warn "  1. Configure rclone gdrive (one-time OAuth flow):"
+  warn "       ssh $HOST"
+  warn "       rclone config        # add remote 'gdrive', backend 'drive', scope 3"
+  warn "  2. Tell the recorder to use it:"
+  warn "       ssh $HOST 'mkdir -p ~/.config/environment.d &&"
+  warn "         echo ZOOM_REC_REMOTE=gdrive:ZoomRecordings > ~/.config/environment.d/zoom-recorder.conf &&"
+  warn "         systemctl --user set-environment ZOOM_REC_REMOTE=gdrive:ZoomRecordings'"
+  warn "  3. The VNC password is in ~/.config/tigervnc/.passwd-plain on the VM:"
+  warn "       ssh $HOST cat .config/tigervnc/.passwd-plain"
+fi
 
 # ---------------------------------------------------------------------------
 step "5/6 — Tailscale auth (interactive)"
