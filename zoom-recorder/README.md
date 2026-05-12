@@ -427,8 +427,15 @@ and ffmpeg finalizes the last part on SIGINT.
 So crash-safety is "the previous 15 minutes is already on Drive", not
 "the previous 15 minutes is on disk".
 
-Log lives at `~/recordings/.uploader.log`. Each upload also publishes a
-low-priority toast.
+Log lives at `~/recordings/.uploader.log`.
+
+**Toasts are suppressed during active recording** — otherwise the
+"Uploading…" / "Uploaded…" notifications would be captured by x11grab and
+appear in the saved video. The uploader checks `~/recordings/.current.pid`
+on each close_write: if ffmpeg is still running, the upload happens
+silently (only the log records it). When you press Stop and ffmpeg exits,
+the final segment's toasts show normally. Failure toasts always fire,
+even mid-recording — those you need to see immediately.
 
 ### Marker files (per-mp4 "already uploaded" record)
 

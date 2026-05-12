@@ -104,14 +104,30 @@ upload_one() {
   fi
 
   log "uploading $fname  →  $dest"
-  notify "Uploading $fname..." "network-transmit"
+  # Suppress success toasts while ffmpeg is still recording — they'd be
+  # captured by x11grab and appear in the saved video. The 15-min auto-roll
+  # uploads run silently; only the final segment(s) after Stop produce
+  # toasts (by then ffmpeg has exited and is safely uncaptured).
+  # Failures always toast — the user must know about those.
+  if ! ffmpeg_recording; then
+    notify "Uploading $fname..." "network-transmit"
+  fi
   # Close fd 7 (the flock) in rclone so a hung rclone can't keep the lock alive.
   if { rclone copy "$src" "$dest" --log-level INFO --log-file "$LOG"; } 7>&-; then
     touch "$marker"
-    notify "Uploaded $fname" "emblem-default"
+    if ! ffmpeg_recording; then
+      notify "Uploaded $fname" "emblem-default"
+    fi
   else
     notify "Upload FAILED: $fname (see .uploader.log)" "dialog-error"
   fi
+}
+
+# Returns 0 (true) if ffmpeg is currently capturing — i.e. inside an active
+# recording session and the toast would land inside the saved video.
+ffmpeg_recording() {
+  local pf="$REC_DIR/.current.pid"
+  [[ -f "$pf" ]] && kill -0 "$(cat "$pf" 2>/dev/null)" 2>/dev/null
 }
 
 # Initial sync: pick up any segments that already exist on disk but not on
