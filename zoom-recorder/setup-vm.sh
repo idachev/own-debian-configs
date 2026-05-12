@@ -266,6 +266,19 @@ if [[ "$ENABLE_DESKTOP_ICONS" == "yes" ]]; then
       > "$HOME/.config/autostart/${stem}.desktop"
     chmod 644 "$HOME/.config/autostart/${stem}.desktop"
   done
+
+  # Also surface the Zoom + Chrome system launchers on the desktop so you can
+  # click them straight from VNC without digging through the Applications menu.
+  for app_desktop in /usr/share/applications/Zoom.desktop \
+                     /usr/share/applications/google-chrome.desktop; do
+    [[ -f "$app_desktop" ]] || continue
+    name=$(basename "$app_desktop")
+    dst="$HOME/Desktop/$name"
+    cp "$app_desktop" "$dst"
+    chmod 755 "$dst"
+    gio set "$dst" 'metadata::xfce-exe-checksum' \
+      "$(sha256sum "$dst" | cut -d' ' -f1)" 2>/dev/null || true
+  done
 else
   warn "Skipping desktop icons (ENABLE_DESKTOP_ICONS=$ENABLE_DESKTOP_ICONS)"
 fi
