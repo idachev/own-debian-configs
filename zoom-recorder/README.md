@@ -10,8 +10,10 @@ content, and can be driven from a phone via VNC.
 zoom-recorder/
 ├── README.md                                       # this file
 ├── setup-vm.sh                                     # one-shot setup — run ON the VM
-├── local-tunnel.sh                                 # run on the LAPTOP: open/close VNC SSH tunnel
-├── health-check.sh                                 # run on the LAPTOP: one-screen status of the VM
+├── local-tunnel.sh                                 # laptop: open/close VNC SSH tunnel
+├── health-check.sh                                 # laptop: one-screen status of the VM
+├── backup-vm-state.sh                              # laptop: tar unique VM state to a local file
+├── restore-vm-state.sh                             # laptop: extract tarball back onto a fresh VM
 └── vm-files/                                       # source-of-truth for runtime files
     ├── zoom-record-start.sh                        # → ~/bin/ on the VM
     ├── zoom-record-stop.sh                         # → ~/bin/ on the VM
@@ -594,6 +596,75 @@ Stop between meetings:
 ```bash
 aws ec2 stop-instances --instance-ids <i-...>
 ```
+
+---
+
+## Save state and tear down AWS (zero spend)
+
+If you don't expect to record for a while and want to stop paying the
+~$2.40/mo for EBS, the workflow is:
+
+1. **Back up the unique state** (~4 KB):
+
+   ```bash
+   ./backup-vm-state.sh
+   # writes ~/zoom-recorder-vm-state-YYYYMMDD-HHMMSS.tar.gz
+   ```
+
+   What goes in: gdrive OAuth token, VNC password (hashed + plaintext),
+   `ZOOM_REC_REMOTE` env, upload markers. What's deliberately out:
+   `~/.zoom/` (40+ MB of cache; sign in fresh on restore). To include
+   the Zoom sign-in state anyway: `ZOOM_BACKUP_INCLUDE_ZOOM=1 ./backup-vm-state.sh`.
+
+2. **Confirm the backup is on your laptop** before destroying anything:
+
+   ```bash
+   tar tzf ~/zoom-recorder-vm-state-*.tar.gz | head
+   ```
+
+3. **Tear down EC2 + EBS** (zero spend afterwards):
+
+   ```bash
+   # Find the instance
+   aws ec2 describe-instances \
+     --filters 'Name=tag:Name,Values=zoom-recorder' 'Name=instance-state-name,Values=running,stopped' \
+     --query 'Reservations[].Instances[].{Id:InstanceId,State:State.Name,Vol:BlockDeviceMappings[0].Ebs.VolumeId,DeleteOnTerm:BlockDeviceMappings[0].Ebs.DeleteOnTermination}' \
+     --output table
+
+   # Terminate (deletes the volume too if DeleteOnTerm=True — verify above)
+   aws ec2 terminate-instances --instance-ids <i-...>
+
+   # If DeleteOnTerm=False, explicitly delete the volume after the instance is gone:
+   aws ec2 delete-volume --volume-id <vol-...>
+   ```
+
+4. **Recordings are already on Drive** under `gdrive:ZoomRecordings/`. No
+   action needed.
+
+### Restore later onto a fresh VM
+
+```bash
+# 1. Launch a new EC2 instance (see "Quick start: provision a fresh VM"
+#    above). Update HostName in ~/.ssh/config to its new public IP.
+# 2. Provision it:
+rsync -avz --delete ~/bin/zoom-recorder/ ubuntu@<new-vm>:~/zoom-recorder/
+ssh ubuntu@<new-vm>
+cd ~/zoom-recorder && ./setup-vm.sh
+exit
+
+# 3. Restore the state tarball:
+./restore-vm-state.sh ~/zoom-recorder-vm-state-YYYYMMDD-HHMMSS.tar.gz
+
+# 4. Re-auth Tailscale (machine identity changes — tarball can't carry it):
+ssh <new-vm> sudo tailscale up --qr
+
+# 5. Verify everything came up:
+./health-check.sh
+```
+
+Tailscale will assign the same name but typically a new IP (`100.x.x.x`).
+Update anything that referenced the old IP (e.g. RealVNC bookmarks on
+your phone).
 
 ---
 
