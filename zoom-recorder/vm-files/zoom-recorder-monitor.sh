@@ -9,6 +9,7 @@
 set -uo pipefail
 
 TICK="${ZOOM_MON_TICK:-5}"                       # seconds between checks
+GRACE="${ZOOM_MON_GRACE_SECONDS:-60}"            # consecutive out-of-meeting seconds before auto-stop
 REC_DIR="$HOME/recordings"
 PID_FILE="$REC_DIR/.current.pid"
 PAUSE_FLAG="$REC_DIR/.monitor.paused"
@@ -16,6 +17,7 @@ SELF_PID="$REC_DIR/.monitor.pid"
 SELF_LOCK="$REC_DIR/.monitor.lock"
 LOG="$REC_DIR/.monitor.log"
 START_SCRIPT="$HOME/bin/zoom-record-start.sh"
+STOP_SCRIPT="$HOME/bin/zoom-record-stop.sh"
 
 mkdir -p "$REC_DIR"
 
@@ -77,7 +79,14 @@ is_recording() {
   [[ -f "$PID_FILE" ]] && kill -0 "$(cat "$PID_FILE")" 2>/dev/null
 }
 
-log "monitor started, tick=${TICK}s, pid=$$"
+log "monitor started, tick=${TICK}s, grace=${GRACE}s, pid=$$"
+
+# Accumulates seconds of "recording running but no meeting detected".
+# Reset whenever a meeting is seen or no recording is running. Auto-stop
+# fires once the counter reaches $GRACE — the grace period absorbs brief
+# detection gaps (e.g. screen-share window transitions) so we don't kill
+# a recording during a momentary blip.
+no_meeting_seconds=0
 
 while true; do
   if [[ -f "$PAUSE_FLAG" ]]; then
@@ -85,16 +94,32 @@ while true; do
     continue
   fi
 
-  if in_meeting && ! is_recording; then
-    log "Zoom meeting detected and no recording running — starting"
-    if [[ -x "$START_SCRIPT" ]]; then
-      # Close fd 8 (our flock) in the start script and grandchildren —
-      # otherwise ffmpeg inherits it and holds the monitor lock for the
-      # whole recording, blocking any monitor restart mid-session.
-      "$START_SCRIPT" >/dev/null 2>&1 8>&- || log "start script failed"
-    else
-      log "ERROR: $START_SCRIPT missing or not executable"
+  if in_meeting; then
+    no_meeting_seconds=0
+    if ! is_recording; then
+      log "Zoom meeting detected and no recording running — starting"
+      if [[ -x "$START_SCRIPT" ]]; then
+        # Close fd 8 (our flock) in the start script and grandchildren —
+        # otherwise ffmpeg inherits it and holds the monitor lock for the
+        # whole recording, blocking any monitor restart mid-session.
+        "$START_SCRIPT" >/dev/null 2>&1 8>&- || log "start script failed"
+      else
+        log "ERROR: $START_SCRIPT missing or not executable"
+      fi
     fi
+  elif is_recording; then
+    no_meeting_seconds=$(( no_meeting_seconds + TICK ))
+    if (( no_meeting_seconds >= GRACE )); then
+      log "No Zoom meeting for ${no_meeting_seconds}s (grace=${GRACE}s) — stopping recording"
+      if [[ -x "$STOP_SCRIPT" ]]; then
+        "$STOP_SCRIPT" >/dev/null 2>&1 8>&- || log "stop script failed"
+      else
+        log "ERROR: $STOP_SCRIPT missing or not executable"
+      fi
+      no_meeting_seconds=0
+    fi
+  else
+    no_meeting_seconds=0
   fi
 
   sleep "$TICK"

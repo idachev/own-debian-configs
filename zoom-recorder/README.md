@@ -190,8 +190,10 @@ icons.
 4. Within ~5 s the monitor detects the meeting and starts a recording.
    A "Started: recording-YYYYMMDD-HHMMSS.mp4" toast appears in the VNC
    desktop notifications.
-5. When the meeting ends, double-click **Stop Recording**. (Or: leave the
-   meeting first, then click Stop.) Stop toast shows part count + total size.
+5. When the meeting ends, the monitor auto-stops the recording ~60 s after
+   Zoom signals are gone (e.g. you close Zoom or leave the meeting). The
+   Stop toast shows part count + total size. You can also force it
+   immediately by double-clicking **Stop Recording**.
 6. Recordings are split into 15-minute parts inside `~/recordings/` — all
    files for one session share a base timestamp:
    ```
@@ -225,8 +227,13 @@ Behavior:
 - If **in meeting + not recording** → starts a new recording (idempotent).
 - If **in meeting + recording crashed** → starts a fresh file with a new
   timestamp on the next tick.
-- It does **not** auto-stop on meeting end. You press Stop when done.
-- A paused state (toggle icon) makes the monitor a no-op without killing it.
+- If **not in meeting + recording running** → after `ZOOM_MON_GRACE_SECONDS`
+  (default 60 s) of continuous "no meeting" ticks, runs the Stop script so
+  ffmpeg finalizes its mp4 trailer cleanly. The grace period absorbs brief
+  signal gaps (screen-share transitions, etc.) so a blip doesn't kill the
+  recording. The counter resets on any meeting detection.
+- A paused state (toggle icon) makes the monitor a no-op without killing it —
+  the auto-stop timer is also suspended while paused.
 
 ### Three desktop icons
 
@@ -237,7 +244,17 @@ Behavior:
 | **Auto-Record Toggle** | Touches `~/recordings/.monitor.paused` — toggles the monitor on/off. |
 
 Manual override pattern: to genuinely stop mid-meeting (otherwise the monitor
-auto-restarts), Toggle **OFF** first, then Stop.
+auto-restarts), Toggle **OFF** first, then Stop. Conversely, to keep recording
+*after* a meeting ends without it auto-stopping, Toggle **OFF** before the
+grace period elapses.
+
+Override the grace period via env var (set in the autostart `.desktop` or
+exported before launching the monitor):
+
+```bash
+ZOOM_MON_GRACE_SECONDS=120 ~/bin/zoom-recorder-monitor.sh   # wait 2 min after meeting
+ZOOM_MON_GRACE_SECONDS=30  ~/bin/zoom-recorder-monitor.sh   # snappier auto-stop
+```
 
 ### Recording segmentation (crash safety)
 
