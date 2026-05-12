@@ -404,18 +404,80 @@ a parallel recording. Toggle the monitor OFF first if it might race you.
 
 ## Optional: auto-upload to Google Drive / Dropbox / S3
 
-`zoom-record-stop.sh` already has hooks for [rclone](https://rclone.org). To
-enable:
+`zoom-record-stop.sh` has rclone upload baked in. When set, each Stop
+uploads every `<base>-partNNN.mp4` of the session to
+`$ZOOM_REC_REMOTE/<base>/` and toasts the result. Log lives at
+`~/recordings/.upload-<base>.log` for post-mortem.
+
+### 1. Install rclone — **use the .deb, not the snap**
+
+Ubuntu 26.04's apt rclone is 1.60 (4 years old), and the **snap** rclone
+breaks our use case: snap's launcher tries to create a transient systemd
+scope via dbus, which fails when invoked from an xfce4-session-spawned
+.desktop launcher (you'd see `Activated service 'org.freedesktop.systemd1'
+failed: Process org.freedesktop.systemd1 exited with status 1` in the
+journal and "Upload to … failed" with no rclone log). Grab the current
+.deb directly from rclone.org:
 
 ```bash
-ssh <vm>
-sudo apt install -y rclone
-rclone config        # interactive: add a remote, e.g. named "gdrive"
-echo 'export ZOOM_REC_REMOTE=gdrive:ZoomRecordings' >> ~/.bashrc
+cd /tmp
+wget https://downloads.rclone.org/rclone-current-linux-amd64.deb
+sudo apt install -y ./rclone-current-linux-amd64.deb
+rclone version    # expect 1.74+
 ```
 
-After this, each Stop will upload the freshly saved mp4 to that remote and
-toast the result. Unset `ZOOM_REC_REMOTE` to disable.
+### 2. Configure a remote
+
+```bash
+rclone config        # 'n' new, name 'gdrive', backend 'drive', scope 3 (drive.file)
+```
+
+If you don't have a browser on the VM: pick `Use auto config? = n`, run
+`rclone authorize "drive"` on your laptop where Firefox/Chrome can open
+the login URL, paste the JSON token back into the VM prompt.
+
+If the VM has a browser (we install Firefox/Chromium during setup if you
+chose to): pick `Use auto config? = y` and let it open automatically.
+
+Verify:
+```bash
+rclone lsd gdrive:
+rclone mkdir gdrive:ZoomRecordings
+echo smoke > ~/smoke.txt
+rclone copy ~/smoke.txt gdrive:ZoomRecordings/
+command rm ~/smoke.txt
+```
+
+### 3. Tell the recorder where to upload
+
+The stop launcher inherits its environment from XFCE → systemd `--user`,
+so set the var in the systemd user environment file (NOT `.bashrc`,
+which the .desktop launcher never sources):
+
+```bash
+mkdir -p ~/.config/environment.d
+echo 'ZOOM_REC_REMOTE=gdrive:ZoomRecordings' > ~/.config/environment.d/zoom-recorder.conf
+# active on next session start; for the running session:
+systemctl --user set-environment ZOOM_REC_REMOTE=gdrive:ZoomRecordings
+DISPLAY=:1 dbus-update-activation-environment --systemd ZOOM_REC_REMOTE
+```
+
+After a VM reboot it just works without any of the manual `set-environment` /
+`dbus-update-…` dance — those are only needed once to push the env into the
+*currently running* XFCE without restarting it.
+
+### 4. Test end-to-end
+
+Click Start → wait a bit → click Stop. Expect three toasts:
+
+```
+Saved N part(s), <size> total — recording-…
+Uploading N part(s) to gdrive:ZoomRecordings/…
+Uploaded N part(s) to gdrive:ZoomRecordings/recording-…
+```
+
+Folder appears on drive.google.com under `ZoomRecordings/`. Unset
+`ZOOM_REC_REMOTE` to disable uploads.
 
 ---
 
@@ -463,6 +525,8 @@ larger).
 | Public IP changed after EC2 stop/start | Update `HostName` in `~/.ssh/config`, or assign an Elastic IP. Tailscale IP stays the same. |
 | VNC viewer "End of stream" after VM reboot | `vncserver@:1` should auto-start via systemd `--user` with linger. If it didn't: `ssh <vm> 'systemctl --user start vncserver@:1'` and inspect `systemctl --user status vncserver@:1 --no-pager`. Confirm linger: `loginctl show-user ubuntu \| grep Linger`. |
 | Zoom keeps closing every ~90 seconds; multiple short recordings appear | `vncserver@:1` is in a restart loop. Check `journalctl --user -u vncserver@:1 -n 50`. The unit deliberately does **NOT** set `PIDFile=` because TigerVNC names its pidfile with `hostname` output (e.g. `<host>:1.pid`), which can change at runtime (Tailscale's MagicDNS rewrites the hostname). If you add `PIDFile=`, the pattern will eventually mismatch and systemd's start operation will time out → `Restart=on-failure` kicks → Xvnc + Zoom + ffmpeg get killed every ~90 s. Trade-off: `MainPID=0`, but the cgroup still tracks all children correctly. |
+| "Upload to gdrive failed" + `~/recordings/.upload-*.log` is missing | You're on **snap** rclone. Its launcher fails when invoked from an xfce4-session-spawned process — journal shows `Activated service 'org.freedesktop.systemd1' failed: Process … exited with status 1`. Manual `rclone copy` from SSH still works, which is why this is easy to miss. Fix: install the .deb from rclone.org (see § auto-upload). |
+| `empty token found - please run "rclone config reconnect gdrive:"` | OAuth token gone — most common after swapping snap rclone for the .deb. Snap stored the token under `~/snap/rclone/common/.config/rclone/`, which `snap remove rclone` deletes; the remote config in `~/.config/rclone/rclone.conf` survives but its token field is empty. Fix: `rclone config reconnect gdrive:`. |
 
 ---
 
