@@ -22,24 +22,34 @@ echo "free disk : $(df -h "$HOME/recordings" 2>/dev/null | awk "NR==2{print \$4 
 echo "linger    : $(loginctl show-user "$USER" 2>/dev/null | grep Linger)"
 echo
 
+# Helper: print first match of a pgrep -af pattern, or NONE if empty.
+# Pipelines like `pgrep | grep | head | cut` always exit 0 because the
+# tail of the pipe gets empty input and succeeds, so `|| echo NONE`
+# never fires. Capture into a var and use parameter expansion.
+_first() {
+  local pattern="$1" width="${2:-90}" out
+  out=$(pgrep -af "$pattern" 2>/dev/null | grep -v grep | head -1 | cut -c1-"$width")
+  printf "%s" "${out:-NONE}"
+}
+
 echo "=== display / X / audio ==="
 echo "vncserver : $(systemctl --user is-active vncserver@:1) (NRestarts=$(systemctl --user show -p NRestarts --value vncserver@:1))"
-echo "Xvnc      : $(pgrep -af Xtigervnc | grep -v grep | head -1 | cut -c1-95 || echo NONE)"
-echo "5901      : $(ss -tln 2>/dev/null | grep 5901 | head -1 || echo "no listener")"
+echo "Xvnc      : $(_first Xtigervnc 95)"
+_listen=$(ss -tln 2>/dev/null | grep 5901 | head -1); echo "5901      : ${_listen:-no listener}"
 echo "display   : $(DISPLAY=:1 xdpyinfo 2>/dev/null | awk "/dimensions:/{print \$2}")"
 echo "sinks     : $(pactl list short sinks 2>/dev/null | grep -c zoom_sink) zoom_sink module(s)"
 echo
 
 echo "=== recorder daemons ==="
-echo "monitor   : $(pgrep -af zoom-recorder-monitor.sh | grep -v grep | head -1 | cut -c1-90 || echo NONE)"
-echo "uploader  : $(pgrep -af zoom-recorder-uploader.sh | grep -v grep | head -1 | cut -c1-90 || echo NONE)"
-echo "inotify   : $(pgrep -af inotifywait | grep -v grep | head -1 | cut -c1-90 || echo NONE)"
+echo "monitor   : $(_first zoom-recorder-monitor.sh)"
+echo "uploader  : $(_first zoom-recorder-uploader.sh)"
+echo "inotify   : $(_first inotifywait)"
 echo "monitor paused?  $([ -f ~/recordings/.monitor.paused ] && echo YES || echo no)"
 echo
 
 echo "=== recording / Zoom state ==="
 echo "in meeting? $(wmctrl -l 2>/dev/null | grep -iqE "zoom meeting|zoom_linux_float|as_toolbar" && echo YES || echo no)"
-echo "ffmpeg     : $(pgrep -af "^ffmpeg .*x11grab" | grep -v grep | head -1 | cut -c1-90 || echo NONE)"
+echo "ffmpeg     : $(_first "^ffmpeg .*x11grab")"
 echo "current pid: $(cat ~/recordings/.current.pid 2>/dev/null || echo none)"
 echo "current base: $(cat ~/recordings/.current.base 2>/dev/null || echo none)"
 echo

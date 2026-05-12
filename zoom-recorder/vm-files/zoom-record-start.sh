@@ -65,6 +65,12 @@ fi
 # Segment muxer: each $SEGMENT_SECONDS produces a fully-finalized mp4.
 # If ffmpeg dies mid-segment only the last partial chunk is affected;
 # all earlier parts are intact and playable.
+#
+# 9>&-  closes start.sh's own flock fd  (.start.lock)
+# 8>&-  closes monitor.sh's flock fd if we were invoked by the monitor
+#                                     (.monitor.lock). Harmless if absent.
+# Without these the kernel keeps both locks held for ffmpeg's whole
+# recording lifetime, blocking mid-session restarts of either daemon.
 setsid nohup ffmpeg -hide_banner -y -loglevel warning \
   -video_size "$VIDEO_SIZE" -framerate 15 \
   -f x11grab -i :1.0+0,0 \
@@ -77,7 +83,7 @@ setsid nohup ffmpeg -hide_banner -y -loglevel warning \
   -segment_format mp4 \
   -segment_format_options movflags=+faststart \
   "$REC_DIR/${NAME}-part%03d.mp4" \
-  </dev/null > "$LOG" 2>&1 &
+  </dev/null > "$LOG" 2>&1 9>&- 8>&- &
 
 echo $! > "$PID_FILE"
 sleep 1.5

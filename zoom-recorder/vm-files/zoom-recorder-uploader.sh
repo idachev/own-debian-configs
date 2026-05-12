@@ -52,7 +52,7 @@ if ! flock -n 7; then
   exit 0
 fi
 echo $$ > "$SELF_PID"
-trap 'rm -f "$SELF_PID"' EXIT
+trap 'rm -f "$SELF_PID"' EXIT TERM INT
 
 # Preconditions — exit quietly if missing so a fresh VM doesn't spam errors.
 if ! command -v rclone >/dev/null 2>&1; then

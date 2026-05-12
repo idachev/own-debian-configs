@@ -30,7 +30,9 @@ if ! flock -n 8; then
   exit 0
 fi
 echo $$ > "$SELF_PID"
-trap 'rm -f "$SELF_PID"' EXIT
+# Clean PID file on EXIT, SIGTERM, SIGINT — bash's default for unhandled
+# signals is to terminate without firing the EXIT trap, so list them.
+trap 'rm -f "$SELF_PID"' EXIT TERM INT
 
 export DISPLAY=:1
 [[ -z "${DBUS_SESSION_BUS_ADDRESS:-}" ]] && \
@@ -78,7 +80,10 @@ while true; do
   if in_meeting && ! is_recording; then
     log "Zoom meeting detected and no recording running — starting"
     if [[ -x "$START_SCRIPT" ]]; then
-      "$START_SCRIPT" >/dev/null 2>&1 || log "start script failed"
+      # Close fd 8 (our flock) in the start script and grandchildren —
+      # otherwise ffmpeg inherits it and holds the monitor lock for the
+      # whole recording, blocking any monitor restart mid-session.
+      "$START_SCRIPT" >/dev/null 2>&1 8>&- || log "start script failed"
     else
       log "ERROR: $START_SCRIPT missing or not executable"
     fi

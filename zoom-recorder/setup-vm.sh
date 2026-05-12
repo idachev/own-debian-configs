@@ -34,6 +34,9 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 VM_FILES_DIR="${VM_FILES_DIR:-$SCRIPT_DIR/vm-files}"
 [[ -d "$VM_FILES_DIR" ]] || fatal "vm-files dir not found at: $VM_FILES_DIR"
 
+# Track whether the caller passed VNC_PASSWORD explicitly (so a re-run with
+# no env doesn't silently rotate the password).
+VNC_PASSWORD_EXPLICIT="${VNC_PASSWORD:+yes}"
 VNC_PASSWORD="${VNC_PASSWORD:-$(openssl rand -base64 12 | tr -d '/+=' | head -c 16)}"
 BIND_LOCALHOST_ONLY="${BIND_LOCALHOST_ONLY:-no}"
 ENABLE_TAILSCALE="${ENABLE_TAILSCALE:-yes}"
@@ -68,8 +71,20 @@ sudo apt-get install -y \
 log "Configuring TigerVNC"
 mkdir -p "$HOME/.config/tigervnc"
 
-echo "$VNC_PASSWORD" | vncpasswd -f > "$HOME/.config/tigervnc/passwd"
-chmod 600 "$HOME/.config/tigervnc/passwd"
+# Only (re)write the password file on first install, OR when VNC_PASSWORD was
+# set explicitly. Otherwise re-running setup would silently rotate the
+# password (and the subsequent vncserver -kill below would drop any live
+# session, possibly leaving the user locked out if setup is run from VNC).
+if [[ ! -f "$HOME/.config/tigervnc/passwd" ]] || [[ -n "${VNC_PASSWORD_EXPLICIT:-}" ]]; then
+  echo "$VNC_PASSWORD" | vncpasswd -f > "$HOME/.config/tigervnc/passwd"
+  chmod 600 "$HOME/.config/tigervnc/passwd"
+  # Persist plaintext for the user to retrieve later — same dir, mode 600.
+  printf '%s\n' "$VNC_PASSWORD" > "$HOME/.config/tigervnc/.passwd-plain"
+  chmod 600 "$HOME/.config/tigervnc/.passwd-plain"
+  log "VNC password written. Plain copy at ~/.config/tigervnc/.passwd-plain"
+else
+  log "VNC password already set — keeping existing (pass VNC_PASSWORD=... explicitly to override)"
+fi
 
 cat > "$HOME/.config/tigervnc/xstartup" <<'EOF'
 #!/bin/sh
