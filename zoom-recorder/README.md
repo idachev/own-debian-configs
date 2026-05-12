@@ -655,33 +655,71 @@ If you don't expect to record for a while and want to stop paying the
 
 ### Restore later onto a fresh VM
 
-**One command** chains rsync → setup-vm.sh → restore tarball → Tailscale
-auth → health-check:
+#### Prerequisites
+1. Launch a new EC2 instance (same recipe as **Quick start** above:
+   Ubuntu 24.04/26.04 x86_64, t3.medium, 30 GB gp3, SSH-only security group).
+2. Update `HostName` for `zoom-recorder-aws` in your laptop's `~/.ssh/config`
+   to the new public IPv4. Confirm `ssh zoom-recorder-aws true` succeeds.
+3. Make sure a backup tarball exists at
+   `~/bin/zoom-recorder/data/zoom-recorder-vm-state-*.tar.gz`
+   (or pass an explicit path as `$1`).
+
+#### One command (recommended)
 
 ```bash
-# Prereqs: launch a new EC2 instance, update HostName in ~/.ssh/config to its new IP.
 ~/bin/zoom-recorder/restore-fresh-vm.sh
-# Picks the newest ~/zoom-recorder-vm-state-*.tar.gz automatically.
-# Or pass an explicit path:  restore-fresh-vm.sh ~/backups/zoom-recorder-vm-state-X.tgz
 ```
 
-The script is interactive only at the Tailscale step (prints the auth URL,
-waits for you to confirm). Everything else runs unattended. ~10–15 min
-end-to-end on a t3.medium (most of that is the apt install during setup).
+Six steps, status banners between each:
 
-If you'd rather drive each step yourself:
+| # | Step                                                            | Notes |
+|---|-----------------------------------------------------------------|-------|
+| 1 | SSH reachability check                                          | Aborts if the new IP isn't reachable. |
+| 2 | `rsync zoom-recorder/` to the VM                                | Excludes `.git` and `tmp/`. |
+| 3 | `setup-vm.sh` on the VM                                         | Long — ~8–12 min for apt installs (XFCE, ffmpeg, rclone, Chrome, Zoom, Tailscale). Output streamed. |
+| 4 | `restore-vm-state.sh` extracts the backup tarball               | rclone config + VNC password + env file restored. Skipped if no tarball found. |
+| 5 | Tailscale `up --qr` — **interactive**                           | Prints an auth URL; opens in your browser, sign in, then press Enter in the script. Skipped if VM is already authenticated. |
+| 6 | `health-check.sh`                                               | Final sanity report. |
+
+#### Manual equivalent (if you want to drive each step)
 
 ```bash
-rsync -avz --delete ~/bin/zoom-recorder/ ubuntu@<new-vm>:~/zoom-recorder/
-ssh ubuntu@<new-vm> 'cd ~/zoom-recorder && ./setup-vm.sh'
-./restore-vm-state.sh ~/zoom-recorder-vm-state-YYYYMMDD-HHMMSS.tar.gz
-ssh <new-vm> sudo tailscale up --qr
-./health-check.sh
+# 2. rsync the repo
+rsync -avz --delete --exclude '.git' --exclude 'tmp' \
+  ~/bin/zoom-recorder/ zoom-recorder-aws:~/zoom-recorder/
+
+# 3. run setup
+ssh zoom-recorder-aws 'cd ~/zoom-recorder && ./setup-vm.sh'
+
+# 4. restore state (path can be anywhere; this is the canonical location)
+~/bin/zoom-recorder/restore-vm-state.sh \
+  ~/bin/zoom-recorder/data/zoom-recorder-vm-state-YYYYMMDD-HHMMSS.tar.gz
+
+# 5. Tailscale auth (interactive)
+ssh zoom-recorder-aws 'sudo tailscale up --qr'
+
+# 6. health check
+~/bin/zoom-recorder/health-check.sh
 ```
 
-Tailscale will assign the same name but typically a new IP (`100.x.x.x`).
-Update anything that referenced the old IP (e.g. RealVNC bookmarks on
-your phone).
+#### After the restore
+- **VNC password** is restored from the backup
+  (`~/.config/tigervnc/.passwd-plain` on the VM has it in plain).
+- **Tailscale IP changes** with every new VM — the previous IP shows
+  "offline" in `tailscale status`. Update RealVNC bookmarks on your
+  phone, etc.
+- **rclone gdrive remote** works immediately — token is in the backup.
+  Verify: `ssh zoom-recorder-aws rclone listremotes` shows `gdrive:`.
+- **Upload markers** are restored, so the uploader's initial-sync won't
+  attempt to re-push files that were already on Drive at backup time.
+- **`ZOOM_REC_REMOTE`** is in `~/.config/environment.d/zoom-recorder.conf`
+  and gets imported into the running systemd-user environment by the
+  restore step.
+
+#### When something looks off
+Re-run `health-check.sh`. It checks vncserver state, monitor + uploader +
+inotifywait running, env present, rclone configured, Tailscale up, single
+`zoom_sink`, and tails the most recent monitor + uploader log entries.
 
 ---
 
