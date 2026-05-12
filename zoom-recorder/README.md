@@ -11,6 +11,7 @@ zoom-recorder/
 ├── README.md                                       # this file
 ├── setup-vm.sh                                     # one-shot setup — run ON the VM
 ├── local-tunnel.sh                                 # run on the LAPTOP: open/close VNC SSH tunnel
+├── health-check.sh                                 # run on the LAPTOP: one-screen status of the VM
 └── vm-files/                                       # source-of-truth for runtime files
     ├── zoom-record-start.sh                        # → ~/bin/ on the VM
     ├── zoom-record-stop.sh                         # → ~/bin/ on the VM
@@ -275,28 +276,28 @@ echo "free disk:  $(df -h ~/recordings | awk "NR==2{print \$4}") on $(df -h ~/re
 
 ### Post-reboot health check
 
-After a VM reboot, run this to confirm the whole stack came back cleanly:
+The canonical check lives at `health-check.sh` in this folder — run from your
+laptop:
 
 ```bash
-ssh <vm> '
-echo "uptime    : $(uptime -p)"
-echo "vncserver : $(systemctl --user is-active vncserver@:1) (NRestarts=$(systemctl --user show -p NRestarts --value vncserver@:1))"
-echo "Xvnc      : $(pgrep -af Xtigervnc | grep -v grep | head -1 | cut -c1-90)"
-echo "monitor   : $(pgrep -af zoom-recorder-monitor.sh | grep -v grep | head -1 | cut -c1-80 || echo NONE)"
-echo "env       : $(systemctl --user show-environment | grep ZOOM_REC_REMOTE)"
-echo "tailscale : $(sudo tailscale ip -4 2>/dev/null)"
-echo "rclone    : $(rclone listremotes 2>/dev/null)"
-echo "5901      : $(ss -tln | grep 5901 | head -1)"
-echo "sinks     : $(pactl list short sinks | grep -c zoom_sink) zoom_sink module(s)"
-'
+~/bin/zoom-recorder/health-check.sh
+# or with a different host:
+ZOOM_VM_HOST=other-alias ~/bin/zoom-recorder/health-check.sh
 ```
 
-Want to see:
+It does one ssh round-trip and prints a one-screen summary across five
+sections: **system**, **display/X/audio**, **recorder daemons**,
+**recording/Zoom state**, **cloud upload**, plus the last few entries of
+the monitor and uploader logs.
 
-- `NRestarts=0` (the unit didn't fall into a restart loop)
-- `monitor` shows a running PID (not `NONE`)
-- `env` shows `ZOOM_REC_REMOTE=…` if rclone upload is configured
-- `sinks` shows `1 zoom_sink module(s)` (idempotent xstartup is doing its job)
+What "healthy after reboot" looks like:
+
+- `vncserver : active (NRestarts=0)` — clean autostart, no restart loop
+- `monitor` / `uploader` / `inotify` all show running PIDs (not `NONE`)
+- `env` shows `ZOOM_REC_REMOTE=…` if cloud upload is configured
+- `sinks` shows `1 zoom_sink module(s)` (idempotent xstartup did its job)
+- `files : N mp4 / N marked uploaded` — every existing recording is
+  already on the remote, no re-uploads on this boot
 
 ### Tail the monitor log live
 
@@ -423,6 +424,25 @@ So crash-safety is "the previous 15 minutes is already on Drive", not
 
 Log lives at `~/recordings/.uploader.log`. Each upload also publishes a
 low-priority toast.
+
+### Marker files (per-mp4 "already uploaded" record)
+
+After a successful upload the uploader does `touch <mp4>.uploaded` next to
+the file. On the next startup, the initial-sync loop skips any mp4 whose
+marker is newer than the mp4 itself — so a reboot doesn't re-scan or
+re-upload the backlog.
+
+To force a re-upload of a specific file:
+```bash
+rm ~/recordings/recording-YYYYMMDD-HHMMSS-part000.mp4.uploaded
+```
+Next time the uploader runs, that file gets re-sent (rclone will still
+skip the actual transfer if the remote copy is identical).
+
+When cleaning up old recordings, delete the markers alongside the mp4s:
+```bash
+find ~/recordings -name 'recording-*-part*.mp4*' -mtime +14 -delete
+```
 
 ### 1. Install rclone — **use the .deb, not the snap**
 

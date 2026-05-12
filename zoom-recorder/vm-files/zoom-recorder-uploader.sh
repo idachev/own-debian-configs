@@ -78,14 +78,23 @@ upload_one() {
   fi
   local base="${BASH_REMATCH[1]}"
   local src="$REC_DIR/$fname"
+  local marker="${src}.uploaded"
   local dest="$ZOOM_REC_REMOTE/$base/"
 
   # Skip if the source vanished (rare race during initial sync vs. cleanup).
   [[ -f "$src" ]] || return 0
 
+  # Skip if we have a marker that's newer than the file — already uploaded.
+  # Force re-upload by `rm <file>.uploaded`. The mtime check means a file
+  # that was somehow rewritten after upload (rare) will be retransferred.
+  if [[ -f "$marker" && "$marker" -nt "$src" ]]; then
+    return 0
+  fi
+
   log "uploading $fname  →  $dest"
   # Close fd 7 (the flock) in rclone so a hung rclone can't keep the lock alive.
   if { rclone copy "$src" "$dest" --log-level INFO --log-file "$LOG"; } 7>&-; then
+    touch "$marker"
     notify "Uploaded $fname" "emblem-default"
   else
     notify "Upload FAILED: $fname (see .uploader.log)" "dialog-error"
