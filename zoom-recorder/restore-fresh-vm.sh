@@ -21,8 +21,12 @@ TARBALL="${1:-}"
 
 # Resolve latest tarball if none passed. Missing tarball is not fatal —
 # the orchestrator just skips the restore step (fresh setup mode).
+# Search the canonical data/ dir first, then $HOME (legacy location).
 if [[ -z "$TARBALL" ]]; then
-  TARBALL="$(ls -t "$HOME"/zoom-recorder-vm-state-*.tar.gz 2>/dev/null | head -1 || true)"
+  TARBALL="$(ls -t \
+    "$SCRIPT_DIR"/data/zoom-recorder-vm-state-*.tar.gz \
+    "$HOME"/zoom-recorder-vm-state-*.tar.gz \
+    2>/dev/null | head -1 || true)"
   if [[ -n "$TARBALL" ]]; then
     echo "Using latest backup: $TARBALL"
   fi

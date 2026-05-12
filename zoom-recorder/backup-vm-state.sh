@@ -33,8 +33,11 @@
 
 set -euo pipefail
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 HOST="${ZOOM_VM_HOST:-zoom-recorder-aws}"
-OUT="${1:-$HOME/zoom-recorder-vm-state-$(date +%Y%m%d-%H%M%S).tar.gz}"
+# Default: store under data/ next to this script. Directory is gitignored
+# (it contains rclone tokens + VNC passwords — never commit).
+OUT="${1:-$SCRIPT_DIR/data/zoom-recorder-vm-state-$(date +%Y%m%d-%H%M%S).tar.gz}"
 
 # Resolve to absolute path
 OUT="$(realpath -m "$OUT")"

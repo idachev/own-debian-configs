@@ -15,6 +15,7 @@ zoom-recorder/
 ├── backup-vm-state.sh                              # laptop: tar unique VM state to a local file
 ├── restore-vm-state.sh                             # laptop: extract tarball back onto a fresh VM
 ├── restore-fresh-vm.sh                             # laptop: ONE-SHOT — setup + restore + Tailscale + health-check
+├── data/                                           # gitignored — VM state tarballs (rclone tokens, VNC password)
 └── vm-files/                                       # source-of-truth for runtime files
     ├── zoom-record-start.sh                        # → ~/bin/ on the VM
     ├── zoom-record-stop.sh                         # → ~/bin/ on the VM
@@ -618,7 +619,8 @@ If you don't expect to record for a while and want to stop paying the
 
    ```bash
    ./backup-vm-state.sh
-   # writes ~/zoom-recorder-vm-state-YYYYMMDD-HHMMSS.tar.gz
+   # writes ./data/zoom-recorder-vm-state-YYYYMMDD-HHMMSS.tar.gz
+   # (data/ is gitignored — these files contain rclone tokens + VNC password)
    ```
 
    What goes in: gdrive OAuth token, VNC password (hashed + plaintext),
@@ -629,7 +631,7 @@ If you don't expect to record for a while and want to stop paying the
 2. **Confirm the backup is on your laptop** before destroying anything:
 
    ```bash
-   tar tzf ~/zoom-recorder-vm-state-*.tar.gz | head
+   tar tzf ./data/zoom-recorder-vm-state-*.tar.gz | head
    ```
 
 3. **Tear down EC2 + EBS** (zero spend afterwards):
