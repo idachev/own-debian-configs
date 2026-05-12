@@ -14,3 +14,6 @@ __pycache__
 !.vscode/extensions.json
 
 /.history
+
+# Claude Code runtime artifacts
+.claude/*.lock
