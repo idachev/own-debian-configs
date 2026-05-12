@@ -17,6 +17,18 @@ LOG="$REC_DIR/.uploader.log"
 mkdir -p "$REC_DIR"
 
 export DISPLAY=:1
+# Prefer the xfce4-session DBus (where xfce4-notifyd actually lives) over
+# the systemd-user DBus (where /run/user/UID/bus points). When this script
+# is launched via XFCE autostart, DBUS_SESSION_BUS_ADDRESS is already
+# correct. When launched from SSH, it isn't — so reach into xfce4-session's
+# /proc/PID/environ to find the right bus.
+if XSP=$(pgrep -u "$(id -u)" -x xfce4-session 2>/dev/null | head -1) && \
+   [[ -r "/proc/$XSP/environ" ]]; then
+  XFCE_DBUS=$(tr '\0' '\n' < "/proc/$XSP/environ" \
+              | grep '^DBUS_SESSION_BUS_ADDRESS=' | head -1 | cut -d= -f2-)
+  [[ -n "$XFCE_DBUS" ]] && export DBUS_SESSION_BUS_ADDRESS="$XFCE_DBUS"
+fi
+# Fallback to systemd-user bus if no XFCE session yet.
 [[ -z "${DBUS_SESSION_BUS_ADDRESS:-}" ]] && \
   export DBUS_SESSION_BUS_ADDRESS="unix:path=/run/user/$(id -u)/bus"
 

@@ -35,6 +35,14 @@ echo $$ > "$SELF_PID"
 trap 'rm -f "$SELF_PID"' EXIT TERM INT
 
 export DISPLAY=:1
+# Prefer xfce4-session DBus over systemd-user DBus so notifications reach
+# xfce4-notifyd whether we're launched from autostart or from SSH.
+if XSP=$(pgrep -u "$(id -u)" -x xfce4-session 2>/dev/null | head -1) && \
+   [[ -r "/proc/$XSP/environ" ]]; then
+  XFCE_DBUS=$(tr '\0' '\n' < "/proc/$XSP/environ" \
+              | grep '^DBUS_SESSION_BUS_ADDRESS=' | head -1 | cut -d= -f2-)
+  [[ -n "$XFCE_DBUS" ]] && export DBUS_SESSION_BUS_ADDRESS="$XFCE_DBUS"
+fi
 [[ -z "${DBUS_SESSION_BUS_ADDRESS:-}" ]] && \
   export DBUS_SESSION_BUS_ADDRESS="unix:path=/run/user/$(id -u)/bus"
 
