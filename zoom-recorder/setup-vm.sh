@@ -28,7 +28,10 @@ warn()  { printf '\n\033[1;33m!! %s\033[0m\n' "$*"; }
 fatal() { printf '\n\033[1;31m## %s\033[0m\n' "$*" >&2; exit 1; }
 
 [[ "$(id -u)" -eq 0 ]] && fatal "Run as a normal user with sudo, not root."
-sudo -v || fatal "sudo access required."
+# Use `sudo -n true` (non-interactive) not `sudo -v` (validate / refresh
+# auth cache). `-v` always wants a TTY even when NOPASSWD is set, which
+# breaks `ssh some-host './setup-vm.sh'`-style invocations.
+sudo -n true || fatal "passwordless sudo required (the AWS Ubuntu AMI default)."
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 VM_FILES_DIR="${VM_FILES_DIR:-$SCRIPT_DIR/vm-files}"
@@ -188,6 +191,25 @@ if [[ "$ENABLE_CHROME" == "yes" ]]; then
   fi
 else
   warn "Skipping Chrome install (ENABLE_CHROME=$ENABLE_CHROME)"
+fi
+
+# ----------------------------------------------------------------------------
+# 4c. rclone (.deb from rclone.org, NOT the snap)
+# ----------------------------------------------------------------------------
+# The snap rclone fails when invoked from an xfce4-session-spawned process
+# (its launcher can't create a transient systemd scope over dbus). The
+# .deb is a plain static binary and works uniformly. The Ubuntu apt
+# rclone is too old (1.60). Get the current upstream .deb.
+log "Installing rclone (.deb from rclone.org)"
+if ! command -v rclone >/dev/null || [[ "$(rclone version 2>/dev/null | head -1 | awk '{print $2}')" == "v1.60"* ]]; then
+  cd /tmp
+  wget -q --show-progress -O rclone.deb \
+    https://downloads.rclone.org/rclone-current-linux-amd64.deb
+  sudo apt-get install -y ./rclone.deb
+  rm -f rclone.deb
+  cd - >/dev/null
+else
+  log "rclone already installed: $(rclone version | head -1)"
 fi
 
 # ----------------------------------------------------------------------------

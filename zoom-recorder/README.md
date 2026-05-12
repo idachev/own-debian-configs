@@ -76,10 +76,12 @@ The script does, in order:
 6. Install **Google Chrome** (.deb) — needed for Zoom webinar registration
    links and the rclone OAuth flow; native package, no snap confinement
    issues
-7. Install Tailscale (you still need `sudo tailscale up --qr` to authenticate)
-8. Install runtime scripts to `~/bin/` and launchers to `~/Desktop/`
-9. Register the auto-record monitor and the per-segment uploader in
-   `~/.config/autostart/`
+7. Install **rclone** (.deb from rclone.org, **not** snap; the snap launcher
+   fails when invoked from xfce4-session-spawned processes)
+8. Install Tailscale (you still need `sudo tailscale up --qr` to authenticate)
+9. Install runtime scripts to `~/bin/` and launchers to `~/Desktop/`
+10. Register the auto-record monitor and the per-segment uploader in
+    `~/.config/autostart/`
 
 At the end it prints the VNC password and Tailscale IP (if available).
 
