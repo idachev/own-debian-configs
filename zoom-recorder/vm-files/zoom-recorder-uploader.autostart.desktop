@@ -1,0 +1,11 @@
+[Desktop Entry]
+Type=Application
+Version=1.0
+Name=Zoom Recorder Uploader
+Comment=Uploads each finalized recording segment to the rclone remote
+Exec=/home/ubuntu/bin/zoom-recorder-uploader.sh
+Icon=network-transmit
+Terminal=false
+StartupNotify=false
+X-GNOME-Autostart-enabled=true
+NoDisplay=true

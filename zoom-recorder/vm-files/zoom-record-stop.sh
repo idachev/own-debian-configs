@@ -75,20 +75,7 @@ COUNT=${#PARTS[@]}
 TOTAL=$(du -ch "${PARTS[@]}" | tail -1 | cut -f1)
 notify "Saved $COUNT part(s), $TOTAL total — $BASE" "emblem-default"
 
-# Optional: upload all parts of this session to cloud if rclone configured.
-# rclone copy accepts only one SOURCE + DEST. Use --include to filter the
-# recordings dir down to just this session's parts in a single command.
-if command -v rclone >/dev/null 2>&1 && [[ -f "$HOME/.config/rclone/rclone.conf" ]]; then
-  REMOTE="${ZOOM_REC_REMOTE:-}"
-  if [[ -n "$REMOTE" ]]; then
-    UPLOAD_LOG="$REC_DIR/.upload-$BASE.log"
-    notify "Uploading $COUNT part(s) to $REMOTE..." "network-transmit"
-    if rclone copy "$REC_DIR" "$REMOTE/$BASE/" \
-         --include "${BASE}-part*.mp4" \
-         --log-file "$UPLOAD_LOG" --log-level INFO; then
-      notify "Uploaded $COUNT part(s) to $REMOTE/$BASE" "emblem-default"
-    else
-      notify "Upload to $REMOTE failed — see $UPLOAD_LOG" "dialog-error"
-    fi
-  fi
-fi
+# Upload is handled out-of-band by ~/bin/zoom-recorder-uploader.sh, which
+# watches $REC_DIR for close_write events and uploads each finalized
+# segment as it lands (including the last one when ffmpeg exits cleanly
+# from this script's SIGINT). The uploader publishes its own toasts.

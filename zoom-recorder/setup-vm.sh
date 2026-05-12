@@ -11,6 +11,8 @@
 #   BIND_LOCALHOST_ONLY   (default: no)             — yes: VNC only on lo. no: lo + Tailscale
 #   ENABLE_TAILSCALE      (default: yes)            — install + auth Tailscale
 #   ENABLE_ZOOM           (default: yes)            — install Zoom client
+#   ENABLE_CHROME         (default: yes)            — install Google Chrome (for Zoom webinar
+#                                                     registration links and rclone OAuth)
 #   ENABLE_DESKTOP_ICONS  (default: yes)            — copy start/stop scripts + launchers
 #
 # Companion vm-files/ directory must be next to this script (or pointed at via
@@ -36,6 +38,7 @@ VNC_PASSWORD="${VNC_PASSWORD:-$(openssl rand -base64 12 | tr -d '/+=' | head -c 
 BIND_LOCALHOST_ONLY="${BIND_LOCALHOST_ONLY:-no}"
 ENABLE_TAILSCALE="${ENABLE_TAILSCALE:-yes}"
 ENABLE_ZOOM="${ENABLE_ZOOM:-yes}"
+ENABLE_CHROME="${ENABLE_CHROME:-yes}"
 ENABLE_DESKTOP_ICONS="${ENABLE_DESKTOP_ICONS:-yes}"
 
 # ----------------------------------------------------------------------------
@@ -56,6 +59,7 @@ sudo apt-get install -y \
   ffmpeg wget curl ca-certificates \
   libxcb-xtest0 libxcb-cursor0 \
   wmctrl xdotool x11-utils \
+  inotify-tools \
   openssl
 
 # ----------------------------------------------------------------------------
@@ -148,6 +152,30 @@ else
 fi
 
 # ----------------------------------------------------------------------------
+# 4b. Google Chrome (optional)
+# ----------------------------------------------------------------------------
+# Needed when a Zoom webinar invite goes through a web-based registration page
+# first — the Zoom client can't open that, you need a real browser inside the
+# VNC session. Chrome is also the easiest path for rclone OAuth flows.
+# Chrome is also a native .deb (not a snap), so launching works correctly when
+# spawned from xfce4-session — unlike the apt Firefox which is snap-backed.
+if [[ "$ENABLE_CHROME" == "yes" ]]; then
+  log "Installing Google Chrome"
+  if ! command -v google-chrome >/dev/null && ! command -v google-chrome-stable >/dev/null; then
+    cd /tmp
+    wget -q --show-progress -O google-chrome.deb \
+      https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
+    sudo apt-get install -y ./google-chrome.deb
+    rm -f google-chrome.deb
+    cd - >/dev/null
+  else
+    log "Chrome already installed"
+  fi
+else
+  warn "Skipping Chrome install (ENABLE_CHROME=$ENABLE_CHROME)"
+fi
+
+# ----------------------------------------------------------------------------
 # 5. Tailscale (optional, interactive auth)
 # ----------------------------------------------------------------------------
 if [[ "$ENABLE_TAILSCALE" == "yes" ]]; then
@@ -181,6 +209,7 @@ if [[ "$ENABLE_DESKTOP_ICONS" == "yes" ]]; then
   install -m 755 "$VM_FILES_DIR/record-ad-hoc.sh"                "$HOME/bin/"
   install -m 755 "$VM_FILES_DIR/zoom-recorder-monitor.sh"        "$HOME/bin/"
   install -m 755 "$VM_FILES_DIR/zoom-recorder-monitor-toggle.sh" "$HOME/bin/"
+  install -m 755 "$VM_FILES_DIR/zoom-recorder-uploader.sh"       "$HOME/bin/"
 
   # Generate .desktop launchers with the real $HOME path baked into Exec=.
   # vm-files/*.desktop are templates that use /home/ubuntu/... — rewrite to $HOME.
@@ -193,11 +222,13 @@ if [[ "$ENABLE_DESKTOP_ICONS" == "yes" ]]; then
       "$(sha256sum "$dst" | cut -d' ' -f1)" 2>/dev/null || true
   done
 
-  # XFCE autostart entry for the monitor (runs when VNC session starts).
-  sed "s|/home/ubuntu/bin/|$HOME/bin/|g" \
-    "$VM_FILES_DIR/zoom-recorder-monitor.autostart.desktop" \
-    > "$HOME/.config/autostart/zoom-recorder-monitor.desktop"
-  chmod 644 "$HOME/.config/autostart/zoom-recorder-monitor.desktop"
+  # XFCE autostart entries (runs when VNC session starts).
+  for stem in zoom-recorder-monitor zoom-recorder-uploader; do
+    sed "s|/home/ubuntu/bin/|$HOME/bin/|g" \
+      "$VM_FILES_DIR/${stem}.autostart.desktop" \
+      > "$HOME/.config/autostart/${stem}.desktop"
+    chmod 644 "$HOME/.config/autostart/${stem}.desktop"
+  done
 else
   warn "Skipping desktop icons (ENABLE_DESKTOP_ICONS=$ENABLE_DESKTOP_ICONS)"
 fi

@@ -21,6 +21,8 @@ zoom-recorder/
     ├── zoom-record-stop.desktop                    # → ~/Desktop/ launcher
     ├── zoom-recorder-monitor-toggle.desktop        # → ~/Desktop/ launcher
     ├── zoom-recorder-monitor.autostart.desktop     # → ~/.config/autostart/ (XFCE)
+    ├── zoom-recorder-uploader.sh                   # → ~/bin/ (per-segment rclone uploader)
+    ├── zoom-recorder-uploader.autostart.desktop    # → ~/.config/autostart/ (XFCE)
     └── vncserver@.service                          # → ~/.config/systemd/user/ (boot-time auto-start)
 ```
 
@@ -59,7 +61,7 @@ cd ~/zoom-recorder
 The script does, in order:
 
 1. apt-update + install base packages (XFCE, TigerVNC, PulseAudio, ffmpeg,
-   wmctrl, xdotool, x11-utils)
+   wmctrl, xdotool, x11-utils, **inotify-tools**)
 2. Configure TigerVNC — random password, **geometry 1920x1080**,
    `AcceptSetDesktopSize=0` (so viewer-side resize won't change the recording
    resolution)
@@ -67,9 +69,13 @@ The script does, in order:
    user `linger` enabled, so it comes back automatically after a VM reboot
 4. Set up PulseAudio + `zoom_sink` null sink (idempotent across X restarts)
 5. Install the Zoom Linux client
-6. Install Tailscale (you still need `sudo tailscale up --qr` to authenticate)
-7. Install runtime scripts to `~/bin/` and launchers to `~/Desktop/`
-8. Register the auto-record monitor in `~/.config/autostart/`
+6. Install **Google Chrome** (.deb) — needed for Zoom webinar registration
+   links and the rclone OAuth flow; native package, no snap confinement
+   issues
+7. Install Tailscale (you still need `sudo tailscale up --qr` to authenticate)
+8. Install runtime scripts to `~/bin/` and launchers to `~/Desktop/`
+9. Register the auto-record monitor and the per-segment uploader in
+   `~/.config/autostart/`
 
 At the end it prints the VNC password and Tailscale IP (if available).
 
@@ -114,6 +120,7 @@ VNC_GEOMETRY=2560x1440 ./setup-vm.sh   # bigger framebuffer (more CPU on encode)
 BIND_LOCALHOST_ONLY=yes ./setup-vm.sh  # VNC only on lo (no Tailscale access)
 ENABLE_TAILSCALE=no    ./setup-vm.sh   # skip Tailscale install
 ENABLE_ZOOM=no         ./setup-vm.sh   # skip Zoom (already installed?)
+ENABLE_CHROME=no       ./setup-vm.sh   # skip Google Chrome install
 ENABLE_DESKTOP_ICONS=no ./setup-vm.sh  # skip Desktop launchers
 ```
 
@@ -404,10 +411,18 @@ a parallel recording. Toggle the monitor OFF first if it might race you.
 
 ## Optional: auto-upload to Google Drive / Dropbox / S3
 
-`zoom-record-stop.sh` has rclone upload baked in. When set, each Stop
-uploads every `<base>-partNNN.mp4` of the session to
-`$ZOOM_REC_REMOTE/<base>/` and toasts the result. Log lives at
-`~/recordings/.upload-<base>.log` for post-mortem.
+Upload is handled by a **background watcher** (`~/bin/zoom-recorder-uploader.sh`)
+that runs continuously alongside the monitor. It uses `inotifywait` on
+`~/recordings/` for `close_write` events — every time ffmpeg finalizes a
+15-minute part, the file is uploaded **right away** to
+`$ZOOM_REC_REMOTE/<base>/`. The final segment uploads when you click Stop
+and ffmpeg finalizes the last part on SIGINT.
+
+So crash-safety is "the previous 15 minutes is already on Drive", not
+"the previous 15 minutes is on disk".
+
+Log lives at `~/recordings/.uploader.log`. Each upload also publishes a
+low-priority toast.
 
 ### 1. Install rclone — **use the .deb, not the snap**
 
@@ -466,18 +481,35 @@ After a VM reboot it just works without any of the manual `set-environment` /
 `dbus-update-…` dance — those are only needed once to push the env into the
 *currently running* XFCE without restarting it.
 
-### 4. Test end-to-end
+### 4. Restart Xvnc so the uploader autostart picks up the new env
 
-Click Start → wait a bit → click Stop. Expect three toasts:
+If you just configured the env file mid-session:
 
-```
-Saved N part(s), <size> total — recording-…
-Uploading N part(s) to gdrive:ZoomRecordings/…
-Uploaded N part(s) to gdrive:ZoomRecordings/recording-…
+```bash
+systemctl --user restart vncserver@:1   # NB: this kills any in-progress Zoom
 ```
 
-Folder appears on drive.google.com under `ZoomRecordings/`. Unset
-`ZOOM_REC_REMOTE` to disable uploads.
+Or simply wait until the next reboot — the env file is read automatically
+by systemd's user manager at boot.
+
+### 5. Test end-to-end
+
+Click Start → wait long enough for one segment to finalize (or just click
+Stop after a few seconds). You'll see toasts:
+
+```
+Started: recording-…
+Saved N part(s), <size> total — recording-…      ← from stop.sh
+Uploaded recording-…-part000.mp4                  ← from uploader
+Uploaded recording-…-part001.mp4                  ← every segment, as it lands
+...
+```
+
+Folder appears on drive.google.com under `ZoomRecordings/<base>/`.
+
+To disable uploads, unset `ZOOM_REC_REMOTE` (or comment the line in
+`~/.config/environment.d/zoom-recorder.conf`) and restart the session.
+The uploader will detect the missing var on next start and exit quietly.
 
 ---
 
