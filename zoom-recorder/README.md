@@ -14,6 +14,7 @@ zoom-recorder/
 ├── health-check.sh                                 # laptop: one-screen status of the VM
 ├── backup-vm-state.sh                              # laptop: tar unique VM state to a local file
 ├── restore-vm-state.sh                             # laptop: extract tarball back onto a fresh VM
+├── restore-fresh-vm.sh                             # laptop: ONE-SHOT — setup + restore + Tailscale + health-check
 └── vm-files/                                       # source-of-truth for runtime files
     ├── zoom-record-start.sh                        # → ~/bin/ on the VM
     ├── zoom-record-stop.sh                         # → ~/bin/ on the VM
@@ -643,22 +644,27 @@ If you don't expect to record for a while and want to stop paying the
 
 ### Restore later onto a fresh VM
 
+**One command** chains rsync → setup-vm.sh → restore tarball → Tailscale
+auth → health-check:
+
 ```bash
-# 1. Launch a new EC2 instance (see "Quick start: provision a fresh VM"
-#    above). Update HostName in ~/.ssh/config to its new public IP.
-# 2. Provision it:
+# Prereqs: launch a new EC2 instance, update HostName in ~/.ssh/config to its new IP.
+~/bin/zoom-recorder/restore-fresh-vm.sh
+# Picks the newest ~/zoom-recorder-vm-state-*.tar.gz automatically.
+# Or pass an explicit path:  restore-fresh-vm.sh ~/backups/zoom-recorder-vm-state-X.tgz
+```
+
+The script is interactive only at the Tailscale step (prints the auth URL,
+waits for you to confirm). Everything else runs unattended. ~10–15 min
+end-to-end on a t3.medium (most of that is the apt install during setup).
+
+If you'd rather drive each step yourself:
+
+```bash
 rsync -avz --delete ~/bin/zoom-recorder/ ubuntu@<new-vm>:~/zoom-recorder/
-ssh ubuntu@<new-vm>
-cd ~/zoom-recorder && ./setup-vm.sh
-exit
-
-# 3. Restore the state tarball:
+ssh ubuntu@<new-vm> 'cd ~/zoom-recorder && ./setup-vm.sh'
 ./restore-vm-state.sh ~/zoom-recorder-vm-state-YYYYMMDD-HHMMSS.tar.gz
-
-# 4. Re-auth Tailscale (machine identity changes — tarball can't carry it):
 ssh <new-vm> sudo tailscale up --qr
-
-# 5. Verify everything came up:
 ./health-check.sh
 ```
 
