@@ -92,6 +92,7 @@ upload_one() {
   fi
 
   log "uploading $fname  →  $dest"
+  notify "Uploading $fname..." "network-transmit"
   # Close fd 7 (the flock) in rclone so a hung rclone can't keep the lock alive.
   if { rclone copy "$src" "$dest" --log-level INFO --log-file "$LOG"; } 7>&-; then
     touch "$marker"
