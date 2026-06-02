@@ -69,13 +69,13 @@ sudo -H apt update
 # openjdk-8 is no longer in the default noble repos; standardize on 21.
 packages=( openjdk-21-jdk openjdk-21-dbg openjdk-21-source xsensors \
   htop ncdu vim tmux zsh git gitk zip aspell aptitude keychain gparted smartmontools \
-  build-essential nvme-cli universal-ctags npm cpulimit python3-pip pipx python3-venv \
+  build-essential nvme-cli universal-ctags cpulimit python3-pip pipx python3-venv \
   pcsc-tools pcscd opensc \
   libnss3-tools sshpass nmap python3-pyqtgraph socat lrzip p7zip p7zip-full jq apache2-utils \
   libimage-exiftool-perl ffmpeg postgresql-client python3-dev fdupes gthumb mc progress \
   archivemount openssh-server maven libcurl4-openssl-dev gcc g++ make pv acpitool pavucontrol \
   libpcsclite-dev swig docker.io docker-compose-v2 azure-cli mongodb-mongosh mongodb-database-tools \
-  google-cloud-cli brightnessctl kitty-terminfo fd-find )
+  google-cloud-cli brightnessctl kitty-terminfo fd-find ripgrep rbenv ruby-build )
 
 for i in "${packages[@]}"; do
     sudo -H apt install -y "$i"
@@ -109,9 +109,45 @@ done
 pipx install git+https://github.com/basak/glacier-cli.git
 
 ################################################################################
-# Setup for nodejs and angular/cli
+# Version managers / CLIs installed via upstream installers (not in apt, or the
+# apt build is too old). These are referenced by the zshrc.
 
-#curl -sL https://deb.nodesource.com/setup_lts.x | sudo -E bash -
-#sudo -H apt -y install nodejs
+# pyenv (Python version manager)
+if [ ! -d "${HOME}/.pyenv" ]; then
+    curl -fsSL https://pyenv.run | bash
+fi
+
+# temporal CLI
+curl -sSf https://temporal.download/cli.sh | sh
+
+# fzf — apt ships 0.44 which lacks `fzf --zsh` (needs >= 0.48); install upstream
+if [ ! -d "${HOME}/.fzf" ]; then
+    git clone --depth 1 https://github.com/junegunn/fzf.git "${HOME}/.fzf"
+fi
+"${HOME}/.fzf/install" --bin                       # just the binary, no rc edits
+sudo install "${HOME}/.fzf/bin/fzf" /usr/local/bin/fzf
+fzf --version                                      # confirm >= 0.48
+
+################################################################################
+# Node.js 22 via NodeSource
+# noble's apt nodejs is 18.x; Hermes Agent needs v22 (browser automation /
+# WhatsApp bridge). NodeSource nodejs bundles npm, so apt `npm` was dropped.
+
+curl -fsSL https://deb.nodesource.com/setup_22.x | sudo -E bash -
+sudo -H apt install -y nodejs
 
 #sudo -H npm install -g @angular/cli
+
+################################################################################
+# uv — fast Python package manager. Hermes Agent uses it to manage its own
+# Python 3.11 toolchain (noble ships 3.12).
+
+if ! command -v uv >/dev/null 2>&1; then
+    curl -LsSf https://astral.sh/uv/install.sh | sh
+fi
+
+################################################################################
+# Playwright system dependencies for headless Chromium (apt libs only)
+# Needs Node/npx, installed above.
+
+sudo npx playwright install-deps chromium
