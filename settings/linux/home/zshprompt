@@ -32,14 +32,21 @@ function precmd {
 
 
 	###
-	# Get APM info.
+	# Get battery level of the system battery only.
+	# Read directly from sysfs and require present=1 so wireless
+	# peripherals (mice/keyboards) reported as batteries are ignored.
 
-	if which acpi > /dev/null 2>&1; then
-		PR_APM_RESULT=`acpi -b 2> /dev/null | head -n 1`
-	elif which ibam > /dev/null 2>&1; then
-		PR_APM_RESULT=`ibam --percentbattery 2> /dev/null`
-	elif which apm > /dev/null 2>&1; then
-		PR_APM_RESULT=`apmi 2> /dev/null`
+	PR_APM_LEVEL=""
+	for _bat in /sys/class/power_supply/BAT*(N); do
+		[[ "$(< $_bat/present 2> /dev/null)" = "1" ]] || continue
+		PR_APM_LEVEL="$(< $_bat/capacity 2> /dev/null)"
+		break
+	done
+	# Fallback to acpi if sysfs has no system battery entry.
+	if [[ -z "$PR_APM_LEVEL" ]] && which acpi > /dev/null 2>&1; then
+		if [[ "$(acpi -b 2> /dev/null | head -n 1)" =~ '([0-9]+)%' ]]; then
+			PR_APM_LEVEL="$match[1]"
+		fi
 	fi
 
   if [ "${PR_SHOW_KUBE}" = "1"  ]; then
@@ -154,17 +161,10 @@ setprompt () {
 	fi
 	
 	###
-	# APM detection used for battery status if available
-	
-	if which acpi > /dev/null 2>&1; then
-		PR_APM='$PR_RED${${PR_APM_RESULT[(f)1]}[(w)+4]}%% '
-	elif which ibam > /dev/null 2>&1; then
-		PR_APM='$PR_RED${${PR_APM_RESULT[(f)1]}[(w)-2]}%%(${${PR_APM_RESULT[(f)3]}[(w)-1]}) '
-	elif which apm > /dev/null 2>&1; then
-		PR_APM='$PR_RED${PR_APM_RESULT[(w)5,(w)6]/\% /%%} '
-	else
-		PR_APM=''
-	fi
+	# Battery level (computed in precmd); shows e.g. "95% " in red,
+	# and nothing at all when there is no system battery.
+
+	PR_APM='${PR_APM_LEVEL:+$PR_RED${PR_APM_LEVEL}%% }'
 
 	###
 	# Finally, the prompt.
