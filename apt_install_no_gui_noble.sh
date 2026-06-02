@@ -80,7 +80,7 @@ packages=( openjdk-21-jdk openjdk-21-dbg openjdk-21-source xsensors \
   git-lfs yq ninja-build clang autoconf automake libtool \
   libbz2-dev liblzma-dev tk-dev python-is-python3 imagemagick tesseract-ocr \
   poppler-utils redis-tools default-mysql-client fish \
-  podman flatpak gradle )
+  podman flatpak gradle libtool-bin )
 
 for i in "${packages[@]}"; do
     sudo -H apt install -y "$i"
