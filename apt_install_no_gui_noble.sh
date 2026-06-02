@@ -76,7 +76,10 @@ packages=( openjdk-21-jdk openjdk-21-dbg openjdk-21-source xsensors \
   archivemount openssh-server maven libcurl4-openssl-dev gcc g++ make pv acpitool pavucontrol \
   libpcsclite-dev swig docker.io docker-compose-v2 azure-cli mongodb-mongosh mongodb-database-tools \
   google-cloud-cli brightnessctl kitty-terminfo fd-find ripgrep rbenv ruby-build \
-  golang-go rustc cargo cmake pkg-config sqlite3 gh yarnpkg libffi-dev )
+  golang-go rustc cargo cmake pkg-config sqlite3 gh yarnpkg libffi-dev \
+  git-lfs yq ninja-build clang autoconf automake libtool \
+  libbz2-dev liblzma-dev tk-dev python-is-python3 imagemagick tesseract-ocr \
+  poppler-utils redis-tools default-mysql-client fish )
 
 for i in "${packages[@]}"; do
     sudo -H apt install -y "$i"
