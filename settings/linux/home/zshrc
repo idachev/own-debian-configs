@@ -207,11 +207,11 @@ alias -g S='&> /dev/null &'
 ##################################################################
 # Plugins
 
-source ~/.zsh/zsh-syntax-highlighting.zsh
+[ -f ~/.zsh/zsh-syntax-highlighting.zsh ] && source ~/.zsh/zsh-syntax-highlighting.zsh
 
-source ~/.zsh/zsh-history-substring-search.zsh
+[ -f ~/.zsh/zsh-history-substring-search.zsh ] && source ~/.zsh/zsh-history-substring-search.zsh
 
-source ~/.zsh/zsh-z.plugin.zsh
+[ -f ~/.zsh/zsh-z.plugin.zsh ] && source ~/.zsh/zsh-z.plugin.zsh
 
 zstyle ':completion:*' menu select
 
@@ -229,21 +229,13 @@ fpath=(~/.zsh/zsh-completions $fpath)
 # type a directory's name to cd to it
 compctl -/ cd
 
-if [ -f ~/.aliases ]; then
-  . ~/.aliases
-fi
+[ -f ~/.aliases ] && . ~/.aliases
 
-if [ -f ~/.shell_set_colors ]; then
-  . ~/.shell_set_colors
-fi
+[ -f ~/.shell_set_colors ] && . ~/.shell_set_colors
 
-if [ -f ~/.ls_dir_set_colors ]; then
-  . ~/.ls_dir_set_colors
-fi
+[ -f ~/.ls_dir_set_colors ] && . ~/.ls_dir_set_colors
 
-if [ -f ~/.localrc ]; then
-  . ~/.localrc
-fi
+[ -f ~/.localrc ] && . ~/.localrc
 
 ##################################################################
 # Keychain
@@ -252,13 +244,9 @@ if command -v keychain > /dev/null 2>&1 && [ -f ~/.local_ssh_key ]; then
   keychain -q ~/.local_ssh_key
 fi
 
-if [ -f ~/.keychain/${HOST}-sh ]; then
-  . ~/.keychain/${HOST}-sh
-fi
+[ -f ~/.keychain/${HOST}-sh ] && . ~/.keychain/${HOST}-sh
 
-if [ -f ~/.keychain/${HOST}-sh-gpg ]; then
-  . ~/.keychain/${HOST}-sh-gpg
-fi
+[ -f ~/.keychain/${HOST}-sh-gpg ] && . ~/.keychain/${HOST}-sh-gpg
 
 ##################################################################
 # Others
@@ -277,14 +265,9 @@ export SDKMAN_DIR="${HOME}/.sdkman"
 [[ -s "${HOME}/.sdkman/bin/sdkman-init.sh" ]] && source "${HOME}/.sdkman/bin/sdkman-init.sh"
 
 
-if [ -f ~/bin/aws-vault ]; then
-  eval "$(aws-vault --completion-script-zsh)"
-fi
+[ -f ~/bin/aws-vault ] && eval "$(aws-vault --completion-script-zsh)"
 
-
-if [ -f ~/.zsh/zsh-completions/maestral ]; then
-  . ~/.zsh/zsh-completions/maestral
-fi
+[ -f ~/.zsh/zsh-completions/maestral ] && . ~/.zsh/zsh-completions/maestral
 
 if [ -n "$DISPLAY" ] && command -v xmodmap > /dev/null 2>&1 && \
    [ -f ~/bin/settings/linux/home/_manual_/xmodmap_g915_wheel ]; then
@@ -297,7 +280,7 @@ fi
 
 export PYENV_ROOT="$HOME/.pyenv"
 [[ -d $PYENV_ROOT/bin ]] && export PATH="$PYENV_ROOT/bin:$PATH"
-eval "$(pyenv init - zsh)"
+command -v pyenv > /dev/null 2>&1 && eval "$(pyenv init - zsh)"
 
 ######################################################################
 # nvm
@@ -323,9 +306,7 @@ if [ -x ~/.rbenv/bin/rbenv ]; then
   eval "$(~/.rbenv/bin/rbenv init - --no-rehash zsh)"
 fi
 
-if [ -f ~/bin/z.sh ]; then
-  . ~/bin/z.sh
-fi
+[ -f ~/bin/z.sh ] && . ~/bin/z.sh
 
 ##################################################################
 # fzf
@@ -353,7 +334,7 @@ _fzf_compgen_dir() {
   fd --type d --hidden --follow --exclude ".git" . "$1"
 }
 
-source <(fzf --zsh)
+command -v fzf > /dev/null 2>&1 && source <(fzf --zsh)
 
 ######################################################################
 # bun
