@@ -75,7 +75,7 @@ packages=( openjdk-21-jdk openjdk-21-dbg openjdk-21-source xsensors \
   libimage-exiftool-perl ffmpeg postgresql-client python3-dev fdupes gthumb mc progress \
   archivemount openssh-server maven libcurl4-openssl-dev gcc g++ make pv acpitool pavucontrol \
   libpcsclite-dev swig docker.io docker-compose-v2 azure-cli mongodb-mongosh mongodb-database-tools \
-  google-cloud-cli brightnessctl kitty-terminfo )
+  google-cloud-cli brightnessctl kitty-terminfo fd-find )
 
 for i in "${packages[@]}"; do
     sudo -H apt install -y "$i"
