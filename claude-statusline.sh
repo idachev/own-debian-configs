@@ -6,6 +6,12 @@ input=$(cat)
 # Extract values from JSON
 cwd=$(echo "$input" | jq -r '.workspace.current_dir')
 model=$(echo "$input" | jq -r '.model.display_name')
+effort=$(echo "$input" | jq -r '.effort.level // empty')
+
+# Append the reasoning effort next to the model name: [model effort]
+if [ -n "$effort" ]; then
+    model="$model $effort"
+fi
 
 # Replace home directory with just ~
 cwd="${cwd/#$HOME/\~}"
