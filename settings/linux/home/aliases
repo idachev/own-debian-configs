@@ -43,7 +43,9 @@ alias sgptsh='sgpt sh'
 alias sgptch='sgpt --chat'
 alias sgptcd='sgpt code'
 
-alias claudep='claude --model claude-sonnet-4-6 -p'
+alias claudep='claude --model claude-sonnet -p'
+alias claudehr='headroom wrap claude'
+alias claudeds='~/.claude/claude-ds.sh'
 
 # Different directory listings
 alias ls='ls -v -hF --color=tty --group-directories-first'

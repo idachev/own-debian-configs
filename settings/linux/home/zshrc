@@ -360,3 +360,6 @@ esac
 # Added by flyctl installer
 export FLYCTL_INSTALL="/home/idachev/.fly"
 export PATH="$FLYCTL_INSTALL/bin:$PATH"
+
+# opencode
+export PATH=/home/idachev/.opencode/bin:$PATH
