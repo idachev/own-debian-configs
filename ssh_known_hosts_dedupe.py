@@ -2,42 +2,54 @@
 
 """
 Deduplicate ~/.ssh/known_hosts, keeping the latest (last-in-file) entry for
-each host key and dropping earlier duplicates.
+each PROVABLE duplicate and dropping earlier ones.
 
-ssh appends new host key entries to the end of known_hosts, so for any given
-host the last matching entry is the most recently added one.
+Two known_hosts lines are only ever merged when they are provably the same
+hostname:
 
-With HashKnownHosts enabled (the default on most distros), hostnames are
-salted and hashed per-line, so two entries can't be compared by hostname.
-Instead entries are grouped by (marker, keytype, key) - e.g. two lines with
-the same ssh-rsa/ecdsa/ed25519 key are almost certainly the same host recorded
-under different aliases (hostname vs IP vs FQDN) or re-added over time, not a
-coincidental key collision between unrelated hosts.
+  - Plaintext hostnames are compared literally (they're visible in the file).
+  - Hashed hostnames (the default with HashKnownHosts) are salted per-line,
+    so they can't be compared directly. They are only merged when a supplied
+    candidate hostname (from ~/.ssh/config `Host` entries and/or
+    --hosts-file) verifies against the line's HMAC-SHA1(salt, hostname),
+    exactly like `ssh-keygen -F` does.
+
+Two hashed lines sharing the same key are NOT assumed to be the same host and
+are NEVER merged on that basis alone: the same key is often shared across
+several real aliases for one host (short name, FQDN, IP), and each alias is
+an independent lookup key for ssh's verification - merging them would drop
+the entry needed to verify whichever alias didn't survive, silently breaking
+that connection (this previously broke `git push` to github.com when this
+script grouped hashed entries by key alone).
+
+Without any candidate hostnames, only byte-identical duplicate lines are
+removed - always safe, but limited for a fully-hashed file. Pass
+--ssh-config/--hosts-file to also verify and collapse duplicates for hosts
+you actually use.
 
 Usage:
     ./ssh_known_hosts_dedupe.py [known_hosts_path] [--dry-run]
+                                 [--ssh-config PATH] [--no-ssh-config]
+                                 [--hosts-file PATH]
 
 A timestamped backup is written next to the file before it is overwritten.
 """
 
 import argparse
+import base64
+import hashlib
+import hmac
 import os
 import shutil
 from datetime import datetime
 
 DEFAULT_KNOWN_HOSTS = '~/.ssh/known_hosts'
+DEFAULT_SSH_CONFIG = '~/.ssh/config'
 
 
-def parse_key_group(line):
-    """Return the grouping tuple for a known_hosts entry line, or None if the
-    line is blank, a comment, or unparseable.
-
-    Hashed hostnames (the default with HashKnownHosts) are salted per-line, so
-    identical hosts get different literal text; those are grouped by
-    (marker, keytype, key) alone. Plaintext hostnames are included in the
-    group key so two distinct hosts that happen to share a key (e.g. cloned
-    VM/container images that never regenerated their host key) are never
-    merged into one."""
+def parse_entry(line):
+    """Return (marker, hosts, keytype, key) for a known_hosts entry line, or
+    None if the line is blank, a comment, or unparseable."""
     stripped = line.strip()
     if not stripped or stripped.startswith('#'):
         return None
@@ -47,21 +59,93 @@ def parse_key_group(line):
     if tokens[0].startswith('@'):
         if len(tokens) < 4:
             return None
-        marker, hosts, keytype, key = tokens[0], tokens[1], tokens[2], tokens[3]
-    else:
-        if len(tokens) < 3:
-            return None
-        marker, hosts, keytype, key = '', tokens[0], tokens[1], tokens[2]
+        return tokens[0], tokens[1], tokens[2], tokens[3]
 
-    if hosts.startswith('|1|'):
-        return marker, keytype, key
-    return marker, hosts, keytype, key
+    if len(tokens) < 3:
+        return None
+
+    return '', tokens[0], tokens[1], tokens[2]
 
 
-def dedupe_lines(lines):
-    """Return (kept_lines, removed_count), keeping the last occurrence of
-    each (marker, keytype, key) group and all non-key lines untouched."""
-    groups = [parse_key_group(line) for line in lines]
+def hashed_host_matches(hosts_field, hostname):
+    """Return True if hosts_field (a `|1|salt|hash` known_hosts entry)
+    verifies for the given literal hostname - the same check
+    `ssh`/`ssh-keygen -F` perform."""
+    if not hosts_field.startswith('|1|'):
+        return False
+
+    parts = hosts_field.split('|')
+    if len(parts) != 4:
+        return False
+
+    try:
+        salt = base64.b64decode(parts[2])
+        expected = base64.b64decode(parts[3])
+    except (ValueError, TypeError):
+        return False
+
+    computed = hmac.new(salt, hostname.encode(), hashlib.sha1).digest()
+    return hmac.compare_digest(computed, expected)
+
+
+def load_ssh_config_hosts(path):
+    """Return literal (non-wildcard) hostnames from `Host` lines in an ssh
+    client config file."""
+    hosts = []
+    if not os.path.isfile(path):
+        return hosts
+
+    with open(path, 'rt') as f:
+        for line in f:
+            stripped = line.strip()
+            if not stripped or stripped.startswith('#'):
+                continue
+
+            parts = stripped.split(None, 1)
+            if len(parts) != 2 or parts[0].lower() != 'host':
+                continue
+
+            for token in parts[1].split():
+                if '*' not in token and '?' not in token:
+                    hosts.append(token)
+
+    return hosts
+
+
+def load_hosts_file(path):
+    """Return one candidate hostname per non-comment, non-blank line."""
+    hosts = []
+    with open(path, 'rt') as f:
+        for line in f:
+            stripped = line.strip()
+            if stripped and not stripped.startswith('#'):
+                hosts.append(stripped)
+    return hosts
+
+
+def group_key(entry, candidate_hostnames):
+    """Return the grouping key used to decide duplicates for one entry.
+
+    Defaults to the raw hosts field (byte-identical lines only). If the
+    hosts field is hashed and verifies against exactly one candidate
+    hostname, group by that verified hostname instead, so lines added at
+    different times (different salts) for the SAME real hostname still
+    collapse safely. A hashed line matching zero or more than one candidate
+    is left ungrouped (conservative - never guess)."""
+    marker, hosts_field, keytype, key = entry
+
+    if hosts_field.startswith('|1|'):
+        matches = [h for h in candidate_hostnames if hashed_host_matches(hosts_field, h)]
+        if len(matches) == 1:
+            return marker, 'verified:' + matches[0], keytype, key
+
+    return marker, hosts_field, keytype, key
+
+
+def dedupe_lines(lines, candidate_hostnames):
+    """Return (kept_lines, removed_count, verified_removed_count)."""
+    entries = [parse_entry(line) for line in lines]
+    groups = [None if e is None else group_key(e, candidate_hostnames) for e in entries]
 
     last_index_by_group = {}
     for i, group in enumerate(groups):
@@ -70,22 +154,27 @@ def dedupe_lines(lines):
 
     kept = []
     removed = 0
+    verified_removed = 0
     for i, (line, group) in enumerate(zip(lines, groups)):
         if group is None or last_index_by_group[group] == i:
             kept.append(line)
         else:
             removed += 1
+            if group[1].startswith('verified:'):
+                verified_removed += 1
 
-    return kept, removed
+    return kept, removed, verified_removed
 
 
-def dedupe_known_hosts(path, dry_run):
+def dedupe_known_hosts(path, dry_run, candidate_hostnames):
     with open(path, 'rt') as f:
         lines = f.readlines()
 
-    kept, removed = dedupe_lines(lines)
+    kept, removed, verified_removed = dedupe_lines(lines, candidate_hostnames)
 
-    print('%s: %d lines, %d duplicate entries, %d remaining' % (path, len(lines), removed, len(kept)))
+    print('%s: %d lines, %d candidate hostnames to verify against' % (path, len(lines), len(candidate_hostnames)))
+    print('%d duplicate entries removed (%d via verified hostname match), %d remaining' %
+          (removed, verified_removed, len(kept)))
 
     if removed == 0:
         print('Nothing to do')
@@ -111,13 +200,26 @@ def main():
                          help='path to known_hosts file (default: %s)' % DEFAULT_KNOWN_HOSTS)
     parser.add_argument('--dry-run', action='store_true',
                          help='show what would change without modifying the file')
+    parser.add_argument('--ssh-config', default=DEFAULT_SSH_CONFIG,
+                         help='ssh client config to read literal Host entries from (default: %s)' % DEFAULT_SSH_CONFIG)
+    parser.add_argument('--no-ssh-config', action='store_true',
+                         help='do not read candidate hostnames from --ssh-config')
+    parser.add_argument('--hosts-file',
+                         help='extra file with one candidate hostname per line to verify hashed entries against')
     args = parser.parse_args()
 
     path = os.path.expanduser(args.path)
     if not os.path.isfile(path):
         parser.error('file not found: %s' % path)
 
-    dedupe_known_hosts(path, args.dry_run)
+    candidate_hostnames = []
+    if not args.no_ssh_config:
+        candidate_hostnames += load_ssh_config_hosts(os.path.expanduser(args.ssh_config))
+    if args.hosts_file:
+        candidate_hostnames += load_hosts_file(os.path.expanduser(args.hosts_file))
+    candidate_hostnames = sorted(set(candidate_hostnames))
+
+    dedupe_known_hosts(path, args.dry_run, candidate_hostnames)
 
 
 if __name__ == '__main__':
