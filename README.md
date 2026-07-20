@@ -37,6 +37,9 @@ cd /home/<username>/bin/settings/linux/root
 source create_links
 ```
 
+See `settings/linux/root/README.md` for additional root setup, e.g. the
+ZeroTier DNS fix for new machines joined to a ZeroTier network with managed DNS.
+
 # Install all goodies
 To install all useful programs call
 ```

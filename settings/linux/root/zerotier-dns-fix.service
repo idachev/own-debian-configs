@@ -1,0 +1,7 @@
+[Unit]
+Description=Push ZeroTier network DNS settings to systemd-resolved
+After=zerotier-one.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/zerotier-dns-fix.sh

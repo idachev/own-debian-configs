@@ -1,0 +1,9 @@
+[Unit]
+Description=Watch ZeroTier network config for DNS changes
+
+[Path]
+PathChanged=/var/lib/zerotier-one/networks.d
+Unit=zerotier-dns-fix.service
+
+[Install]
+WantedBy=multi-user.target
