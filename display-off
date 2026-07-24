@@ -1,0 +1,100 @@
+#!/usr/bin/env python3
+"""
+Display Off - Turn off display with fullscreen window to reactivate it.
+
+Shows a fullscreen dark window that captures keyboard/mouse input to turn
+the display back on. Useful for leaving your laptop running while keeping
+the display off to save power.
+
+Uses `xrandr --off` rather than DPMS: DPMS power-off is automatically
+undone by the X server the instant it sees any input activity, which made
+it impossible for this script's own click-counting logic to keep the
+screen dark past the first input. Disabling the output via xrandr is a
+real mode change, not a power-management timeout, so it stays off until
+this script explicitly re-enables it.
+"""
+
+import sys
+import time
+import tkinter as tk
+import subprocess
+
+# Ignore mouse motion smaller than this many pixels from the window's
+# starting pointer position, so the cursor already resting inside the
+# fullscreen window (or a tiny natural jitter) doesn't instantly wake it.
+MOTION_WAKE_THRESHOLD = 15
+
+# Require this many qualifying inputs (key press, click, or motion past the
+# threshold) close together in time before waking, so one accidental brush
+# of the touchpad or keyboard doesn't switch the display back on.
+REQUIRED_HITS = 3
+HIT_GAP_SECONDS = 2.0
+
+
+def get_output_name():
+    try:
+        result = subprocess.run(['xrandr', '--query'], check=True, capture_output=True, text=True)
+    except (subprocess.CalledProcessError, FileNotFoundError) as e:
+        print(f"Error: 'xrandr --query' failed: {e}", file=sys.stderr)
+        sys.exit(1)
+
+    connected = [line.split() for line in result.stdout.splitlines() if ' connected' in line]
+    if not connected:
+        print("Error: no connected display found via xrandr.", file=sys.stderr)
+        sys.exit(1)
+
+    for tokens in connected:
+        if 'primary' in tokens:
+            return tokens[0]
+    return connected[0][0]
+
+
+def run_xrandr(*args):
+    try:
+        subprocess.run(['xrandr', *args], check=True)
+        return True
+    except (subprocess.CalledProcessError, FileNotFoundError) as e:
+        print(f"Error: 'xrandr {' '.join(args)}' failed: {e}", file=sys.stderr)
+        return False
+
+
+def main():
+    output = get_output_name()
+
+    root = tk.Tk()
+    root.attributes('-fullscreen', True)
+    root.configure(bg='black')
+    root.focus_force()
+    root.update()
+
+    start_x, start_y = root.winfo_pointerx(), root.winfo_pointery()
+    hits = {'count': 0, 'last_time': 0.0}
+
+    def register_hit(event=None):
+        now = time.monotonic()
+        if now - hits['last_time'] > HIT_GAP_SECONDS:
+            hits['count'] = 0
+        hits['count'] += 1
+        hits['last_time'] = now
+        if hits['count'] >= REQUIRED_HITS:
+            run_xrandr('--output', output, '--auto')
+            root.quit()
+
+    def on_motion(event):
+        if abs(event.x_root - start_x) > MOTION_WAKE_THRESHOLD or \
+           abs(event.y_root - start_y) > MOTION_WAKE_THRESHOLD:
+            register_hit()
+
+    root.bind('<KeyPress>', register_hit)
+    root.bind('<ButtonPress>', register_hit)
+    root.bind('<Motion>', on_motion)
+
+    if not run_xrandr('--output', output, '--off'):
+        root.destroy()
+        sys.exit(1)
+
+    root.mainloop()
+
+
+if __name__ == '__main__':
+    main()
