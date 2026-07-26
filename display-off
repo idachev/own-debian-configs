@@ -1,99 +1,118 @@
 #!/usr/bin/env python3
 """
-Display Off - Turn off display with fullscreen window to reactivate it.
+Display Off - Lock the session and power off the display.
 
-Shows a fullscreen dark window that captures keyboard/mouse input to turn
-the display back on. Useful for leaving your laptop running while keeping
-the display off to save power.
+Engages the desktop's own screen locker, then powers the panel down via
+DPMS. Useful for leaving the laptop open and running with the screen dark.
 
-Uses `xrandr --off` rather than DPMS: DPMS power-off is automatically
-undone by the X server the instant it sees any input activity, which made
-it impossible for this script's own click-counting logic to keep the
-screen dark past the first input. Disabling the output via xrandr is a
-real mode change, not a power-management timeout, so it stays off until
-this script explicitly re-enables it.
+Any key press or mouse movement wakes the panel to the locker's password
+prompt; the session stays locked until you authenticate, and the locker's
+own idle timeout blanks it again afterwards.
+
+Why DPMS here (an earlier revision of this script used `xrandr --off`):
+the locker owns the keyboard and mouse once it engages, so this script
+can no longer watch for input itself. DPMS is the right mechanism for
+that split - the X server wakes the panel on input and the locker
+handles the authentication. `xrandr --off` would leave the panel dark
+with no way to see the password prompt.
 """
 
+import shutil
+import subprocess
 import sys
 import time
-import tkinter as tk
-import subprocess
 
-# Ignore mouse motion smaller than this many pixels from the window's
-# starting pointer position, so the cursor already resting inside the
-# fullscreen window (or a tiny natural jitter) doesn't instantly wake it.
-MOTION_WAKE_THRESHOLD = 15
+# Screen lockers in preference order: the desktop-native one first, then
+# the common cross-desktop daemons. `xflock4` is last as a catch-all -
+# note it does not know about cinnamon-screensaver, which is why the
+# Cinnamon entry has to come first rather than relying on it.
+LOCKERS = (
+    ('cinnamon-screensaver-command', ('--lock',)),
+    ('xfce4-screensaver-command', ('--lock',)),
+    ('mate-screensaver-command', ('--lock',)),
+    ('gnome-screensaver-command', ('--lock',)),
+    ('xscreensaver-command', ('-lock',)),
+    ('light-locker-command', ('--lock',)),
+    ('xsecurelock', ()),
+    ('i3lock', ('-n',)),
+    ('xflock4', ()),
+)
 
-# Require this many qualifying inputs (key press, click, or motion past the
-# threshold) close together in time before waking, so one accidental brush
-# of the touchpad or keyboard doesn't switch the display back on.
-REQUIRED_HITS = 3
-HIT_GAP_SECONDS = 2.0
+# How long to wait for the locker to actually cover the screen before
+# powering the panel down. Blanking too early can race with the locker
+# mapping its window, which wakes the panel straight back up.
+LOCK_SETTLE_TIMEOUT = 5.0
+LOCK_POLL_INTERVAL = 0.2
+LOCK_SETTLE_GRACE = 0.4
 
 
-def get_output_name():
+def find_locker():
+    for binary, args in LOCKERS:
+        path = shutil.which(binary)
+        if path:
+            return binary, path, args
+    print(
+        "Error: no supported screen locker found. Tried: "
+        + ", ".join(name for name, _ in LOCKERS),
+        file=sys.stderr,
+    )
+    sys.exit(1)
+
+
+def lock_is_active(binary):
+    """True if the locker reports an active screensaver.
+
+    Returns None when the locker has no query interface, so the caller
+    can fall back to a plain settle delay instead of polling forever.
+    """
+    if not binary.endswith('-screensaver-command'):
+        return None
+    flag = '-time' if binary == 'xscreensaver-command' else '--query'
     try:
-        result = subprocess.run(['xrandr', '--query'], check=True, capture_output=True, text=True)
-    except (subprocess.CalledProcessError, FileNotFoundError) as e:
-        print(f"Error: 'xrandr --query' failed: {e}", file=sys.stderr)
-        sys.exit(1)
-
-    connected = [line.split() for line in result.stdout.splitlines() if ' connected' in line]
-    if not connected:
-        print("Error: no connected display found via xrandr.", file=sys.stderr)
-        sys.exit(1)
-
-    for tokens in connected:
-        if 'primary' in tokens:
-            return tokens[0]
-    return connected[0][0]
+        result = subprocess.run(
+            [binary, flag], capture_output=True, text=True, timeout=2
+        )
+    except (subprocess.SubprocessError, OSError):
+        return None
+    return 'active' in result.stdout.lower() and 'inactive' not in result.stdout.lower()
 
 
-def run_xrandr(*args):
+def wait_for_lock(binary):
+    deadline = time.monotonic() + LOCK_SETTLE_TIMEOUT
+    while time.monotonic() < deadline:
+        state = lock_is_active(binary)
+        if state is None:
+            break
+        if state:
+            break
+        time.sleep(LOCK_POLL_INTERVAL)
+    # Small grace period either way: even once the locker reports active,
+    # its window may still be painting.
+    time.sleep(LOCK_SETTLE_GRACE)
+
+
+def run(*args):
     try:
-        subprocess.run(['xrandr', *args], check=True)
+        subprocess.run(args, check=True)
         return True
-    except (subprocess.CalledProcessError, FileNotFoundError) as e:
-        print(f"Error: 'xrandr {' '.join(args)}' failed: {e}", file=sys.stderr)
+    except (subprocess.CalledProcessError, FileNotFoundError, OSError) as e:
+        print(f"Error: '{' '.join(args)}' failed: {e}", file=sys.stderr)
         return False
 
 
 def main():
-    output = get_output_name()
+    binary, path, lock_args = find_locker()
 
-    root = tk.Tk()
-    root.attributes('-fullscreen', True)
-    root.configure(bg='black')
-    root.focus_force()
-    root.update()
-
-    start_x, start_y = root.winfo_pointerx(), root.winfo_pointery()
-    hits = {'count': 0, 'last_time': 0.0}
-
-    def register_hit(event=None):
-        now = time.monotonic()
-        if now - hits['last_time'] > HIT_GAP_SECONDS:
-            hits['count'] = 0
-        hits['count'] += 1
-        hits['last_time'] = now
-        if hits['count'] >= REQUIRED_HITS:
-            run_xrandr('--output', output, '--auto')
-            root.quit()
-
-    def on_motion(event):
-        if abs(event.x_root - start_x) > MOTION_WAKE_THRESHOLD or \
-           abs(event.y_root - start_y) > MOTION_WAKE_THRESHOLD:
-            register_hit()
-
-    root.bind('<KeyPress>', register_hit)
-    root.bind('<ButtonPress>', register_hit)
-    root.bind('<Motion>', on_motion)
-
-    if not run_xrandr('--output', output, '--off'):
-        root.destroy()
+    if not run(path, *lock_args):
         sys.exit(1)
 
-    root.mainloop()
+    wait_for_lock(binary)
+
+    # `dpms force off` is silently a no-op unless DPMS support is enabled.
+    if not run('xset', '+dpms'):
+        sys.exit(1)
+    if not run('xset', 'dpms', 'force', 'off'):
+        sys.exit(1)
 
 
 if __name__ == '__main__':
