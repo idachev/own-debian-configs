@@ -43,6 +43,9 @@ debug_msg() {
 STDIN_MESSAGE=""
 STDIN_CWD=""
 STDIN_SESSION_ID=""
+STDIN_EVENT=""
+STDIN_NOTIFY_TYPE=""
+STDIN_DATA=""
 if [ ! -t 0 ]; then
   # stdin is available (not a terminal)
   STDIN_DATA=$(cat)
@@ -50,12 +53,18 @@ if [ ! -t 0 ]; then
 
   # Try to extract fields from JSON using jq if available
   if command -v jq >/dev/null 2>&1 && [ -n "$STDIN_DATA" ]; then
+    # Claude Code sends snake_case (session_id, hook_event_name); Grok sends the
+    # same envelope in camelCase (sessionId, hookEventName) and adds
+    # notificationType. `message` and `cwd` are spelled the same in both.
     STDIN_MESSAGE=$(echo "$STDIN_DATA" | jq -r '.message // empty' 2>/dev/null)
-    STDIN_CWD=$(echo "$STDIN_DATA" | jq -r '.cwd // empty' 2>/dev/null)
-    STDIN_SESSION_ID=$(echo "$STDIN_DATA" | jq -r '.session_id // empty' 2>/dev/null)
+    STDIN_CWD=$(echo "$STDIN_DATA" | jq -r '.cwd // .workspaceRoot // empty' 2>/dev/null)
+    STDIN_SESSION_ID=$(echo "$STDIN_DATA" | jq -r '.session_id // .sessionId // empty' 2>/dev/null)
+    STDIN_EVENT=$(echo "$STDIN_DATA" | jq -r '.hook_event_name // .hookEventName // empty' 2>/dev/null)
+    STDIN_NOTIFY_TYPE=$(echo "$STDIN_DATA" | jq -r '.notification_type // .notificationType // empty' 2>/dev/null)
     debug_msg "Extracted message using jq: '$STDIN_MESSAGE'"
     debug_msg "Extracted cwd using jq: '$STDIN_CWD'"
     debug_msg "Extracted session_id using jq: '$STDIN_SESSION_ID'"
+    debug_msg "Extracted event using jq: '$STDIN_EVENT' type: '$STDIN_NOTIFY_TYPE'"
   elif [ -n "$STDIN_DATA" ]; then
     # Fallback: try basic regex extraction if jq not available
     STDIN_MESSAGE=$(echo "$STDIN_DATA" | sed -n 's/.*"message"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p')
@@ -63,6 +72,65 @@ if [ ! -t 0 ]; then
     debug_msg "Extracted message using sed: '$STDIN_MESSAGE'"
     debug_msg "Extracted cwd using sed: '$STDIN_CWD'"
   fi
+fi
+
+# Walk up from this hook to the agent process that spawned it. Its PID pins the
+# exact kitty window even when several sessions share a working directory.
+find_agent_pid() {
+  local re="$1" pid="$PPID" name
+  while [ -n "$pid" ] && [ "$pid" != "0" ] && [ "$pid" != "1" ]; do
+    name=$(command tr '\0' '\n' <"/proc/$pid/cmdline" 2>/dev/null | command head -n1)
+    name="${name##*/}"
+    if echo "$name" | command grep -qE "$re"; then
+      echo "$pid"
+      return 0
+    fi
+    pid=$(command awk '/^PPid:/{print $2}' "/proc/$pid/status" 2>/dev/null)
+  done
+  return 1
+}
+
+# Identify which agent fired this hook.
+# Grok CLI also loads ~/.claude/settings.json hooks (its "Claude Code compatibility"
+# scope, always active, no trust prompt) so it fires this script too. Grok injects
+# GROK_* env vars into every hook; Claude Code does not.
+if [ -n "$GROK_SESSION_ID" ]; then
+  HOOK_SOURCE="grok"
+  HOOK_TITLE="Grok CLI"
+  HOOK_SESSION="$GROK_SESSION_ID"
+  HOOK_PROC_RE="^grok$"
+elif [ -n "$STDIN_SESSION_ID" ] || [ -n "$CLAUDE_PROJECT_DIR" ]; then
+  HOOK_SOURCE="claude"
+  HOOK_TITLE="Claude Code"
+  HOOK_SESSION="$STDIN_SESSION_ID"
+  HOOK_PROC_RE="^claude$"
+else
+  HOOK_SOURCE="unknown"
+  HOOK_TITLE="Agent"
+  HOOK_SESSION=""
+  HOOK_PROC_RE="^(claude|grok)$"
+fi
+HOOK_AGENT_PID=$(find_agent_pid "$HOOK_PROC_RE")
+debug_msg "Hook source: '$HOOK_SOURCE' session: '$HOOK_SESSION' proc: '$HOOK_PROC_RE' agent pid: '$HOOK_AGENT_PID'"
+
+# Append one line per invocation so unexplained popups can be traced to a session.
+# Override the path with NOTIFY_LOG, or set NOTIFY_LOG=/dev/null to disable.
+NOTIFY_LOG="${NOTIFY_LOG:-$HOME/tmp/claude-logs/claude-input-notify.log}"
+mkdir -p "$(command dirname "$NOTIFY_LOG")" 2>/dev/null
+printf '%s src=%-7s agent_pid=%s event=%s type=%s session=%s cwd=%s msg=%s\n  raw=%s\n' \
+  "$(date -Is)" "$HOOK_SOURCE" "${HOOK_AGENT_PID:-none}" \
+  "${STDIN_EVENT:-none}" "${STDIN_NOTIFY_TYPE:-none}" \
+  "${HOOK_SESSION:-none}" "${STDIN_CWD:-none}" "${STDIN_MESSAGE:-none}" \
+  "$(echo "$STDIN_DATA" | command tr -d '\n' | command cut -c1-600)" \
+  >>"$NOTIFY_LOG" 2>/dev/null
+
+# Skip the popup for sources listed in NOTIFY_SKIP_SOURCES (comma-separated),
+# e.g. NOTIFY_SKIP_SOURCES=grok to silence Grok while keeping Claude notifications.
+if [ -n "$NOTIFY_SKIP_SOURCES" ] &&
+  echo ",$NOTIFY_SKIP_SOURCES," | command grep -q ",$HOOK_SOURCE,"; then
+  debug_msg "Source '$HOOK_SOURCE' is in NOTIFY_SKIP_SOURCES, skipping notification"
+  echo "Source '$HOOK_SOURCE' suppressed, skipping notification"
+  exit 0
 fi
 
 # Get terminal window ID from first argument or try to detect it
@@ -166,7 +234,7 @@ if [ ! -f "$ICON_PATH" ]; then
 fi
 
 # Prepare the notification text
-NOTIFICATION_TEXT="<span size=\"xx-large\" weight=\"bold\" foreground=\"${TEXT_COLOR_PRIMARY}\">Claude Code</span>\n\n"
+NOTIFICATION_TEXT="<span size=\"xx-large\" weight=\"bold\" foreground=\"${TEXT_COLOR_PRIMARY}\">${HOOK_TITLE}</span>\n\n"
 NOTIFICATION_TEXT="${NOTIFICATION_TEXT}<span size=\"large\">━━━━━━━━━━━━━━━━━━━━━━━━━━━</span>\n\n"
 
 # Use stdin message if available, otherwise default message
@@ -174,6 +242,12 @@ if [ -n "$STDIN_MESSAGE" ]; then
   NOTIFICATION_TEXT="${NOTIFICATION_TEXT}<span size=\"x-large\">✨ <b>$STDIN_MESSAGE</b> ✨</span>\n\n"
 else
   NOTIFICATION_TEXT="${NOTIFICATION_TEXT}<span size=\"x-large\">✨ <b>Waiting for your input...</b> ✨</span>\n\n"
+fi
+
+# Show which working directory raised this, so the right session is identifiable
+# when several agents are running at once.
+if [ -n "$STDIN_CWD" ]; then
+  NOTIFICATION_TEXT="${NOTIFICATION_TEXT}<span size=\"small\" foreground=\"${TEXT_COLOR_DEBUG}\">$(basename "$STDIN_CWD")</span>\n\n"
 fi
 
 NOTIFICATION_TEXT="${NOTIFICATION_TEXT}<span size=\"medium\" style=\"italic\">Click OK to return to terminal</span>"
@@ -211,7 +285,11 @@ YAD_EXIT_CODE=$?
 # Function to focus kitty internal window using remote control
 focus_kitty_window() {
   local target_cwd="$1"
-  debug_msg "Attempting to focus kitty window with cwd: '$target_cwd'"
+  # Regex matching the agent process to look for. Must reflect the hook source:
+  # matching "claude" for a grok-fired notification would focus the Claude window.
+  local proc_re="${2:-claude}"
+  local agent_pid="$3"
+  debug_msg "Attempting to focus kitty window with cwd: '$target_cwd' proc: '$proc_re' pid: '$agent_pid'"
 
   # Find kitty socket
   local kitty_socket=$(ls /tmp/kitty-* 2>/dev/null | command head -1)
@@ -228,24 +306,52 @@ focus_kitty_window() {
     return 1
   fi
 
-  # Find window running claude with matching cwd
+  if ! command -v jq >/dev/null 2>&1; then
+    debug_msg "jq not available, cannot match kitty windows"
+    return 1
+  fi
+
+  # Match on the basename of the executable so a path such as ~/.grok/... in an
+  # unrelated argument cannot masquerade as the agent process. Scans every OS
+  # window, not just the first.
+  local jq_select='def agent($re):
+      select(any(.foreground_processes[]?;
+                 (.cmdline[0] // "") | split("/") | last | test($re; "i")));
+    .[].tabs[].windows[]'
+
+  # Exact match on the PID of the agent that fired this hook. Unambiguous even
+  # when two sessions of the same agent share a working directory.
   local kitty_window_id=""
-  if [ -n "$target_cwd" ] && command -v jq >/dev/null 2>&1; then
-    # First try to match by cwd
-    kitty_window_id=$(echo "$kitty_info" | jq -r --arg cwd "$target_cwd" '
-      .[0].tabs[].windows[] |
-      select(.foreground_processes[]? | (.cmdline[]? | test("claude"; "i")) and .cwd == $cwd) |
-      .id' 2>/dev/null | command head -1)
+  if [ -n "$agent_pid" ]; then
+    kitty_window_id=$(echo "$kitty_info" | jq -r --argjson pid "$agent_pid" '
+      .[].tabs[].windows[] |
+      select(any(.foreground_processes[]?; .pid == $pid)) | .id' 2>/dev/null | command head -1)
+    debug_msg "Kitty window ID matched by agent pid $agent_pid: '$kitty_window_id'"
+  fi
+
+  # Find window running the agent with matching cwd
+  if [ -z "$kitty_window_id" ] && [ -n "$target_cwd" ]; then
+    kitty_window_id=$(echo "$kitty_info" | jq -r --arg cwd "$target_cwd" --arg re "$proc_re" "
+      $jq_select | agent(\$re) |
+      select(any(.foreground_processes[]?; .cwd == \$cwd)) | .id" 2>/dev/null | command head -1)
     debug_msg "Kitty window ID matched by cwd: '$kitty_window_id'"
   fi
 
-  # If no match by cwd, find any window running claude
-  if [ -z "$kitty_window_id" ] && command -v jq >/dev/null 2>&1; then
-    kitty_window_id=$(echo "$kitty_info" | jq -r '
-      .[0].tabs[].windows[] |
-      select(.foreground_processes[]? | .cmdline[]? | test("claude"; "i")) |
+  # If no match by cwd, find any window running the agent
+  if [ -z "$kitty_window_id" ]; then
+    kitty_window_id=$(echo "$kitty_info" | jq -r --arg re "$proc_re" "
+      $jq_select | agent(\$re) | .id" 2>/dev/null | command head -1)
+    debug_msg "Kitty window ID (any $proc_re): '$kitty_window_id'"
+  fi
+
+  # Last resort: loose match anywhere in the command line, still scoped to the
+  # agent that fired the hook.
+  if [ -z "$kitty_window_id" ]; then
+    kitty_window_id=$(echo "$kitty_info" | jq -r --arg re "$proc_re" '
+      .[].tabs[].windows[] |
+      select(any(.foreground_processes[]?; any(.cmdline[]?; test($re; "i")))) |
       .id' 2>/dev/null | command head -1)
-    debug_msg "Kitty window ID (any claude): '$kitty_window_id'"
+    debug_msg "Kitty window ID (loose $proc_re): '$kitty_window_id'"
   fi
 
   if [ -n "$kitty_window_id" ]; then
@@ -254,7 +360,7 @@ focus_kitty_window() {
     return $?
   fi
 
-  debug_msg "No claude window found in kitty"
+  debug_msg "No $proc_re window found in kitty"
   return 1
 }
 
@@ -290,7 +396,7 @@ if [ $YAD_EXIT_CODE -eq 0 ] && [ -n "$TERMINAL_ID" ]; then
   fi
 
   # For kitty: also focus the specific internal window running claude
-  focus_kitty_window "$STDIN_CWD"
+  focus_kitty_window "$STDIN_CWD" "$HOOK_PROC_RE" "$HOOK_AGENT_PID"
 else
   debug_msg "Not focusing terminal - exit code: $YAD_EXIT_CODE, TERMINAL_ID: '$TERMINAL_ID'"
 fi
