@@ -95,9 +95,42 @@ if git --no-optional-locks rev-parse --git-dir > /dev/null 2>&1; then
     fi
 fi
 
+# Current usage, always in k: 520 -> 520, 1234 -> 1.2k, 142347 -> 142k, 1000000 -> 1000k
+fmt_tokens() {
+    awk -v n="$1" 'BEGIN {
+        if (n < 1000) { printf "%d", n; exit }
+        v = n / 1000
+        if (v < 10 && v != int(v)) printf "%.1fk", v
+        else printf "%dk", int(v + 0.5)
+    }'
+}
+
+# Window size, always in M: 1000000 -> 1M, 200000 -> 0.2M, 1500000 -> 1.5M
+fmt_max() {
+    awk -v n="$1" 'BEGIN {
+        v = n / 1000000
+        if (v == int(v)) printf "%dM", v
+        else printf "%.1fM", v
+    }'
+}
+
 # Context window as a 10-block bar (color-coded: green <60, yellow 60-85, red >=85)
 ctx_info=""
 ctx_pct=$(echo "$input" | jq -r '.context_window.used_percentage // empty')
+# current_usage is an object of token buckets; context occupancy is the input-side sum
+# (input + cache_creation + cache_read). Tolerate a plain number, and fall back to
+# total_input_tokens, so a schema change degrades instead of silently printing 0.
+ctx_used=$(echo "$input" | jq -r '
+    (.context_window.current_usage as $u
+     | if ($u | type) == "object" then
+           ($u.input_tokens // 0)
+         + ($u.cache_creation_input_tokens // 0)
+         + ($u.cache_read_input_tokens // 0)
+       elif ($u | type) == "number" then $u
+       else null end)
+    // .context_window.total_input_tokens
+    // empty')
+ctx_size=$(echo "$input" | jq -r '.context_window.context_window_size // empty')
 if [ -n "$ctx_pct" ] && [ "$ctx_pct" != "null" ]; then
     ctx_int=$(printf "%.0f" "$ctx_pct")
     filled=$(( (ctx_int + 5) / 10 ))
@@ -115,7 +148,15 @@ if [ -n "$ctx_pct" ] && [ "$ctx_pct" != "null" ]; then
     bar_empty=""
     [ "$filled" -gt 0 ] && bar_filled=$(printf '▰%.0s' $(seq 1 $filled))
     [ "$empty" -gt 0 ] && bar_empty=$(printf '▱%.0s' $(seq 1 $empty))
-    ctx_info=$(printf " ${ctx_color}%s\033[2;37m%s${ctx_color}(%d%%)\033[0m" "$bar_filled" "$bar_empty" "$ctx_int")
+    # Token counts alongside the percentage: (14% 142k/1M)
+    ctx_tokens=""
+    if [ -n "$ctx_used" ] && [ "$ctx_used" != "null" ]; then
+        ctx_tokens=" $(fmt_tokens "$ctx_used")"
+        if [ -n "$ctx_size" ] && [ "$ctx_size" != "null" ] && [ "$ctx_size" != "0" ]; then
+            ctx_tokens="$ctx_tokens/$(fmt_max "$ctx_size")"
+        fi
+    fi
+    ctx_info=$(printf " ${ctx_color}%s\033[2;37m%s${ctx_color}(%d%%%s)\033[0m" "$bar_filled" "$bar_empty" "$ctx_int" "$ctx_tokens")
 fi
 
 # Session cost in USD
