@@ -14,6 +14,13 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 #
 # Test mode: Set TEST_MODE=1 to always show notification (bypass terminal check)
 # Example: TEST_MODE=1 ./claude-input-notify.sh
+#
+# Grok filter: only notify on user-input / fully-idle types (not per-task
+# background completions). Override allowlist with NOTIFY_GROK_TYPES.
+# Default: permission_prompt,idle_prompt,elicitation_dialog
+# Example: NOTIFY_GROK_TYPES=permission_prompt,idle_prompt ./claude-input-notify.sh
+#
+# Suppress a whole source: NOTIFY_SKIP_SOURCES=grok
 
 # Debug mode flag (set to 1 to enable debug output)
 DEBUG_MODE=${DEBUG_MODE:-0}
@@ -131,6 +138,26 @@ if [ -n "$NOTIFY_SKIP_SOURCES" ] &&
   debug_msg "Source '$HOOK_SOURCE' is in NOTIFY_SKIP_SOURCES, skipping notification"
   echo "Source '$HOOK_SOURCE' suppressed, skipping notification"
   exit 0
+fi
+
+# Grok fires Notification for every background task completion (task_complete)
+# while subagents still run. Only surface the dialog when the user must act
+# (permission / elicitation) or when the turn is fully idle (idle_prompt).
+# Override with NOTIFY_GROK_TYPES (comma-separated allowlist), e.g.
+# NOTIFY_GROK_TYPES=permission_prompt,idle_prompt,elicitation_dialog
+if [ "$HOOK_SOURCE" = "grok" ]; then
+  GROK_NOTIFY_ALLOW="${NOTIFY_GROK_TYPES:-permission_prompt,idle_prompt,elicitation_dialog}"
+  if [ -z "$STDIN_NOTIFY_TYPE" ]; then
+    debug_msg "Grok notification missing type, skipping notification"
+    echo "Grok notification missing type, skipping notification"
+    exit 0
+  fi
+  if ! echo ",$GROK_NOTIFY_ALLOW," | command grep -q ",$STDIN_NOTIFY_TYPE,"; then
+    debug_msg "Grok type '$STDIN_NOTIFY_TYPE' not in allowlist ($GROK_NOTIFY_ALLOW), skipping"
+    echo "Grok type '$STDIN_NOTIFY_TYPE' skipped (not user-input/idle)"
+    exit 0
+  fi
+  debug_msg "Grok type '$STDIN_NOTIFY_TYPE' allowed"
 fi
 
 # Get terminal window ID from first argument or try to detect it

@@ -17,7 +17,8 @@ find . -type d -name target -print0 | \
 find . -type d -name node_modules -print0 | \
   xargs -0 -l1 "${DIR}/cleanup_develop_dir_if_npm_modules.sh"
 
-find . -type d -name venv -print0 | \
+# venv and .venv (both match pyvenv.cfg via cleanup_develop_dir_if_venv.sh)
+find . -type d \( -name venv -o -name .venv \) -print0 | \
   xargs -0 -l1 "${DIR}/cleanup_develop_dir_if_venv.sh"
 
 find . -type d -name .gradle -print0 | \
