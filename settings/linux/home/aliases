@@ -43,7 +43,7 @@ alias sgptsh='sgpt sh'
 alias sgptch='sgpt --chat'
 alias sgptcd='sgpt code'
 
-alias claudep='claude --model claude-sonnet -p'
+alias claudep='claude --model sonnet -p'
 alias claudehr='headroom wrap claude'
 alias claudeds='~/.claude/claude-ds.sh'
 
