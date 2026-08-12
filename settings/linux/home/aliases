@@ -47,6 +47,8 @@ alias claudep='claude --model sonnet -p'
 alias claudehr='headroom wrap claude'
 alias claudeds='~/.claude/claude-ds.sh'
 
+alias claude-mntr="CLAUDE_CONFIG_DIR=$HOME/.claude-mentorano claude"
+
 # Different directory listings
 alias ls='ls -v -hF --color=tty --group-directories-first'
 alias ll='ls -l'
