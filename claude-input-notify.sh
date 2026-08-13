@@ -2,9 +2,10 @@
 [ "$1" = -x ] && shift && set -x
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-# Claude Code Input Notification Script
-# Shows a visual notification when Claude Code is waiting for user input
-# and switches focus back to the terminal window when OK is clicked
+# Agent input notification (Claude Code + Grok CLI)
+# Shows a visual notification when an agent is waiting for user input
+# and switches focus back to the terminal window when OK is clicked.
+# Grok fires use grok-logo-64.png + "Grok CLI"; Claude uses the asterisk.
 #
 # Usage: claude-input-notify.sh [terminal_window_id]
 #        Can also read JSON from stdin to extract a message field
@@ -31,7 +32,9 @@ TEST_MODE=${TEST_MODE:-0}
 # Visual settings for notification window
 WINDOW_WIDTH=450
 WINDOW_BORDERS=25
-TEXT_COLOR_PRIMARY="#6B5B95"
+TEXT_COLOR_CLAUDE="#6B5B95"
+TEXT_COLOR_GROK="#222222"
+TEXT_COLOR_PRIMARY="$TEXT_COLOR_CLAUDE"
 TEXT_COLOR_DEBUG="#888888"
 
 # Initialize debug log
@@ -253,12 +256,22 @@ if [ "$TEST_MODE" -eq 1 ]; then
 fi
 
 
-# Get the directory where this script is located
-# Look for a 64x64 version first, fallback to original
-ICON_PATH="${SCRIPT_DIR}/claude-logo-64.png"
-if [ ! -f "$ICON_PATH" ]; then
-  ICON_PATH="${SCRIPT_DIR}/claude-logo.png"
+# Brand the popup from the hook source. Grok already sets HOOK_TITLE; use
+# the Grok comet mark instead of the Claude asterisk for those fires.
+if [ "$HOOK_SOURCE" = "grok" ]; then
+  TEXT_COLOR_PRIMARY="$TEXT_COLOR_GROK"
+  ICON_PATH="${SCRIPT_DIR}/grok-logo-64.png"
+  if [ ! -f "$ICON_PATH" ]; then
+    ICON_PATH="${SCRIPT_DIR}/grok-logo.png"
+  fi
+else
+  TEXT_COLOR_PRIMARY="$TEXT_COLOR_CLAUDE"
+  ICON_PATH="${SCRIPT_DIR}/claude-logo-64.png"
+  if [ ! -f "$ICON_PATH" ]; then
+    ICON_PATH="${SCRIPT_DIR}/claude-logo.png"
+  fi
 fi
+debug_msg "Icon path: '$ICON_PATH' color: '$TEXT_COLOR_PRIMARY'"
 
 # Prepare the notification text
 NOTIFICATION_TEXT="<span size=\"xx-large\" weight=\"bold\" foreground=\"${TEXT_COLOR_PRIMARY}\">${HOOK_TITLE}</span>\n\n"
