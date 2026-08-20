@@ -1,0 +1,12 @@
+# Stop s2idle spurious wakes on Dell Precision 7560.
+# Match by PCI class/driver, not bus address (stable across kernel updates).
+# 0x0c0330 = xHCI (onboard USB 00:14.0 and Thunderbolt USB 00:0d.0)
+# 0x0c0340 = Thunderbolt NHI (00:0d.2)
+ACTION=="add|bind|change", SUBSYSTEM=="pci", ATTR{class}=="0x0c0330", \
+  TEST=="power/wakeup", ATTR{power/wakeup}="disabled"
+ACTION=="add|bind|change", SUBSYSTEM=="pci", ATTR{class}=="0x0c0340", \
+  TEST=="power/wakeup", ATTR{power/wakeup}="disabled"
+
+# Onboard Intel I219-LM (e1000e / ACPI GLAN)
+ACTION=="add|bind|change", SUBSYSTEM=="pci", DRIVER=="e1000e", \
+  TEST=="power/wakeup", ATTR{power/wakeup}="disabled"

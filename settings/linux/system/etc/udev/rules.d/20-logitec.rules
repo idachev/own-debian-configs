@@ -1,1 +1,5 @@
-ACTION=="add", SUBSYSTEM=="usb", DRIVERS=="usb", ATTRS{idVendor}=="046d", ATTR{power/wakeup}="disabled"
+# Disable USB wakeup for all Logitech devices (vendor 046d).
+# ACTION add-only + DRIVERS=="usb" raced: driver is often unbound on add,
+# and wakeup is re-enabled after suspend/resume. bind/change re-apply it.
+ACTION=="add|bind|change", SUBSYSTEM=="usb", ATTR{idVendor}=="046d", \
+  TEST=="power/wakeup", ATTR{power/wakeup}="disabled"
