@@ -17,11 +17,6 @@ if [ "$TERM" = "xterm" ] ; then
     else
         case "$COLORTERM" in
             gnome-terminal)
-                # Those crafty Gnome folks require you to check COLORTERM,
-                # but don't allow you to just *favor* the setting over TERM.
-                # Instead you need to compare it and perform some guesses
-                # based upon the value. This is, perhaps, too simplistic.
-#idachev disabled on mint                TERM="gnome-256color"
                 ;;
             *)
                 echo "Warning: Unrecognized COLORTERM: $COLORTERM"

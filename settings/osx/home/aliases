@@ -6,7 +6,7 @@ alias ..='cd ..'
 alias ppp-on='sudo /usr/sbin/ppp-on'
 alias ppp-off='sudo /usr/sbin/ppp-off'
 alias firestarter='sudo su -c firestarter'
-alias hist="grep '$1' ${HOME}/.histfile"
+hist() { grep "$1" "$HOME/.histfile"; }
 alias irssi="irssi -c irc.freenode.net -n yyz"
 alias psg="ps ax | grep"
 alias gvim="gvim -geom 132x42"
@@ -63,22 +63,29 @@ alias la='ls -a'
 alias lc='ls -C'
 alias l='ls -al'
 alias lla='l'
-alias lsd='ls -ld *(-/DN)'
+if [ -n "${ZSH_VERSION:-}" ]; then
+  alias lsd='ls -ld *(-/DN)'
+fi
 alias lsa='ls -ld .*'
 alias ltr='l -tr'
 alias lt='l -t'
 
-# eza
-alias eza='eza -hF --group-directories-first'
-alias le='eza -al'
-alias lel='eza -l'
+if command -v eza > /dev/null 2>&1; then
+  alias eza='eza -hF --group-directories-first'
+  alias le='eza -al'
+  alias lel='eza -l'
+fi
 
 # fzf
 alias fv="fzf --bind 'enter:become(vim {})'"
 alias pf="ps aux | fzf"
 alias spf="sudo ps aux | fzf"
 alias fp="fzf --style full --preview 'fzf-preview.sh {}' --bind 'focus:transform-header:file --brief {}'"
-alias fh="fd . --max-depth 1 | fzf"
+if command -v fd > /dev/null 2>&1; then
+  alias fh="fd . --max-depth 1 | fzf"
+else
+  alias fh="find . -maxdepth 1 | fzf"
+fi
 
 rfif() {
   if [ ! "$#" -gt 0 ]; then echo "Need a string to search for!"; return 1; fi
@@ -202,29 +209,38 @@ alias pssh='psg ssh'
 
 alias assume-role='source aws_assume_role.sh $@'
 
-alias rsync-files-db-dir='rsync -n -u -aXvhPOJ --exclude .working $@'
+# openrsync (stock macOS) rejects GNU -X/-J; -avhP is portable
+rsync-files-db-dir() {
+  rsync -n -u -avhP --exclude .working "$@"
+}
 
 # AWS Profiles
 
 aspl() {
-    [[ -r "${AWS_CONFIG_FILE:-$HOME/.aws/config}" ]] || return 1
+    [ -r "${AWS_CONFIG_FILE:-$HOME/.aws/config}" ] || return 1
 
-    grep --color=auto --exclude-dir={.bzr,CVS,.git,.hg,.svn} \
-      '\[profile' "${AWS_CONFIG_FILE:-$HOME/.aws/config}" | \
+    grep '\[profile' "${AWS_CONFIG_FILE:-$HOME/.aws/config}" | \
       sed -e 's/.*profile \([a-zA-Z0-9_\.-]*\).*/\1/'
 }
 
 asp() {
-    if [[ -z "$1" ]]; then
+    if [ -z "$1" ]; then
         unset AWS_DEFAULT_PROFILE AWS_PROFILE AWS_EB_PROFILE
-        echo -e "AWS profile cleared."
+        echo "AWS profile cleared."
         return
     fi
 
-    local available_profiles=($(aspl))
-    if [[ -z "${available_profiles[(r)$1]}" ]]; then
-        echo "${fg[red]}Profile '$1' not found in '${AWS_CONFIG_FILE:-$HOME/.aws/config}'" >&2
-        echo "Available profiles: ${(j:, :)available_profiles:-no profiles found}${reset_color}" >&2
+    local _asp_found=0
+    local _asp_p
+    for _asp_p in $(aspl); do
+      if [ "$_asp_p" = "$1" ]; then
+        _asp_found=1
+        break
+      fi
+    done
+    if [ "$_asp_found" -eq 0 ]; then
+        echo "Profile '$1' not found in '${AWS_CONFIG_FILE:-$HOME/.aws/config}'" >&2
+        echo "Available profiles: $(aspl | tr '\n' ' ')" >&2
         return 1
     fi
 
@@ -252,6 +268,14 @@ awsvl() {
   "${BROWSER}" "${url}"
 }
 
+_mac_open_incognito() {
+  if [ -d "/Applications/Google Chrome.app" ]; then
+    open -na "Google Chrome" --args --incognito "$@"
+  else
+    open "$@"
+  fi
+}
+
 awsvlp() {
   if [[ -z "$1" ]]; then
     echo -e "Expect a AWS profile check aws-vault list"
@@ -260,11 +284,11 @@ awsvlp() {
 
   local url=$(aws-vault login $1 --stdout)
 
-  "${BROWSER}" -incognito "https://signin.aws.amazon.com/oauth?Action=logout"
+  _mac_open_incognito "https://signin.aws.amazon.com/oauth?Action=logout"
 
   sleep 1
 
-  "${BROWSER}" -incognito "${url}"
+  _mac_open_incognito "${url}"
 }
 
 awsvep() {
@@ -334,11 +358,6 @@ kec() {
   kubectl exec "${POD_NAME}" -- $*
 }
 
-if [ "$0" = "bash" ]; then
-  echo "I'm in bash"
-  complete -F __start_kubectl k
-fi
-
 ksn() {
   kubectl config set-context --current --namespace=$1
 }
@@ -349,10 +368,13 @@ ksc() {
 
 # Helm
 
-alias helm_2_15_0="docker run -it --rm \
-  -v $(pwd):/apps \
-  -v ~/.kube/config:/root/.kube/config \
-  -v ~/.helm:/root/.helm alpine/helm:2.15.0"
+helm_2_15_0() {
+  docker run -it --rm \
+    -v "$(pwd)":/apps \
+    -v "$HOME/.kube/config":/root/.kube/config \
+    -v "$HOME/.helm":/root/.helm \
+    alpine/helm:2.15.0 "$@"
+}
 
 alias kafkacat-dc="docker run -it --rm \
   --network host \
@@ -380,8 +402,8 @@ cleanup_mvn_target_dirs() {
 
 mvn() {
   local dir="$PWD"
-  while [[ ! -x "${dir}/mvnw" && "${dir}" != / ]]; do
-    dir="${dir:h}"
+  while [ ! -x "${dir}/mvnw" ] && [ "${dir}" != / ]; do
+    dir=$(dirname "$dir")
   done
 
   if [[ -x "${dir}/mvnw" ]]; then

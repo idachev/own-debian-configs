@@ -368,8 +368,8 @@ c       Convert gz<->bz2, tar.gz<->tar.bz2 & tgz->tar.bz2
 	fi
 
 + f \.3[G|g][P|p]$ & t r & ! t t
-p       Play with vlc
-	vlc %f
+p       Play
+	open %f
 
 + t t
 C       Convert gz<->bz2, tar.gz<->tar.bz2 & tgz->tar.bz2
@@ -402,24 +402,23 @@ C       Convert gz<->bz2, tar.gz<->tar.bz2 & tgz->tar.bz2
 	  shift
         done
 
-+ x /usr/bin/open | x /usr/local/bin/open & x /bin/sh
-o       Open next a free console
-        open -s -- sh
+o       Open with default app
+        open '%d/%f'
 
 t       Touch file in inactive to be as file from active panel
         touch -am -r '%d/%f' '%D/%F'
 
-c       Compare with kdiff3
-        kdiff3 '%d/%f' '%D/%F'
+c       Compare with FileMerge
+        opendiff '%d/%f' '%D/%F'
 
 K       Compare with cmp
         cmp -l '%d/%f' '%D/%F'
 
-e       View with FBReader
-        fbreader '%f'
+e       Open with default app
+        open '%f'
 
-v       View vlc
-        vlc '%d/%f'
+v       Open with default app
+        open '%d/%f'
 
 L       Rotate 90 left
         nconvert_rotate_90_left.sh '%d/%f'

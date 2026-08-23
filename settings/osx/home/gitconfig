@@ -65,7 +65,7 @@
   changed = green
   untracked = cyan
 [merge]
-  tool = kdiff3
+  tool = opendiff
 [core]
   autocrlf = false
   safecrlf = warn

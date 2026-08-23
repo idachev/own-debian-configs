@@ -361,7 +361,7 @@ regex/([^0-9]|^[^\.]*)\.([1-9][A-Za-z]*|[ln])\.xz$
 
 # CHM
 regex/\.(chm|CHM)$
-	Open=which kchmviewer > /dev/null 2>&1 && (kchmviewer %f &) || (xchm %f &)
+	Open=open %f
 
 ### Images ###
 
@@ -394,10 +394,10 @@ type/^Netpbm
 	Include=image
 
 shell/.xcf
-	Open=(gimp %f &)
+	Open=open %f
 
 shell/.xbm
-	Open=bitmap %f
+	Open=open %f
 
 shell/.xpm
 	Include=image
@@ -407,47 +407,44 @@ shell/.ico
 	Include=image
 
 include/image
-	Open=(gwenview %f &)
-	#Open=(see %f &)
-	View=%view{ascii} identify %f
-	#View=%view{ascii} asciiview %f
+	Open=open %f
+	View=%view{ascii} file %f
 
 
 ### Sound files ###
 
 regex/\.([wW][aA][vV]|[sS][nN][dD]|[vV][oO][cC]|[aA][uU]|[sS][mM][pP]|[aA][iI][fF][fF]|[sS][nN][dD])$
-       Open=if [ "$DISPLAY" = "" ]; then play %f; else (xmms %f >/dev/null 2>&1 &); fi
+       Open=open %f
 
 regex/\.([mM][oO][dD]|[sS]3[mM]|[xX][mM]|[iI][tT]|[mM][tT][mM]|669|[sS][tT][mM]|[uU][lL][tT]|[fF][aA][rR])$
-       Open=mikmod %f
-       #Open=tracker %f
+       Open=open %f
 
 regex/\.([wW][aA][wW]22)$
-       Open=vplay -s 22 %f
+       Open=open %f
 
 regex/\.([mM][pP]3)$
-	Open=if [ "$DISPLAY" = "" ]; then mpg123 %f; else (xmms %f >/dev/null 2>&1 &); fi
+	Open=open %f
 	View=%view{ascii} mpg123 -vtn1 %f 2>&1 | sed -n '/^Title/,/^Comment/p;/^MPEG/,/^Audio/p'
 
 regex/\.([oO][gG][gG|aA|vV|xX])$
-	Open=if [ "$DISPLAY" = "" ]; then ogg123 %f; else (xmms %f >/dev/null 2>&1 &); fi
+	Open=open %f
 	View=%view{ascii} ogginfo %s
 
 regex/\.([sS][pP][xX]|[fF][lL][aA][cC])$
-	Open=if [ "$DISPLAY" = "" ]; then play %f; else (xmms %f >/dev/null 2>&1 &); fi
+	Open=open %f
 
 regex/\.([mM][iI][dD][iI]?|[rR][mM][iI][dD]?)$
-	Open=timidity %f
+	Open=open %f
 
 regex/\.([wW][mM][aA])$
-	Open=mplayer -vo null %f
-	View=%view{ascii} mplayer -quiet -slave -frames 0 -vo null -ao null -identify %f 2>/dev/null | tail +13 || file %f
+	Open=open %f
+	View=%view{ascii} file %f
 
 
 ### Play lists ###
 
 regex/\.([mM]3[uU]|[pP][lL][sS])$
-	Open=if [ -z "$DISPLAY" ]; then mplayer -vo null -playlist %f; else (xmms -p %f >/dev/null 2>&1 &); fi
+	Open=open %f
 
 
 ### Video ###
@@ -490,27 +487,22 @@ regex/\.([oO][gG][mM])$
 	Include=video
 
 regex/\.([rR][aA]?[mM])$
-	Open=(realplay %f >/dev/null 2>&1 &)
+	Open=open %f
 
 include/video
-	Open=(vlc %f >/dev/null 2>&1 &)
-	#Open=(mplayer %f >/dev/null 2>&1 &)
-	#Open=(gtv %f >/dev/null 2>&1 &)
-	#Open=(xanim %f >/dev/null 2>&1 &)
+	Open=open %f
 
 
 ### Documents ###
 
 # Postscript
 type/^PostScript
-	Open=(gv %f &)
+	Open=open %f
 	View=%view{ascii} ps2ascii %f
 
 # PDF
 type/^PDF
-	Open=(see %f &)
-	#Open=(acroread %f &)
-	#Open=(ghostview %f &)
+	Open=open %f
 	View=%view{ascii} pdftotext %f -
 
 # The following code very ugly and should not be taken as example.
@@ -518,53 +510,53 @@ type/^PDF
 
 # html
 regex/\.([hH][tT][mM][lL]?)$
-	Open=(if test -n "" && test -n "$DISPLAY"; then ( file://%d/%p &) 1>&2; else links %f || lynx -force_html %f || ${PAGER:-more} %f; fi) 2>/dev/null
+	Open=open %f
 	View=%view{ascii} links -dump %f 2>/dev/null || w3m -dump %f 2>/dev/null || lynx -dump -force_html %f
 
 # StarOffice 5.2
 shell/.sdw
-	Open=(libreoffice %f &)
+	Open=open %f
 
 # StarOffice 6 and OpenOffice.org formats
 regex/\.(odt|ott|sxw|stw|ods|ots|sxc|stc|odp|otp|sxi|sti|odg|otg|sxd|std|odb|odf|sxm|odm|sxg)$
-	Open=(libreoffice %f &)
+	Open=open %f
 	View=%view{ascii} odt2txt %f
 
 # AbiWord
 shell/.abw
-	Open=(abiword %f &)
+	Open=open %f
 
 # Microsoft Word Document
 regex/\.([Dd][oO][cCtT]|[Ww][rR][iI])$
-	Open=(abiword %f >/dev/null 2>&1 &)
+	Open=open %f
 	View=%view{ascii} antiword -t %f || catdoc -w %f || word2x -f text %f - || strings %f
 type/^Microsoft\ Word
-	Open=(abiword %f >/dev/null 2>&1 &)
+	Open=open %f
 	View=%view{ascii} antiword -t %f || catdoc -w %f || word2x -f text %f - || strings %f
 
 # RTF document
 regex/\.([rR][tT][fF])$
-	Open=(abiword %f >/dev/null 2>&1 &)
+	Open=open %f
 
 # Microsoft Excel Worksheet
 regex/\.([xX][lL][sSwW])$
-	Open=(gnumeric %f >/dev/null 2>&1 &)
+	Open=open %f
 	View=%view{ascii} xls2csv %f || strings %f
 type/^Microsoft\ Excel
-	Open=(gnumeric %f >/dev/null 2>&1 &)
+	Open=open %f
 	View=%view{ascii} xls2csv %f || strings %f
 
 # Use OpenOffice.org to open any MS Office documents
 type/^Microsoft\ Office\ Document
-	Open=(libreoffice %f &)
+	Open=open %f
 
 # Framemaker
 type/^FrameMaker
-	Open=fmclient -f %f
+	Open=open %f
 
 # DVI
 regex/\.([dD][vV][iI])$
-	Open=run-mailcap %f 2>&1 &
+	Open=open %f
 	View=%view{ascii} catdvi %f
 
 # TeX
@@ -573,7 +565,7 @@ regex/\.([Tt][Ee][Xx])$
 
 # DjVu
 regex/\.(djvu?|DJVU?)$
-	Open=djview %f &
+	Open=open %f
 	View=%view{ascii} djvused -e print-pure-txt %f
 
 ### Miscellaneous ###
@@ -607,7 +599,7 @@ regex/\.(d64|D64)$
 
 # Glade, a user interface designer for GTK+ and GNOME
 regex/\.([Gg][Ll][Aa][Dd][Ee])$
-	Open=if glade-3 --version >/dev/null 2>&1; then (glade-3 %f >/dev/null 2>&1 &); else (glade-2 %f >/dev/null 2>&1 &); fi
+	Open=open %f
 
 # Gettext Catalogs
 shell/.mo
@@ -615,7 +607,7 @@ shell/.mo
 
 # lyx
 regex/\.(lyx|LYX)$
-	Open=lyx %f
+	Open=open %f
 	View=%view{ascii} lyxcat %f
 
 # torrent

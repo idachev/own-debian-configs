@@ -297,7 +297,11 @@ fi
 ##################################################################
 # fzf
 
-export FZF_DEFAULT_COMMAND='fd --type f --strip-cwd-prefix --hidden --follow --exclude .git'
+if command -v fd > /dev/null 2>&1; then
+  export FZF_DEFAULT_COMMAND='fd --type f --strip-cwd-prefix --hidden --follow --exclude .git'
+else
+  export FZF_DEFAULT_COMMAND="find . -type f ! -path '*/.git/*'"
+fi
 
 export FZF_CTRL_T_COMMAND="$FZF_DEFAULT_COMMAND"
 
@@ -313,11 +317,19 @@ export FZF_COMPLETION_PATH_OPTS='--walker file,dir,follow,hidden'
 export FZF_COMPLETION_DIR_OPTS='--walker dir,follow'
 
 _fzf_compgen_path() {
-  fd --hidden --follow --exclude ".git" . "$1"
+  if command -v fd > /dev/null 2>&1; then
+    fd --hidden --follow --exclude ".git" . "$1"
+  else
+    find "$1" -type f ! -path '*/.git/*'
+  fi
 }
 
 _fzf_compgen_dir() {
-  fd --type d --hidden --follow --exclude ".git" . "$1"
+  if command -v fd > /dev/null 2>&1; then
+    fd --type d --hidden --follow --exclude ".git" . "$1"
+  else
+    find "$1" -type d ! -path '*/.git/*'
+  fi
 }
 
 command -v fzf > /dev/null 2>&1 && source <(fzf --zsh)
