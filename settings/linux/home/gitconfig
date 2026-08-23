@@ -85,3 +85,6 @@
   UseHttpPath = true
 [interactive]
 	diffFilter = diff-so-fancy --patch
+
+[includeIf "gitdir:~/develop/mentorano/"]
+	path = ~/develop/mentorano/.gitconfig
