@@ -22,6 +22,15 @@ source create_links
 ln -s ~/.ssh/id_rsa ~/.local_ssh_key
 ```
 
+On macOS:
+```
+cd settings/osx/home
+
+source create_links
+
+ln -s ~/.ssh/id_rsa ~/.local_ssh_key
+```
+
 To add specifics only to the local shell config use:
 ```
 ~/.localrc
@@ -41,10 +50,25 @@ See `settings/linux/root/README.md` for additional root setup, e.g. the
 ZeroTier DNS fix for new machines joined to a ZeroTier network with managed DNS.
 
 # Install all goodies
-To install all useful programs call
+To install all useful programs on debian/ubuntu/mint call
 ```
 apt_install_all_goodies.sh
 ```
+
+CLI-only (Ubuntu 24.04):
+```
+apt_install_no_gui_noble.sh
+```
+
+On macOS (Homebrew + SDKMAN + nvm + rustup, safe to re-run):
+```
+./brew_install_no_gui.sh
+```
+CLI + GUI casks (Postman, Calibre, Thunderbird, Telegram, Slack, KeePassXC, JetBrains Toolbox):
+```
+./brew_install_all_goodies.sh
+```
+Docker Desktop and macFUSE may ask for a sudo password. Java 21 / Maven / Gradle come from SDKMAN, Node LTS from nvm, Rust from rustup.
 
 # Custom Settings
 
