@@ -55,8 +55,6 @@ else
   link $BASEDIR/bashrc $HOME/.bashrc
   link $BASEDIR/profile $HOME/.profile
   link $BASEDIR/bash_logout $HOME/.bash_logout
-#  link $BASEDIR/bashrc_help $HOME/.bashrc_help
-#  link $BASEDIR/bashrc_app_specific $HOME/.bashrc_app_specific
 
   # zsh
   link $BASEDIR/zsh $HOME/.zsh
@@ -75,35 +73,20 @@ else
   link $BASEDIR/gitattributes $HOME/.gitattributes
   link $BASEDIR/gitk $HOME/.gitk
   link $BASEDIR/git-prompt.sh $HOME/.git-prompt.sh
-#  link $BASEDIR/gitignore $HOME/.gitignore
-#  link $BASEDIR/gitattributes $HOME/.gitattributes
-
-# OLD for ubuntu 10.10 for debian wheezy moved to ~/.config
-#  link $BASEDIR/htoprc $HOME/.htoprc
-#  link $BASEDIR/mc $HOME/.mc
 
   # config
-#  link $BASEDIR/config/glogg $HOME/.config/glogg
-#  link $BASEDIR/config/hotkeys $HOME/.config/hotkeys
-#  link $BASEDIR/config/htop $HOME/.config/htop
-#  link $BASEDIR/config/mc $HOME/.config/mc
-#  link $BASEDIR/config/synapse $HOME/.config/synapse
-#  link $BASEDIR/config/terminator $HOME/.config/terminator
-#  link $BASEDIR/config/awesome $HOME/.config/awesome
- 
- # tmux
+  link $BASEDIR/config/glogg $HOME/.config/glogg
+  link $BASEDIR/config/htop $HOME/.config/htop
+  link $BASEDIR/config/mc $HOME/.config/mc
+
+  # tmux
   link $BASEDIR/tmux $HOME/.tmux
   link $BASEDIR/tmux.conf $HOME/.tmux.conf
 
   # misc
   link $BASEDIR/aliases $HOME/.aliases
-#  link $BASEDIR/kderc $HOME/.kderc
   link $BASEDIR/inputrc $HOME/.inputrc
   link $BASEDIR/toprc $HOME/.toprc
-#  link $BASEDIR/fonts $HOME/.fonts
-#  link $BASEDIR/fonts.conf $HOME/.fonts.conf
-#  link $BASEDIR/shell_set_colors $HOME/.shell_set_colors
-#  link $BASEDIR/gtkrc-2.0 $HOME/.gtkrc-2.0
+  link $BASEDIR/shell_set_colors $HOME/.shell_set_colors
 
 fi
-

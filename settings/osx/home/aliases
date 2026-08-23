@@ -6,22 +6,31 @@ alias ..='cd ..'
 alias ppp-on='sudo /usr/sbin/ppp-on'
 alias ppp-off='sudo /usr/sbin/ppp-off'
 alias firestarter='sudo su -c firestarter'
-alias hist="grep '$1' /home/idachev/.histfile"
+alias hist="grep '$1' ${HOME}/.histfile"
 alias irssi="irssi -c irc.freenode.net -n yyz"
-alias mem="free -m"
 alias psg="ps ax | grep"
 alias gvim="gvim -geom 132x42"
-alias rh='echo '\''cleanup from hist:'\'';sed -n -e '\''${x;1!p;};h'\'' ~/.histfile;sed -i '\''$d'\'' ~/.histfile'
+if command -v free > /dev/null 2>&1; then
+  alias mem="free -m"
+fi
+# BSD sed needs an empty backup suffix for in-place edit
+alias rh='echo '\''cleanup from hist:'\'';sed -n -e '\''${x;1!p;};h'\'' ~/.histfile;sed -i '\'''\'' '\''$d'\'' ~/.histfile'
+alias gzip='gzip -9'
+
+# Archives
+alias tarcpz="tar c --use-compress-program=pigz -f"
+alias tarxpz="tar x --use-compress-program=pigz -f"
 
 # Interactive operation...
 alias rm='rm -i'
 alias cp='cp -i'
 alias mv='mv -i'
 
-# Default to human readable figures
+# Disk/dir utils...
 alias df='df -h'
 alias du='du -h'
 alias ncdu='ncdu -q'
+alias ddiff="sudo ${HOME}/bin/diff_dir.sh"
 
 # Misc :)
 alias less='less -r'                          # raw control characters
@@ -30,8 +39,25 @@ alias grep='grep --color'
 alias egrep='egrep --color'
 alias fgrep='fgrep --color'
 
+# AI
+alias sgpt5='sgpt -m "gpt-5"'
+alias sgptn='sgpt -m "gpt-5-nano"'
+alias sgptsh='sgpt sh'
+alias sgptch='sgpt --chat'
+alias sgptcd='sgpt code'
+
+alias claudep='claude --model sonnet -p'
+alias claudehr='headroom wrap claude'
+alias claudeds='~/.claude/claude-ds.sh'
+
+alias claude-mntr="CLAUDE_CONFIG_DIR=$HOME/.claude-mentorano claude"
+
 # Different directory listings
-alias ls='ls -hF -G'
+if command -v eza > /dev/null 2>&1; then
+  alias ls='eza -hF --group-directories-first'
+else
+  alias ls='ls -hF -G'
+fi
 alias ll='ls -l'
 alias la='ls -a'
 alias lc='ls -C'
@@ -42,6 +68,32 @@ alias lsa='ls -ld .*'
 alias ltr='l -tr'
 alias lt='l -t'
 
+# eza
+alias eza='eza -hF --group-directories-first'
+alias le='eza -al'
+alias lel='eza -l'
+
+# fzf
+alias fv="fzf --bind 'enter:become(vim {})'"
+alias pf="ps aux | fzf"
+alias spf="sudo ps aux | fzf"
+alias fp="fzf --style full --preview 'fzf-preview.sh {}' --bind 'focus:transform-header:file --brief {}'"
+alias fh="fd . --max-depth 1 | fzf"
+
+rfif() {
+  if [ ! "$#" -gt 0 ]; then echo "Need a string to search for!"; return 1; fi
+  rg --files-with-matches --no-messages "$1" | fzf --preview "highlight -O ansi -l {} 2> /dev/null | rg --colors 'match:bg:yellow' --ignore-case --pretty --context 10 '$1' || rg --ignore-case --pretty --context 10 '$1' {}"
+}
+
+fif() {
+    if [ ! "$#" -gt 0 ]; then echo "Need a string to search for!"; return 1; fi
+    local file
+    file="$(rga --max-count=1 --ignore-case --files-with-matches --no-messages "$@" | fzf-tmux +m --preview="rga --ignore-case --pretty --context 10 '"$@"' {}")" && open "$file"
+}
+
+alias rgnf='rg --files-without-match'
+alias rgnfx='xargs rg --files-without-match'
+
 # Git related
 alias gitka='gitk --all'
 alias gitga='gitg --all'
@@ -50,18 +102,25 @@ alias gcam='git ci -am'
 alias gk='gitk'
 alias gka='gitk --all'
 
+function git-find-merged() {
+  git branch --all --merged | egrep -v "(^\*|master|develop|dev|qa|production|staging|HEAD)" | sed 's/remotes\/origin\///g' | xargs echo -e "\ngit push origin --delete"
+}
+
 # Extended man viewer
 #alias man='pinfo -m'
 
 # For easy start with nice/ionice
 alias n19='nice -n 19'
 alias n10='nice -n 10'
-alias in7='ionice -c2 -n7'
-alias in4='ionice -c2 -n4'
-alias in0='ionice -c2 -n0'
+if command -v ionice > /dev/null 2>&1; then
+  alias in7='ionice -c2 -n7'
+  alias in4='ionice -c2 -n4'
+  alias in0='ionice -c2 -n0'
+fi
 
 alias tail='tail -f -n +0'
 
+alias exit-force='"exit"'
 alias exit='echo "Please confirm with(y/n): ";read ans;if [ "$ans" = "y" ];then exit;fi'
 
 # Quick working with screens
@@ -84,7 +143,7 @@ dkrr() {
 }
 
 dkrl() {
-  docker logs -f $1
+  docker logs -f $*
 }
 
 dkre() {
@@ -92,7 +151,7 @@ dkre() {
 }
 
 dkrb() {
-  docker exec -it $1 bash
+  docker exec -it $1 sh -c "clear; (bash || ash || sh)"
 }
 
 dkrm() {
@@ -101,43 +160,242 @@ dkrm() {
   done
 }
 
-dkrmi() {
-  docker images --format "{{.Repository}}:{{.Tag}}" --filter=reference="${1}" | xargs docker rmi -f
-  docker images
+dkrmold() {
+  local ids
+  ids=$(docker ps --filter "status=exited" --filter "status=created" --format "{{.ID}}")
+  if [ -n "$ids" ]; then
+    echo "$ids" | xargs docker rm
+  fi
+  docker ps --all
 }
 
-alias dkrm-old='docker ps --filter "status=exited" | awk '\''{print $1}'\'' | xargs --no-run-if-empty docker rm'
+dkrmi() {
+  local ids
+  ids=$(docker images --format "{{.ID}}" --filter=reference="${1}")
+  if [ -n "$ids" ]; then
+    echo "$ids" | xargs docker rmi -f
+  fi
+  docker images | sort -k7 -h
+}
+
+dkrmicl() {
+  local ids
+  ids=$(docker images --format "{{.ID}}" --filter "dangling=true" -q --no-trunc)
+  if [ -n "$ids" ]; then
+    echo "$ids" | xargs docker rmi -f
+  fi
+}
 
 # Misc
+
 alias tmux="tmux -2"
 
-alias prettyjson='python -m json.tool'
+alias ktmux='pkill tmux 2>/dev/null || echo "no tmux sessions"'
+
+if command -v python3 > /dev/null 2>&1; then
+  alias prettyjson='python3 -m json.tool'
+else
+  alias prettyjson='python -m json.tool'
+fi
 
 alias pssh='psg ssh'
 
-#alias assume-role='function(){eval $(command assume-role $@);}'
+alias assume-role='source aws_assume_role.sh $@'
 
+alias rsync-files-db-dir='rsync -n -u -aXvhPOJ --exclude .working $@'
 
-aws_profiles () {
+# AWS Profiles
+
+aspl() {
     [[ -r "${AWS_CONFIG_FILE:-$HOME/.aws/config}" ]] || return 1
-    grep --color=auto --exclude-dir={.bzr,CVS,.git,.hg,.svn} '\[profile' "${AWS_CONFIG_FILE:-$HOME/.aws/config}" | sed -e 's/.*profile \([a-zA-Z0-9_\.-]*\).*/\1/'
+
+    grep --color=auto --exclude-dir={.bzr,CVS,.git,.hg,.svn} \
+      '\[profile' "${AWS_CONFIG_FILE:-$HOME/.aws/config}" | \
+      sed -e 's/.*profile \([a-zA-Z0-9_\.-]*\).*/\1/'
 }
 
-asp () {
-    if [[ -z "$1" ]]
-    then
+asp() {
+    if [[ -z "$1" ]]; then
         unset AWS_DEFAULT_PROFILE AWS_PROFILE AWS_EB_PROFILE
-        echo AWS profile cleared.
+        echo -e "AWS profile cleared."
         return
     fi
-    local available_profiles=($(aws_profiles))
-    if [[ -z "${available_profiles[(r)$1]}" ]]
-    then
+
+    local available_profiles=($(aspl))
+    if [[ -z "${available_profiles[(r)$1]}" ]]; then
         echo "${fg[red]}Profile '$1' not found in '${AWS_CONFIG_FILE:-$HOME/.aws/config}'" >&2
         echo "Available profiles: ${(j:, :)available_profiles:-no profiles found}${reset_color}" >&2
         return 1
     fi
+
     export AWS_DEFAULT_PROFILE=$1
     export AWS_PROFILE=$1
     export AWS_EB_PROFILE=$1
 }
+
+alias aws-unset-session='unset AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY AWS_SESSION_TOKEN AWS_SECURITY_TOKEN'
+
+alias awsv='aws-vault list'
+
+awsvl() {
+  if [[ -z "$1" ]]; then
+    echo -e "Expect a AWS profile check aws-vault list"
+    return
+  fi
+
+  local url=$(aws-vault login $1 --stdout)
+
+  "${BROWSER}" "https://signin.aws.amazon.com/oauth?Action=logout"
+
+  sleep 1
+
+  "${BROWSER}" "${url}"
+}
+
+awsvlp() {
+  if [[ -z "$1" ]]; then
+    echo -e "Expect a AWS profile check aws-vault list"
+    return
+  fi
+
+  local url=$(aws-vault login $1 --stdout)
+
+  "${BROWSER}" -incognito "https://signin.aws.amazon.com/oauth?Action=logout"
+
+  sleep 1
+
+  "${BROWSER}" -incognito "${url}"
+}
+
+awsvep() {
+  if [[ -z "$1" ]]; then
+    echo -e "Expect a AWS profile check aws-vault list"
+    return
+  fi
+
+  aws-vault exec "$1" -- env | grep '^AWS_'
+}
+
+awsve() {
+  if [[ -z "$1" ]]; then
+    echo -e "Expect a AWS profile check aws-vault list"
+    return
+  fi
+
+  aws-vault exec "$1" -- env | grep '^AWS_' | while read line; do echo export "$line"; done
+}
+
+# Kubectl
+
+alias k=kubectl
+
+alias kg='k get'
+alias kgs='kg services'
+alias kgp='kg pods'
+alias kgpw='kg pods -o wide'
+alias kgd='kg deployments'
+alias kga='kg all'
+alias kgst='kg statefulset'
+alias kgn='kg namespace --show-labels'
+
+alias kgc='kubectl config get-contexts'
+
+alias kd='k describe'
+alias kds='kd service'
+alias kdp='kd pod'
+
+alias kpf='k port-forward'
+
+alias kl='k logs -f'
+
+alias kdel='k delete'
+
+alias krun-busybox='k run curl --image=radial/busyboxplus:curl -i --tty'
+
+alias krun-bash='k run my-shell --rm -i --tty --image bash -- bash'
+
+keb() {
+  POD_NAME=${1}
+
+  CONTAINER_NAME=${2}
+
+  if [ -z "${CONTAINER_NAME}" ]; then
+    CONTAINER_ARG=""
+  else
+    CONTAINER_ARG="--container=${CONTAINER_NAME}"
+  fi
+
+  kubectl exec -ti "${POD_NAME}" ${CONTAINER_ARG} -- sh -c "(bash || ash || sh)"
+}
+
+kec() {
+  POD_NAME=${1}
+  shift
+  kubectl exec "${POD_NAME}" -- $*
+}
+
+if [ "$0" = "bash" ]; then
+  echo "I'm in bash"
+  complete -F __start_kubectl k
+fi
+
+ksn() {
+  kubectl config set-context --current --namespace=$1
+}
+
+ksc() {
+  kubectl config use-context $1
+}
+
+# Helm
+
+alias helm_2_15_0="docker run -it --rm \
+  -v $(pwd):/apps \
+  -v ~/.kube/config:/root/.kube/config \
+  -v ~/.helm:/root/.helm alpine/helm:2.15.0"
+
+alias kafkacat-dc="docker run -it --rm \
+  --network host \
+  confluentinc/cp-kafkacat \
+  kafkacat"
+
+# Software
+
+alias mvnver="n19 mvn -q -Dexec.executable=echo -Dexec.args='\${project.version}' --non-recursive exec:exec"
+
+cleanup_mvn_target_dirs() {
+  DOIT=$1
+  find . -type d -iname "target" | \
+    while read line
+    do
+      if [ -f "${line}/../pom.xml" ]; then
+        if [ "${DOIT}" = "doit" ]; then
+          rm -rf "${line}"
+        else
+          echo "[DRY RUN] rm -rf ${line}"
+        fi
+      fi
+    done
+}
+
+mvn() {
+  local dir="$PWD"
+  while [[ ! -x "${dir}/mvnw" && "${dir}" != / ]]; do
+    dir="${dir:h}"
+  done
+
+  if [[ -x "${dir}/mvnw" ]]; then
+    echo -e "Running \`${dir}/mvnw\`...\n" >&2
+    "${dir}/mvnw" -v >&2
+    echo '' >&2
+    "${dir}/mvnw" "$@"
+    return $?
+  fi
+
+  command mvn -v >&2
+  echo '' >&2
+  command mvn "$@"
+}
+
+# Python
+alias bash-venv-zsh="bash -c 'source .venv/bin/activate && exec zsh'"

@@ -3,6 +3,7 @@
 [alias]
   m = merge
   ci = commit
+  cinv = commit --no-verify
   st = status
   s = status
   co = checkout
@@ -23,9 +24,16 @@
   dump = cat-file -p
   l = log --all --pretty=oneline --abbrev-commit --graph --decorate=full
   lp = log --all --pretty=format:'%C(auto,yellow)%h%Creset %cn %ce %C(auto,red)%cI%Creset %s'
-  quick-stats = ! /usr/local/bin/git-quick-stats
-  fap = fetch --all --prune
+  quick-stats = ! bash "$HOME/bin/git-quick-stats"
+  fap = fetch --all --prune --tags
   sha = log --pretty=format:'%h' -n 1
+  pub = "!f() { git pull; git fap; git brm; }; f"
+  mpub = "!f() { git co master; git pub; }; f"
+  dpub = "!f() { git co dev; git pub; }; f"
+  mnpub = "!f() { git co main; git pub; }; f"
+  qpub = "!f() { git co qa; git pub; }; f"
+  spub = "!f() { git co staging; git pub; }; f"
+  ppub = "!f() { git co production; git pub; }; f"
   rescue = "!f() { \
       git fsck --full --no-reflogs --unreachable --lost-found | \
       grep commit | \
@@ -61,10 +69,18 @@
 [core]
   autocrlf = false
   safecrlf = warn
+	pager = diff-so-fancy | less --tabs=4 -RFX
 [http]
   postBuffer = 524288000
 [credential]
-  helper = cache
+  helper = osxkeychain
 [push]
   default = simple
-
+[credential "https://git-codecommit.eu-west-1.amazonaws.com/"]
+  helper = !aws --region eu-west-1 codecommit credential-helper $@
+  UseHttpPath = true
+[credential "https://git-codecommit.eu-west-2.amazonaws.com/"]
+  helper = !aws --region eu-west-2 codecommit credential-helper $@
+  UseHttpPath = true
+[interactive]
+	diffFilter = diff-so-fancy --patch

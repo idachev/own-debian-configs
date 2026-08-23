@@ -1,3 +1,6 @@
+###########################################################
+# Options for Bash
+
 # ~/.bashrc: executed by bash(1) for non-login shells.
 # see /usr/share/doc/bash/examples/startup-files (in the package bash-doc)
 # for examples
@@ -85,6 +88,10 @@ if ! shopt -oq posix; then
   fi
 fi
 
+if [ -f ~/.git-prompt.sh ]; then
+  . ~/.git-prompt.sh
+fi
+
 GIT_PS1_SHOWDIRTYSTATE=true
 
 ###
@@ -96,9 +103,9 @@ else
 fi
 
 if [ "$color_prompt" = yes ]; then
-    PS1='${debian_chroot:+($debian_chroot)}\[\033[00;33m\]\t \d \[\033[00;32m\]\u@\h:\l${PR_STY}\[\033[00m\]\n\[\033[01;34m\]\w\[\033[31m\]$(__git_ps1)\[\033[00m\]\n\$ '
+    PS1='${debian_chroot:+($debian_chroot)}\[\033[00;33m\]\t \D{%Y-%m-%d} \[\033[00;32m\]\u@\h:\l${PR_STY}\[\033[00m\]\n\[\033[01;34m\]\w\[\033[31m\]$(__git_ps1)\[\033[00m\]\n\$ '
 else
-    PS1='${debian_chroot:+($debian_chroot)}\t \d \u@\h:\l${PR_STY}\n\w$(__git_ps1)\n$ '
+    PS1='${debian_chroot:+($debian_chroot)}\t \D{%Y-%m-%d} \u@\h:\l${PR_STY}\n\w$(__git_ps1)\n$ '
 fi
 unset color_prompt force_color_prompt
 
@@ -132,17 +139,22 @@ if [ -f ~/.localrc ]; then
 fi
 
 ##################################################################
-# Keychain
+# SSH keys
 
-#keychain -q ~/.local_ssh_key
+_mac_ssh_key=""
+[ -f ~/.local_ssh_key ] && _mac_ssh_key=~/.local_ssh_key
+[ -z "$_mac_ssh_key" ] && [ -f ~/.ssh/id_rsa ] && _mac_ssh_key=~/.ssh/id_rsa
 
-#if [ -f "~/.keychain/${HOSTNAME}-sh" ]; then
-#  . "~/.keychain/${HOSTNAME}-sh"
-#fi
-
-#if [ -f "~/.keychain/${HOSTNAME}-sh-gpg" ]; then
-#  . "~/.keychain/${HOSTNAME}-sh-gpg"
-#fi
+if [ -n "$_mac_ssh_key" ]; then
+  if command -v keychain > /dev/null 2>&1; then
+    keychain -q "$_mac_ssh_key"
+    [ -f ~/.keychain/${HOSTNAME}-sh ] && . ~/.keychain/${HOSTNAME}-sh
+    [ -f ~/.keychain/${HOSTNAME}-sh-gpg ] && . ~/.keychain/${HOSTNAME}-sh-gpg
+  else
+    /usr/bin/ssh-add --apple-use-keychain "$_mac_ssh_key" 2>/dev/null
+  fi
+fi
+unset _mac_ssh_key
 
 ##################################################################
 # Others
@@ -150,11 +162,18 @@ fi
 # jump zsh completion
 #source `jump-bin --bash-integration`
 
-#THIS MUST BE AT THE END OF THE FILE FOR SDKMAN TO WORK!!!
-#export SDKMAN_DIR="${HOME}/.sdkman"
-#[[ -s "${HOME}/.sdkman/bin/sdkman-init.sh" ]] && source "${HOME}/.sdkman/bin/sdkman-init.sh"
+# kubectl
 
-# need for new git versions
-if [ -f ~/.git-prompt.sh ]; then
-  . ~/.git-prompt.sh
+if which kubectl > /dev/null 2>&1; then
+  source <(kubectl completion bash)
 fi
+
+#THIS MUST BE AT THE END OF THE FILE FOR SDKMAN TO WORK!!!
+export SDKMAN_DIR="${HOME}/.sdkman"
+[[ -s "${HOME}/.sdkman/bin/sdkman-init.sh" ]] && source "${HOME}/.sdkman/bin/sdkman-init.sh"
+
+
+export NVM_DIR="$HOME/.nvm"
+[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"  # This loads nvm
+[ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"  # This loads nvm bash_completion
+[ -s "$HOME/.cargo/env" ] && . "$HOME/.cargo/env"

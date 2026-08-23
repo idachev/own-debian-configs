@@ -32,15 +32,42 @@ function precmd {
 
 
 	###
-	# Get APM info.
+	# Get battery level of the system battery only.
 
-	if which acpi > /dev/null 2>&1; then
-		PR_APM_RESULT=`acpi -b 2> /dev/null`
-	elif which ibam > /dev/null 2>&1; then
-		PR_APM_RESULT=`ibam --percentbattery 2> /dev/null`
-	elif which apm > /dev/null 2>&1; then
-		PR_APM_RESULT=`apmi 2> /dev/null`
+	PR_APM_LEVEL=""
+	if [[ "$OSTYPE" == darwin* ]]; then
+		PR_APM_LEVEL=$(pmset -g batt 2> /dev/null | grep -Eo '[0-9]+%' | head -n 1 | tr -d '%')
+	else
+		for _bat in /sys/class/power_supply/BAT*(N); do
+			[[ "$(< $_bat/present 2> /dev/null)" = "1" ]] || continue
+			PR_APM_LEVEL="$(< $_bat/capacity 2> /dev/null)"
+			break
+		done
+		# Fallback to acpi if sysfs has no system battery entry.
+		if [[ -z "$PR_APM_LEVEL" ]] && which acpi > /dev/null 2>&1; then
+			if [[ "$(acpi -b 2> /dev/null | head -n 1)" =~ '([0-9]+)%' ]]; then
+				PR_APM_LEVEL="$match[1]"
+			fi
+		fi
 	fi
+
+  if [ "${PR_SHOW_KUBE}" = "1"  ]; then
+    if which kubectl > /dev/null 2>&1; then
+      KUBE_NAMESPACE=$(kubectl config view --minify --output 'jsonpath={..namespace}')
+      KUBE_CONTEXT=$(kubectl config current-context)
+      PR_KUBE_NAMESPACE='${PR_WHITE}[kube ${PR_DIM_YELLOW}${KUBE_CONTEXT} ${PR_YELLOW}${KUBE_NAMESPACE}${PR_WHITE}]'
+    else
+      PR_KUBE_NAMESPACE=''
+    fi
+  fi
+
+  if [ "${PR_SHOW_AWS}" = "1" ]; then
+    if [ ! "${AWS_PROFILE}" = "" ]; then
+      PR_AWS_PROFILE='${PR_WHITE}[aws ${PR_LIGHT_MAGENTA}${AWS_PROFILE}${PR_WHITE}]'
+    else
+      PR_AWS_PROFILE=''
+    fi
+  fi
 }
 
 
@@ -93,9 +120,9 @@ setprompt () {
 		colors
 	fi
 	for color in RED GREEN YELLOW BLUE MAGENTA CYAN WHITE; do
-		eval PR_$color='%{$terminfo[bold]$fg[${(L)color}]%}'
-		eval PR_DIM_$color='%{$terminfo[dim]$fg[${(L)color}]%}'
-		eval PR_LIGHT_$color='%{$fg[${(L)color}]%}'
+		eval PR_$color='%{$terminfo[sgr0]%}%{$terminfo[bold]$fg[${(L)color}]%}'
+		eval PR_DIM_$color='%{$terminfo[sgr0]%}%{$terminfo[dim]$fg[${(L)color}]%}'
+		eval PR_LIGHT_$color='%{$terminfo[sgr0]%}%{$fg[${(L)color}]%}'
 		(( count = $count + 1 ))
 	done
 	PR_NO_COLOUR="%{$terminfo[sgr0]%}"
@@ -136,29 +163,28 @@ setprompt () {
 	fi
 	
 	###
-	# APM detection used for battery status if available
-	
-	if which acpi > /dev/null 2>&1; then
-		PR_APM='$PR_RED${${PR_APM_RESULT[(f)1]}[(w)+4]}%% '
-	elif which ibam > /dev/null 2>&1; then
-		PR_APM='$PR_RED${${PR_APM_RESULT[(f)1]}[(w)-2]}%%(${${PR_APM_RESULT[(f)3]}[(w)-1]}) '
-	elif which apm > /dev/null 2>&1; then
-		PR_APM='$PR_RED${PR_APM_RESULT[(w)5,(w)6]/\% /%%} '
-	else
-		PR_APM=''
-	fi
+	# Battery level (computed in precmd); shows e.g. "95% " in red,
+	# and nothing at all when there is no system battery.
 
+	PR_APM='${PR_APM_LEVEL:+$PR_RED${PR_APM_LEVEL}%% }'
 
 	###
 	# Finally, the prompt.
-PR_DIM_YELLOW=$(print '%{\e[0;33m%}')
+  PR_DIM_YELLOW=$(print '%{\e[0;33m%}')
 
 	PROMPT='$PR_STITLE${(e)PR_TITLEBAR}\
-$PR_DIM_YELLOW%D{%H:%M:%S} %D{%d/%m/%Y} \
+$PR_DIM_YELLOW%D{%H:%M:%S} %D{%Y-%m-%d} \
 $PR_DIM_GREEN%(!.%SROOT%s.%n)$PR_DIM_GREEN@%m:%l$PR_STY \
 $PR_DIM_RED%(?..ERRNO:$PR_RED%?) \
-${(e)PR_APM}\
+${(e)PR_APM}'
 
+  if [ "${PR_SHOW_KUBE}" = "1" -o "${PR_SHOW_AWS}" = "1" ]; then
+    PROMPT="${PROMPT}"'
+${(e)PR_AWS_PROFILE}\
+${(e)PR_KUBE_NAMESPACE}'
+  fi
+
+  PROMPT="${PROMPT}"'
 $PR_BLUE%$PR_PWDLEN<...<%~%<< \
 $PR_VCS_INFO\
 
@@ -172,4 +198,3 @@ $PR_NO_COLOUR '
 
 #dumpcolors
 setprompt
-

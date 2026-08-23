@@ -1,7 +1,8 @@
 ###########################################################        
 # Options for Zsh
 
-#eval `dircolors -b`
+# dircolors is GNU coreutils; skip on macOS unless present
+command -v dircolors > /dev/null 2>&1 && eval `dircolors -b`
 
 autoload -U compinit promptinit colors
 compinit
@@ -122,25 +123,15 @@ bindkey '^S' history-incremental-search-forward
 # Used for alias auto extension
 export EDITOR="vim"
 
-#export BROWSER="elinks"
-#export BROWSER="konqueror"
+# macOS opens files with the default app
 export BROWSER="open"
-
-export XTERM="aterm +sb -geometry 80x29 -fg black -bg lightgoldenrodyellow -fn -xos4-terminus-medium-*-normal-*-14-*-*-*-*-*-iso8859-15"
-
-#export VIDEO_PLAYER="totem"
 export VIDEO_PLAYER="open"
-
+export AUDIO_PLAYER="open"
 export IMAGE_VIEW="open"
-
 export OFFICE_VIEW="open"
-
 export PDF_VIEW="open"
-
-export ARCHIVE_VIEW="ark"
-
-export LOG_VIEW="glogg"
-
+export ARCHIVE_VIEW="open"
+export LOG_VIEW="open"
 export FONT_VIEW="open"
 
 # Set up auto extension stuff
@@ -149,6 +140,7 @@ alias -s org=$BROWSER
 alias -s php=$BROWSER
 alias -s com=$BROWSER
 alias -s net=$BROWSER
+
 alias -s PNG=$IMAGE_VIEW
 alias -s png=$IMAGE_VIEW
 alias -s JPG=$IMAGE_VIEW
@@ -156,28 +148,42 @@ alias -s jpg=$IMAGE_VIEW
 alias -s jpeg=$IMAGE_VIEW
 alias -s GIF=$IMAGE_VIEW
 alias -s gif=$IMAGE_VIEW
+alias -s WEBP=$IMAGE_VIEW
+alias -s webp=$IMAGE_VIEW
+
 alias -s sxw=$OFFICE_VIEW
 alias -s doc=$OFFICE_VIEW
 alias -s docx=$OFFICE_VIEW
 alias -s ods=$OFFICE_VIEW
 alias -s xls=$OFFICE_VIEW
 alias -s xlsx=$OFFICE_VIEW
+
 alias -s tgz=$ARCHIVE_VIEW
 alias -s gz=$ARCHIVE_VIEW
 alias -s bz2=$ARCHIVE_VIEW
 alias -s zip=$ARCHIVE_VIEW
+
 alias -s java=$EDITOR
 alias -s txt=$EDITOR
+
 alias -s PKGBUILD=$EDITOR
+
 alias -s pdf=$PDF_VIEW
+
 alias -s mov=$VIDEO_PLAYER
 alias -s mk4=$VIDEO_PLAYER
+alias -s mp4=$VIDEO_PLAYER
+alias -s mkv=$VIDEO_PLAYER
 alias -s m4v=$VIDEO_PLAYER
 alias -s mpg=$VIDEO_PLAYER
 alias -s mvi=$VIDEO_PLAYER
 alias -s avi=$VIDEO_PLAYER
 alias -s 3gp=$VIDEO_PLAYER
 alias -s 3GP=$VIDEO_PLAYER
+
+alias -s mp3=$AUDIO_PLAYER
+alias -s ogg=$AUDIO_PLAYER
+
 alias -s log=$LOG_VIEW
 alias -s ttf=$FONT_VIEW
 
@@ -189,41 +195,55 @@ alias -g S='&> /dev/null &'
 
 ##################################################################
 # Plugins
-source ~/.zsh/zsh-syntax-highlighting.zsh
-source ~/.zsh/zsh-history-substring-search.zsh
+
+[ -f ~/.zsh/zsh-syntax-highlighting.zsh ] && source ~/.zsh/zsh-syntax-highlighting.zsh
+
+[ -f ~/.zsh/zsh-history-substring-search.zsh ] && source ~/.zsh/zsh-history-substring-search.zsh
+
+[ -f ~/.zsh/zsh-z.plugin.zsh ] && source ~/.zsh/zsh-z.plugin.zsh
+
+zstyle ':completion:*' menu select
+
+export ZSH_CUSTOM="${HOME}/.oh-my-zsh/custom"
+if [ -f "${ZSH_CUSTOM}/plugins/zsh_codex/zsh_codex.plugin.zsh" ]; then
+  source "${ZSH_CUSTOM}/plugins/zsh_codex/zsh_codex.plugin.zsh"
+  bindkey '^G' create_completion
+fi
 
 ##################################################################
 # Misc
 
-fpath=(~/develop/private/zsh-completions $fpath)
+fpath=(~/.zsh/zsh-completions $fpath)
+[ -d ~/develop/private/zsh-completions ] && fpath=(~/develop/private/zsh-completions $fpath)
 
 # type a directory's name to cd to it
 compctl -/ cd
 
-if [ -f ~/.aliases ]; then
-  . ~/.aliases
-fi
+[ -f ~/.aliases ] && . ~/.aliases
 
-if [ -f ~/.shell_set_colors ]; then
-  . ~/.shell_set_colors
-fi
+[ -f ~/.shell_set_colors ] && . ~/.shell_set_colors
 
-if [ -f ~/.localrc ]; then
-  . ~/.localrc
-fi
+[ -f ~/.ls_dir_set_colors ] && . ~/.ls_dir_set_colors
+
+[ -f ~/.localrc ] && . ~/.localrc
 
 ##################################################################
-# Keychain
+# SSH keys
 
-keychain -q ~/.local_ssh_key
+_mac_ssh_key=""
+[ -f ~/.local_ssh_key ] && _mac_ssh_key=~/.local_ssh_key
+[ -z "$_mac_ssh_key" ] && [ -f ~/.ssh/id_rsa ] && _mac_ssh_key=~/.ssh/id_rsa
 
-if [ -f "~/.keychain/${HOST}-sh" ]; then
-  . "~/.keychain/${HOST}-sh"
+if [ -n "$_mac_ssh_key" ]; then
+  if command -v keychain > /dev/null 2>&1; then
+    keychain -q "$_mac_ssh_key"
+    [ -f ~/.keychain/${HOST}-sh ] && . ~/.keychain/${HOST}-sh
+    [ -f ~/.keychain/${HOST}-sh-gpg ] && . ~/.keychain/${HOST}-sh-gpg
+  else
+    /usr/bin/ssh-add --apple-use-keychain "$_mac_ssh_key" 2>/dev/null
+  fi
 fi
-
-if [ -f "~/.keychain/${HOST}-sh-gpg" ]; then
-  . "~/.keychain/${HOST}-sh-gpg"
-fi
+unset _mac_ssh_key
 
 ##################################################################
 # Others
@@ -231,8 +251,99 @@ fi
 # jump zsh completion
 #source `jump-bin --zsh-integration`
 
-# need for new git versions
-if [ -f ~/.git-prompt.sh ]; then
-  . ~/.git-prompt.sh
+# kubectl
+
+if which kubectl > /dev/null 2>&1; then
+  source <(kubectl completion zsh)
 fi
 
+#THIS MUST BE AT THE END OF THE FILE FOR SDKMAN TO WORK!!!
+export SDKMAN_DIR="${HOME}/.sdkman"
+[[ -s "${HOME}/.sdkman/bin/sdkman-init.sh" ]] && source "${HOME}/.sdkman/bin/sdkman-init.sh"
+
+
+[ -f ~/bin/aws-vault ] && eval "$(aws-vault --completion-script-zsh)"
+
+[ -f ~/.zsh/zsh-completions/maestral ] && . ~/.zsh/zsh-completions/maestral
+
+if command -v temporal > /dev/null 2>&1; then
+  source <(temporal completion zsh)
+fi
+
+export PYENV_ROOT="$HOME/.pyenv"
+[[ -d $PYENV_ROOT/bin ]] && export PATH="$PYENV_ROOT/bin:$PATH"
+command -v pyenv > /dev/null 2>&1 && eval "$(pyenv init - zsh)"
+
+######################################################################
+# nvm
+
+export NVM_DIR="$HOME/.nvm"
+
+[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"  # This loads nvm
+
+[ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"  # This loads nvm bash_completion
+
+######################################################################
+# rbenv
+
+if [ -x ~/.rbenv/bin/rbenv ]; then
+  eval "$(~/.rbenv/bin/rbenv init - --no-rehash zsh)"
+elif command -v rbenv > /dev/null 2>&1; then
+  eval "$(rbenv init - --no-rehash zsh)"
+fi
+
+[ -f ~/bin/z.sh ] && . ~/bin/z.sh
+
+##################################################################
+# fzf
+
+export FZF_DEFAULT_COMMAND='fd --type f --strip-cwd-prefix --hidden --follow --exclude .git'
+
+export FZF_CTRL_T_COMMAND="$FZF_DEFAULT_COMMAND"
+
+export FZF_DEFAULT_OPTS='--layout reverse --inline-info'
+
+# Options to fzf command
+export FZF_COMPLETION_OPTS='--border --info=inline'
+
+# Options for path completion (e.g. vim **<TAB>)
+export FZF_COMPLETION_PATH_OPTS='--walker file,dir,follow,hidden'
+
+# Options for directory completion (e.g. cd **<TAB>)
+export FZF_COMPLETION_DIR_OPTS='--walker dir,follow'
+
+_fzf_compgen_path() {
+  fd --hidden --follow --exclude ".git" . "$1"
+}
+
+_fzf_compgen_dir() {
+  fd --type d --hidden --follow --exclude ".git" . "$1"
+}
+
+command -v fzf > /dev/null 2>&1 && source <(fzf --zsh)
+
+######################################################################
+# bun
+
+[ -s "$HOME/.bun/_bun" ] && . "$HOME/.bun/_bun"
+
+# pnpm
+export PNPM_HOME="${HOME}/.local/share/pnpm"
+case ":$PATH:" in
+  *":$PNPM_HOME:"*) ;;
+  *) export PATH="$PNPM_HOME:$PATH" ;;
+esac
+# pnpm end
+
+# Added by flyctl installer
+export FLYCTL_INSTALL="${HOME}/.fly"
+export PATH="$FLYCTL_INSTALL/bin:$PATH"
+
+# opencode
+export PATH=${HOME}/.opencode/bin:$PATH
+
+# >>> grok installer >>>
+export PATH="$HOME/.grok/bin:$PATH"
+fpath=(~/.grok/completions/zsh $fpath)
+autoload -Uz compinit && compinit -C
+# <<< grok installer <<<
