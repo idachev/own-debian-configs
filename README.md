@@ -31,6 +31,13 @@ source create_links
 ln -s ~/.ssh/id_rsa ~/.local_ssh_key
 ```
 
+# Setup macOS system (/etc)
+Copies of machine-level configs (sshd drop-ins, etc.). Restore with `sudo cp`,
+do not symlink into `/etc`.
+
+See `settings/osx/system/README.md`.
+
+
 To add specifics only to the local shell config use:
 ```
 ~/.localrc
