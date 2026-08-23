@@ -1,6 +1,16 @@
+# Launch a GUI app in the background and disown it (zsh &!).
+_bg_app() {
+  if [ -n "${ZSH_VERSION:-}" ]; then
+    "$@" &!
+  else
+    "$@" &
+    disown
+  fi
+}
+
 # Normal aliases
 alias c="clear"
-alias gvim="gvim -geom 132x42"
+gvim() { _bg_app command gvim -geom 132x42 "$@"; }
 hist() { grep "$1" "$HOME/.histfile"; }
 alias irssi="irssi -c irc.freenode.net -n yyz"
 alias psg="ps ax | grep"
@@ -90,7 +100,10 @@ fif() {
 alias rgnf='rg --files-without-match'
 alias rgnfx='xargs rg --files-without-match'
 
-# Git related (g/gcam/gk come from OMZ git plugin)
+# Git related (g/gcam/gk come from OMZ git plugin; gk already uses &!)
+gka() { _bg_app gitk --all "$@"; }
+gitka() { _bg_app gitk --all "$@"; }
+gkb() { _bg_app gitk "$@"; }
 
 function git-find-merged() {
   git branch --all --merged | egrep -v "(^\*|master|develop|dev|qa|production|staging|HEAD)" | sed 's/remotes\/origin\///g' | xargs echo -e "\ngit push origin --delete"

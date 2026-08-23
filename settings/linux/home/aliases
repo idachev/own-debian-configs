@@ -1,7 +1,17 @@
+# Launch a GUI app in the background and disown it (zsh &!).
+_bg_app() {
+  if [ -n "${ZSH_VERSION:-}" ]; then
+    "$@" &!
+  else
+    "$@" &
+    disown
+  fi
+}
+
 # Normal aliases
 alias f='find |grep'
 alias c="clear"
-alias gvim='gvim -geom 82x35'
+gvim() { _bg_app command gvim -geom 132x42 "$@"; }
 alias ..='cd ..'
 alias ppp-on='sudo /usr/sbin/ppp-on'
 alias ppp-off='sudo /usr/sbin/ppp-off'
@@ -10,7 +20,6 @@ alias hist="grep '$1' /home/idachev/.histfile"
 alias irssi="irssi -c irc.freenode.net -n yyz"
 alias mem="free -m"
 alias psg="ps ax | grep"
-alias gvim="gvim -geom 132x42"
 alias rh='echo '\''cleanup from hist:'\'';sed -n -e '\''${x;1!p;};h'\'' ~/.histfile;sed -i '\''$d'\'' ~/.histfile'
 alias gzip='gzip -9'
 
@@ -88,12 +97,13 @@ alias rgnf='rg --files-without-match'
 alias rgnfx='xargs rg --files-without-match'
 
 # Git related
-alias gitka='gitk --all'
-alias gitga='gitg --all'
+gitka() { _bg_app gitk --all "$@"; }
+gitga() { _bg_app gitg --all "$@"; }
 alias g='git'
 alias gcam='git ci -am'
-alias gk='gitk'
-alias gka='gitk --all'
+gk() { _bg_app gitk "$@"; }
+gka() { _bg_app gitk --all "$@"; }
+gkb() { _bg_app gitk "$@"; }
 
 function git-find-merged() {
   git branch --all --merged | egrep -v "(^\*|master|develop|dev|qa|production|staging|HEAD)" | sed 's/remotes\/origin\///g' | xargs echo -e "\ngit push origin --delete"
