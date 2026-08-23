@@ -1,0 +1,4 @@
+# Official Ghostty config filename since 1.2.3
+# Theme lives only in ~/.config/ghostty/config
+background-opacity = 1
+background-blur = false

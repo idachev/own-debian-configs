@@ -1,15 +1,9 @@
 # Normal aliases
-alias f='find |grep'
 alias c="clear"
-alias gvim='gvim -geom 82x35'
-alias ..='cd ..'
-alias ppp-on='sudo /usr/sbin/ppp-on'
-alias ppp-off='sudo /usr/sbin/ppp-off'
-alias firestarter='sudo su -c firestarter'
+alias gvim="gvim -geom 132x42"
 hist() { grep "$1" "$HOME/.histfile"; }
 alias irssi="irssi -c irc.freenode.net -n yyz"
 alias psg="ps ax | grep"
-alias gvim="gvim -geom 132x42"
 if command -v free > /dev/null 2>&1; then
   alias mem="free -m"
 fi
@@ -32,13 +26,6 @@ alias du='du -h'
 alias ncdu='ncdu -q'
 alias ddiff="sudo ${HOME}/bin/diff_dir.sh"
 
-# Misc :)
-alias less='less -r'                          # raw control characters
-alias whence='type -a'                        # where, of a sort
-alias grep='grep --color'
-alias egrep='egrep --color'
-alias fgrep='fgrep --color'
-
 # AI
 alias sgpt5='sgpt -m "gpt-5"'
 alias sgptn='sgpt -m "gpt-5-nano"'
@@ -52,21 +39,23 @@ alias claudeds='~/.claude/claude-ds.sh'
 
 alias claude-mntr="CLAUDE_CONFIG_DIR=$HOME/.claude-mentorano claude"
 
-# Different directory listings
+# ls: eza when present. In zsh without eza, OMZ sets ls -G / l / ll / la.
 if command -v eza > /dev/null 2>&1; then
   alias ls='eza -hF --group-directories-first'
-else
+elif [ -z "${ZSH_VERSION:-}" ]; then
   alias ls='ls -hF -G'
 fi
-alias ll='ls -l'
-alias la='ls -a'
-alias lc='ls -C'
-alias l='ls -al'
-alias lla='l'
+if [ -z "${ZSH_VERSION:-}" ]; then
+  alias ll='ls -l'
+  alias la='ls -a'
+  alias l='ls -al'
+  alias g='git'
+  alias k=kubectl
+  alias grep='grep --color'
+fi
 if [ -n "${ZSH_VERSION:-}" ]; then
   alias lsd='ls -ld *(-/DN)'
 fi
-alias lsa='ls -ld .*'
 alias ltr='l -tr'
 alias lt='l -t'
 
@@ -101,13 +90,7 @@ fif() {
 alias rgnf='rg --files-without-match'
 alias rgnfx='xargs rg --files-without-match'
 
-# Git related
-alias gitka='gitk --all'
-alias gitga='gitg --all'
-alias g='git'
-alias gcam='git ci -am'
-alias gk='gitk'
-alias gka='gitk --all'
+# Git related (g/gcam/gk come from OMZ git plugin)
 
 function git-find-merged() {
   git branch --all --merged | egrep -v "(^\*|master|develop|dev|qa|production|staging|HEAD)" | sed 's/remotes\/origin\///g' | xargs echo -e "\ngit push origin --delete"
@@ -309,30 +292,10 @@ awsve() {
   aws-vault exec "$1" -- env | grep '^AWS_' | while read line; do echo export "$line"; done
 }
 
-# Kubectl
-
-alias k=kubectl
+# Kubectl extras OMZ kubectl plugin does not define (k/kgp/kgs/kdel/kpf/kl come from OMZ)
 
 alias kg='k get'
-alias kgs='kg services'
-alias kgp='kg pods'
-alias kgpw='kg pods -o wide'
-alias kgd='kg deployments'
-alias kga='kg all'
-alias kgst='kg statefulset'
-alias kgn='kg namespace --show-labels'
-
-alias kgc='kubectl config get-contexts'
-
 alias kd='k describe'
-alias kds='kd service'
-alias kdp='kd pod'
-
-alias kpf='k port-forward'
-
-alias kl='k logs -f'
-
-alias kdel='k delete'
 
 alias krun-busybox='k run curl --image=radial/busyboxplus:curl -i --tty'
 

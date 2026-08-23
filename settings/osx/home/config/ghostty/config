@@ -1,0 +1,8 @@
+# Official Ghostty/XDG config (~/.config/ghostty/config)
+# Scale is 0.0–1.0; 1 is fully opaque.
+background-opacity = 1
+background-blur = false
+
+# theme = Ultra Dark
+# theme = Kitty Default
+theme = Molokai

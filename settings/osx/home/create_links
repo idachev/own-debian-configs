@@ -57,11 +57,16 @@ else
   link $BASEDIR/bash_logout $HOME/.bash_logout
 
   # zsh
-  link $BASEDIR/zsh $HOME/.zsh
   link $BASEDIR/zshenv $HOME/.zshenv
   link $BASEDIR/zprofile $HOME/.zprofile
   link $BASEDIR/zshprompt $HOME/.zshprompt
   link $BASEDIR/zshrc $HOME/.zshrc
+
+  if [ -d "$HOME/.oh-my-zsh" ]; then
+    link $BASEDIR/oh-my-zsh/custom $HOME/.oh-my-zsh/custom
+  else
+    echo "Skip OMZ custom: $HOME/.oh-my-zsh is missing (install Oh My Zsh first)"
+  fi
 
   # vim
   link $BASEDIR/vim/vimrc $HOME/.vimrc
@@ -78,6 +83,7 @@ else
   link $BASEDIR/config/glogg $HOME/.config/glogg
   link $BASEDIR/config/htop $HOME/.config/htop
   link $BASEDIR/config/mc $HOME/.config/mc
+  link $BASEDIR/config/ghostty $HOME/.config/ghostty
 
   # tmux
   link $BASEDIR/tmux $HOME/.tmux
