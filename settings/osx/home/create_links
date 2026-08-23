@@ -94,5 +94,6 @@ else
   link $BASEDIR/inputrc $HOME/.inputrc
   link $BASEDIR/toprc $HOME/.toprc
   link $BASEDIR/shell_set_colors $HOME/.shell_set_colors
+  link $BASEDIR/ls_dir_set_colors $HOME/.ls_dir_set_colors
 
 fi

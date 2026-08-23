@@ -157,6 +157,7 @@ fi
 
 [ -f ~/.aliases ] && . ~/.aliases
 [ -f ~/.shell_set_colors ] && . ~/.shell_set_colors
+[ -f ~/.ls_dir_set_colors ] && . ~/.ls_dir_set_colors
 [ -f ~/.localrc ] && . ~/.localrc
 
 ###########################################################

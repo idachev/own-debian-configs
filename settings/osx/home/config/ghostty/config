@@ -5,4 +5,5 @@ background-blur = false
 
 # theme = Ultra Dark
 # theme = Kitty Default
-theme = Molokai
+# theme = Molokai
+theme = linux-dark

@@ -1,0 +1,26 @@
+# Same palette as Linux kitty theme-dark.conf
+# (gnome-terminal-profiles-dark.dconf)
+
+foreground = #AAAAAA
+background = #000000
+cursor-color = #AAAAAA
+cursor-text = #000000
+selection-foreground = #000000
+selection-background = #AAAAAA
+
+palette = 0=#9C9C9C
+palette = 1=#FFB6B0
+palette = 2=#CEFFAB
+palette = 3=#FFFFCB
+palette = 4=#B5DCFE
+palette = 5=#FF9CFE
+palette = 6=#DFDFFE
+palette = 7=#FFFFFF
+palette = 8=#7E7E7E
+palette = 9=#FF6C60
+palette = 10=#A8FF60
+palette = 11=#FFFFB6
+palette = 12=#96CAFE
+palette = 13=#FF73FD
+palette = 14=#C6C5FE
+palette = 15=#EEEEEE
