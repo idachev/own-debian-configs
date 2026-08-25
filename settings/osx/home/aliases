@@ -51,7 +51,7 @@ alias claude-mntr="CLAUDE_CONFIG_DIR=$HOME/.claude-mentorano claude"
 
 # ls: eza when present. In zsh without eza, OMZ sets ls -G / l / ll / la.
 if command -v eza > /dev/null 2>&1; then
-  alias ls='eza -hF --group-directories-first'
+  alias ls='eza -hF --group-directories-first --hyperlink=auto'
 elif [ -z "${ZSH_VERSION:-}" ]; then
   alias ls='ls -hF -G'
 fi
@@ -70,7 +70,7 @@ alias ltr='l -tr'
 alias lt='l -t'
 
 if command -v eza > /dev/null 2>&1; then
-  alias eza='eza -hF --group-directories-first'
+  alias eza='eza -hF --group-directories-first --hyperlink=auto'
   alias le='eza -al'
   alias lel='eza -l'
 fi
