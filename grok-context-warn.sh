@@ -1,5 +1,5 @@
 #!/bin/bash
-# Grok context-usage warning. Sibling of claude-input-notify.sh: same YAD
+# Grok context-usage warning. Sibling of claude-input-notify.sh: same
 # popup when this session is at or above CONTEXT_WARN_PERCENT.
 # First qualifying end_turn (usage just at/over the floor) shows immediately.
 # After that the dialog repeats every Nth qualifying fire (default 3).
@@ -32,7 +32,7 @@ WARN_LOG="${CONTEXT_WARN_LOG:-$HOME/tmp/claude-logs/grok-context-warn.log}"
 
 log() {
   command mkdir -p "$(command dirname "$WARN_LOG")" 2>/dev/null || true
-  command printf '%s %s\n' "$(command date -Is)" "$*" >>"$WARN_LOG" 2>/dev/null || true
+  command printf '%s %s\n' "$(command date -Iseconds 2>/dev/null || command date +%Y-%m-%dT%H:%M:%S%z)" "$*" >>"$WARN_LOG" 2>/dev/null || true
 }
 
 if ! command -v jq >/dev/null 2>&1; then
@@ -160,7 +160,7 @@ if [ ! -x "$NOTIFY_SCRIPT" ]; then
 fi
 
 # idle_prompt is on claude-input-notify.sh's Grok allowlist, so the popup
-# matches "waiting for input" (same dialog, focus rules, kitty jump).
+# matches "waiting for input" (same dialog, focus rules, terminal jump).
 PAYLOAD=$(command jq -n \
   --arg msg "$MSG" \
   --arg cwd "$CWD" \
