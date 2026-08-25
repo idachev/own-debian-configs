@@ -124,10 +124,19 @@ install_formulae \
 install_formulae \
     coreutils gnu-sed findutils grep gnu-tar diffutils watch tree
 
+# ncdu    -> CLI disk usage analyzer
+# p7zip   -> 7z archiver used by 7z*.sh
+# git-gui -> basic Git GUI (git gui / gitk)
 install_formulae \
     fd ripgrep eza bat fzf yq jq tmux htop midnight-commander ncdu vim git-gui \
     git-lfs pv progress p7zip lrzip zip aspell keychain universal-ctags \
     shellcheck fdupes gh
+
+# neovim   -> chosen for the interactive TUI diff and left-to-right merge
+#             (nvim -d, :diffget //2 //3) instead of a GUI merge tool
+# ente-cli -> CLI part of Ente Auth (2FA): export and decrypt the vault;
+#             the GUI app is the ente-auth cask in brew_install_all_goodies.sh
+install_formulae neovim ente-cli
 
 install_formulae \
     nmap socat sshpass opensc swig ykman aws-vault
@@ -146,6 +155,10 @@ install_formulae \
 
 ################################################################################
 # Casks (gcloud is a cask; Docker Desktop and macFUSE may prompt for sudo)
+#
+# macfuse -> FUSE file system driver / kernel extension; needed by the
+#            gocryptfs_*.sh and mount_*.sh mounts. After install macOS may ask
+#            to allow the kernel extension in System Settings > Privacy.
 
 install_cask gcloud-cli docker-desktop macfuse
 

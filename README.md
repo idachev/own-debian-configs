@@ -71,11 +71,20 @@ On macOS (Homebrew + SDKMAN + nvm + rustup, safe to re-run):
 ```
 ./brew_install_no_gui.sh
 ```
-CLI + GUI casks (Postman, Calibre, Thunderbird, Telegram, Slack, KeePassXC, JetBrains Toolbox):
+CLI + GUI casks:
 ```
 ./brew_install_all_goodies.sh
 ```
+GUI casks: Postman, Calibre, Thunderbird, Telegram, Slack, KeePassXC, JetBrains
+Toolbox, LinearMouse (scroll/trackpad tuning), Karabiner-Elements (remaps, Hyper
+Key, input switcher), Supacode, Ente Auth (2FA), Opera, Dropbox, AnyDesk,
+Rectangle and AltTab (windows). Each entry in `brew_install_all_goodies.sh` has a
+comment saying why it is there.
+
 Docker Desktop and macFUSE may ask for a sudo password. Java 21 / Maven / Gradle come from SDKMAN, Node LTS from nvm, Rust from rustup.
+
+Rectangle, AltTab, LinearMouse, Karabiner-Elements and AnyDesk need Accessibility
+/ Input Monitoring permissions on first launch.
 
 # Custom Settings
 
