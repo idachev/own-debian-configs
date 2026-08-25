@@ -6,6 +6,15 @@ HISTSIZE=9999999
 SAVEHIST=9999999
 
 ###########################################################
+# Ghostty / Supacode shell integration
+# Auto-injection only covers the shell Ghostty starts; this
+# also loads it for exec zsh, tmux, and nested shells.
+
+if [ -n "${GHOSTTY_RESOURCES_DIR}" ]; then
+  builtin source "${GHOSTTY_RESOURCES_DIR}/shell-integration/zsh/ghostty-integration"
+fi
+
+###########################################################
 # Oh My Zsh
 
 export ZSH="$HOME/.oh-my-zsh"
