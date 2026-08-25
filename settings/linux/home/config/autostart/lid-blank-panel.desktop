@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=Lid blank panel
+Comment=Turn off laptop backlight while the lid is closed
+Exec=/home/idachev/bin/lid-blank-panel.sh
+Terminal=false
+X-GNOME-Autostart-enabled=true
+Hidden=false

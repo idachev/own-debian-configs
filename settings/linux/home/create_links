@@ -101,6 +101,10 @@ else
 
   link $BASEDIR/config/kitty $HOME/.config/kitty
 
+  mkdir -p $HOME/.config/autostart
+  link $BASEDIR/config/autostart/lid-blank-panel.desktop $HOME/.config/autostart/lid-blank-panel.desktop
+
+
   # misc
   link $BASEDIR/aliases $HOME/.aliases
 
