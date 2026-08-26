@@ -7,3 +7,9 @@ background-blur = false
 # theme = Kitty Default
 # theme = Molokai
 theme = linux-dark
+
+# Split zoom and cycle. Ghostty actions, not Supacode Settings.
+# key_x is the physical X key (US position). Works on EN and BG layouts.
+# Docs: https://ghostty.org/docs/config/keybind/reference
+keybind = ctrl+shift+key_x=toggle_split_zoom
+keybind = ctrl+shift+tab=goto_split:next
