@@ -3,6 +3,8 @@
 background-opacity = 1
 background-blur = false
 
+font-size = 14
+
 # theme = Ultra Dark
 # theme = Kitty Default
 # theme = Molokai
