@@ -1,6 +1,7 @@
 #!/bin/bash
 # CLI contract for anydesk_ctl.sh and teamviewer_ctl.sh.
 # Does not start or stop TeamViewer (needs sudo and changes daemons).
+# AnyDesk stop runs only when no AnyDesk process is running.
 
 set -u
 
@@ -55,7 +56,11 @@ assert_exit "anydesk status" 0 "$ANYDESK" status
 assert_stdout_grep "anydesk status names app" "AnyDesk" "$ANYDESK" status
 assert_exit "teamviewer status" 0 "$TEAMVIEWER" status
 assert_stdout_grep "teamviewer status names app" "TeamViewer" "$TEAMVIEWER" status
-assert_exit "anydesk stop when idle" 0 "$ANYDESK" stop
+if pgrep -f '/Applications/AnyDesk.app' >/dev/null 2>&1; then
+  echo "SKIP  anydesk stop when idle (AnyDesk is running)"
+else
+  assert_exit "anydesk stop when idle" 0 "$ANYDESK" stop
+fi
 
 if command grep -E 'sudo launchctl (load|unload)' "$TEAMVIEWER" "$ANYDESK" >/dev/null; then
   FAIL=$((FAIL + 1))
@@ -63,6 +68,38 @@ if command grep -E 'sudo launchctl (load|unload)' "$TEAMVIEWER" "$ANYDESK" >/dev
 else
   PASS=$((PASS + 1))
   echo "PASS  ctl scripts have no sudo load/unload"
+fi
+
+if command grep -E 'launchctl disable .* \|\| true' "$TEAMVIEWER" "$ANYDESK" >/dev/null; then
+  FAIL=$((FAIL + 1))
+  echo "FAIL  disable is not swallowed with || true (stop would lie success)"
+else
+  PASS=$((PASS + 1))
+  echo "PASS  disable is not swallowed with || true"
+fi
+
+if command grep -E 'launchctl enable .* \|\| true' "$TEAMVIEWER" "$ANYDESK" >/dev/null; then
+  FAIL=$((FAIL + 1))
+  echo "FAIL  enable is not swallowed with || true (start would lie success)"
+else
+  PASS=$((PASS + 1))
+  echo "PASS  enable is not swallowed with || true"
+fi
+
+if command grep -q SUDO_UID "$TEAMVIEWER" && command grep -q SUDO_UID "$ANYDESK"; then
+  PASS=$((PASS + 1))
+  echo "PASS  uid() keeps console user when script is root via sudo"
+else
+  FAIL=$((FAIL + 1))
+  echo "FAIL  uid() keeps console user when script is root via sudo"
+fi
+
+if command grep -E 'launchctl bootout .* \|\| true' "$TEAMVIEWER" "$ANYDESK" >/dev/null; then
+  FAIL=$((FAIL + 1))
+  echo "FAIL  bootout is not swallowed with || true"
+else
+  PASS=$((PASS + 1))
+  echo "PASS  bootout is not swallowed with || true"
 fi
 
 echo

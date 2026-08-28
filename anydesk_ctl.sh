@@ -44,7 +44,15 @@ require_app() {
 }
 
 uid() {
-  id -u
+  if [ "$(id -u)" -ne 0 ]; then
+    id -u
+    return
+  fi
+  if [ -n "${SUDO_UID:-}" ]; then
+    echo "$SUDO_UID"
+    return
+  fi
+  stat -f %u /dev/console
 }
 
 anydesk_plists() {
@@ -92,6 +100,22 @@ job_loaded() {
   launchctl print "$1" >/dev/null 2>&1
 }
 
+# bootout exit 3 = No such process (job gone after the loaded check).
+bootout_if_loaded() {
+  local target="$1"
+  local rc=0
+  job_loaded "$target" || return 0
+  if [ "${2:-}" = sudo ]; then
+    sudo launchctl bootout "$target" || rc=$?
+  else
+    launchctl bootout "$target" || rc=$?
+  fi
+  if [ "$rc" -ne 0 ] && [ "$rc" -ne 3 ]; then
+    echo "WARNING: bootout ${target} failed (exit ${rc})." >&2
+    return "$rc"
+  fi
+}
+
 stop_job() {
   local plist="$1"
   local label domain target
@@ -100,42 +124,49 @@ stop_job() {
   [ -n "$label" ] || return 0
   target="${domain}/${label}"
   if [ "$domain" = system ]; then
-    sudo launchctl disable "$target" || true
-    if job_loaded "$target"; then
-      sudo launchctl bootout "$target" || true
-    fi
+    sudo launchctl disable "$target"
+    bootout_if_loaded "$target" sudo
   else
-    launchctl disable "$target" || true
-    if job_loaded "$target"; then
-      launchctl bootout "$target" || true
-    fi
+    launchctl disable "$target"
+    bootout_if_loaded "$target"
   fi
+  assert_job_disabled "$domain" "$label"
 }
 
 start_job() {
   local plist="$1"
-  local label domain target
+  local label domain target i
   label="$(plist_label "$plist")"
   domain="$(plist_domain "$plist")"
   [ -n "$label" ] || return 0
   target="${domain}/${label}"
   if [ "$domain" = system ]; then
-    sudo launchctl enable "$target" || true
+    sudo launchctl enable "$target"
     if job_loaded "$target"; then
-      sudo launchctl kickstart -k "$target" || true
+      sudo launchctl kickstart -k "$target"
     else
-      sudo launchctl bootstrap system "$plist" || true
-      sudo launchctl kickstart "$target" || true
+      sudo launchctl bootstrap system "$plist"
+      for i in 1 2 3 4 5 6 7 8; do
+        job_loaded "$target" && break
+        sudo launchctl kickstart "$target" 2>/dev/null || true
+        sleep 1
+      done
     fi
   else
-    launchctl enable "$target" || true
+    launchctl enable "$target"
     if job_loaded "$target"; then
-      launchctl kickstart -k "$target" || true
+      launchctl kickstart -k "$target"
     else
-      launchctl bootstrap "$domain" "$plist" || true
-      launchctl kickstart "$target" || true
+      launchctl bootstrap "$domain" "$plist"
+      for i in 1 2 3 4 5 6 7 8; do
+        job_loaded "$target" && break
+        launchctl kickstart "$target" 2>/dev/null || true
+        sleep 1
+      done
     fi
   fi
+  assert_job_enabled "$domain" "$label"
+  assert_job_loaded "$domain" "$label"
 }
 
 is_gui_running() {
@@ -156,9 +187,15 @@ kill_leftovers() {
     pgrep -f "$PROC_PATTERN" >/dev/null 2>&1 || return 0
     sleep 1
   done
-  pkill -TERM -f "$PROC_PATTERN" 2>/dev/null || true
-  sleep 1
-  pkill -KILL -f "$PROC_PATTERN" 2>/dev/null || true
+  if [ "${1:-}" = sudo ]; then
+    sudo pkill -TERM -f "$PROC_PATTERN" 2>/dev/null || true
+    sleep 1
+    sudo pkill -KILL -f "$PROC_PATTERN" 2>/dev/null || true
+  else
+    pkill -TERM -f "$PROC_PATTERN" 2>/dev/null || true
+    sleep 1
+    pkill -KILL -f "$PROC_PATTERN" 2>/dev/null || true
+  fi
 }
 
 assert_stopped() {
@@ -181,6 +218,33 @@ disabled_state() {
   esac
 }
 
+assert_job_disabled() {
+  local domain="$1"
+  local label="$2"
+  if [ "$(disabled_state "$domain" "$label")" != disabled ]; then
+    echo "WARNING: ${domain}/${label} is not disabled." >&2
+    return 1
+  fi
+}
+
+assert_job_enabled() {
+  local domain="$1"
+  local label="$2"
+  if [ "$(disabled_state "$domain" "$label")" = disabled ]; then
+    echo "WARNING: ${domain}/${label} is still disabled." >&2
+    return 1
+  fi
+}
+
+assert_job_loaded() {
+  local domain="$1"
+  local label="$2"
+  if ! job_loaded "${domain}/${label}"; then
+    echo "WARNING: ${domain}/${label} is not loaded." >&2
+    return 1
+  fi
+}
+
 job_state() {
   local plist="$1"
   local label domain target loaded override
@@ -198,13 +262,14 @@ job_state() {
 }
 
 do_stop() {
-  local plist plists
+  local plist plists kill_as=
   require_macos
   require_app
   plists="$(anydesk_plists || true)"
   if [ -n "$plists" ]; then
     if anydesk_needs_sudo; then
       need_sudo
+      kill_as=sudo
     fi
     echo "Disabling AnyDesk launchd jobs..."
     while IFS= read -r plist; do
@@ -215,7 +280,7 @@ do_stop() {
   fi
   echo "Quitting AnyDesk..."
   quit_gui
-  kill_leftovers
+  kill_leftovers "$kill_as"
   assert_stopped
   echo "AnyDesk stopped."
 }
