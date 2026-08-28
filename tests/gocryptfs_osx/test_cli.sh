@@ -32,7 +32,7 @@ assert_stdout_grep() {
   local pattern="$2"
   shift 2
   if "$@" >/tmp/gocryptfs_osx_out.txt 2>/tmp/gocryptfs_osx_err.txt &&
-    command grep -q "$pattern" /tmp/gocryptfs_osx_out.txt; then
+    command grep -q -e "$pattern" /tmp/gocryptfs_osx_out.txt; then
     PASS=$((PASS + 1))
     echo "PASS  $name"
   else
@@ -58,6 +58,30 @@ assert_stdout_grep "help names keychain-set" "keychain-set" "$OSX" --help
 assert_stdout_grep "help names agent-install" "agent-install" "$OSX" --help
 assert_exit "status" 0 "$OSX" status
 assert_stdout_grep "status names cipherdir" "storage_private_docs.crypt" "$OSX" status
+assert_stdout_grep "status start stamp" "----- start status " "$OSX" status
+assert_stdout_grep "status stop stamp" "----- stop status exit 0 " "$OSX" status
+
+if "$OSX" status >/tmp/gocryptfs_osx_out.txt 2>/tmp/gocryptfs_osx_err.txt &&
+  command grep -E '^----- start status [0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2} ' /tmp/gocryptfs_osx_out.txt >/dev/null &&
+  command grep -E '^----- stop status exit 0 [0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2} ' /tmp/gocryptfs_osx_out.txt >/dev/null; then
+  PASS=$((PASS + 1))
+  echo "PASS  status stamps have date and time"
+else
+  FAIL=$((FAIL + 1))
+  echo "FAIL  status stamps have date and time"
+  command cat /tmp/gocryptfs_osx_out.txt /tmp/gocryptfs_osx_err.txt
+fi
+
+if "$OSX" --help >/tmp/gocryptfs_osx_out.txt 2>/tmp/gocryptfs_osx_err.txt &&
+  ! command grep -F -e "----- start " /tmp/gocryptfs_osx_out.txt >/dev/null &&
+  ! command grep -F -e "----- start " /tmp/gocryptfs_osx_err.txt >/dev/null; then
+  PASS=$((PASS + 1))
+  echo "PASS  help has no run stamp"
+else
+  FAIL=$((FAIL + 1))
+  echo "FAIL  help has no run stamp"
+  command cat /tmp/gocryptfs_osx_out.txt /tmp/gocryptfs_osx_err.txt
+fi
 
 if command grep -E 'sudo launchctl (load|unload)' "$OSX" "$UNMOUNT" >/dev/null; then
   FAIL=$((FAIL + 1))

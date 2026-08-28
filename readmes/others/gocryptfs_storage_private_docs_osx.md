@@ -38,7 +38,8 @@ launchd can read it).
 `launchctl bootstrap gui/$(id -u)` (no `sudo load`, no KeepAlive), then mounts
 if needed.
 
-Log: `~/Library/Logs/gocryptfs-storage-private-docs.log`
+Log: `~/Library/Logs/gocryptfs-storage-private-docs.log`.
+Each run writes a start line and a stop line with a local timestamp.
 
 ## Commands
 

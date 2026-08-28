@@ -42,6 +42,20 @@ keychain-set stores that password. agent-install loads a LaunchAgent at login.
 EOF
 }
 
+run_stamp() {
+  echo "----- $1 $(date '+%Y-%m-%d %H:%M:%S %z') -----"
+}
+
+stamp_run() {
+  case "$1" in
+    -h|--help|help)
+      return 0
+      ;;
+  esac
+  run_stamp "start $1"
+  trap 'rc=$?; run_stamp "stop '"$1"' exit ${rc}"' EXIT
+}
+
 require_macos() {
   if [ "$(uname -s)" != Darwin ]; then
     echo "This script is for macOS." >&2
@@ -321,6 +335,7 @@ cmd="${1:-mount}"
 if [ "$#" -gt 0 ]; then
   shift
 fi
+stamp_run "${cmd}"
 
 case "${cmd}" in
   mount)
