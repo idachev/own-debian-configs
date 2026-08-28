@@ -24,5 +24,6 @@ files). See `readmes/others/mount_yubikey_enc.md`. Interactive check:
 
 macOS private docs: `~/bin/gocryptfs_storage_private_docs_osx.sh` (login
 Keychain + LaunchAgent). See `readmes/others/gocryptfs_storage_private_docs_osx.md`.
-Unmount is `umount`, not `fusermount`.
+Unmount is `umount`, not `fusermount`. Dropbox sync of those trees:
+`readmes/others/sync_laptop_osx.md`.
 

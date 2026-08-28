@@ -75,3 +75,10 @@ Or Keychain Access → login → `gocryptfs-storage-private-docs` → Show passw
 
 `status` should show: mount `mounted`, keychain `present`, agent job `loaded`.
 Plaintext path: `~/personal/docs/private`.
+
+## Dropbox sync
+
+Cipherdir and plaintext trees go to Dropbox via
+`~/Dropbox/sync/sync_laptop_osx.sh`. The scheduler is a second LaunchAgent
+(`sync_laptop_osx_agent.sh`), not this mount agent. See
+`readmes/others/sync_laptop_osx.md`.
