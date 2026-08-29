@@ -12,13 +12,15 @@ if [ ! -d "${TARGET}" ]; then
   exit 1
 fi
 
+# Only Gradle module output. A Java package named build, CMake build/,
+# docker/build with Dockerfiles, or scripts/build must not match.
+if [ "$(basename "${TARGET}")" != "build" ]; then
+  exit 0
+fi
+
 BASE_DIR=$(dirname "${TARGET}")
 
-# Project cache has vcs-1 / buildOutputCleanup. User-cache copies have vcsWorkingDirs.
-if [ -d "${TARGET}/vcs-1" ] || \
-   [ -d "${TARGET}/vcsWorkingDirs" ] || \
-   [ -d "${TARGET}/buildOutputCleanup" ] || \
-   [ -s "${BASE_DIR}/build.gradle" ] || \
+if [ -s "${BASE_DIR}/build.gradle" ] || \
    [ -s "${BASE_DIR}/build.gradle.kts" ] || \
    [ -s "${BASE_DIR}/settings.gradle" ] || \
    [ -s "${BASE_DIR}/settings.gradle.kts" ]; then

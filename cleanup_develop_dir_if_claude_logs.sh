@@ -1,6 +1,5 @@
 #!/bin/bash
 [ "$1" = -x ] && shift && set -x
-DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 TARGET=$1
 
@@ -13,9 +12,9 @@ if [ ! -d "${TARGET}" ]; then
   exit 1
 fi
 
-BASE_DIR=$(dirname "${TARGET}")
-
-if [ -s "${BASE_DIR}/pom.xml" ]; then
+# Only tmp/claude-logs. Other tmp trees hold photos, exports, sessions.
+if [ "$(basename "${TARGET}")" = "claude-logs" ] && \
+   [ "$(basename "$(dirname "${TARGET}")")" = "tmp" ]; then
   echo "echo"
   echo "echo \"Cleanup ${TARGET}\""
   echo "rm -rf \"${TARGET}\""

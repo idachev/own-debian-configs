@@ -13,11 +13,11 @@ if [ ! -d "${TARGET}" ]; then
   exit 1
 fi
 
-BASE_DIR=$(dirname ${TARGET})
+BASE_DIR=$(dirname "${TARGET}")
 
 count=$(echo "${TARGET}" | grep -o "node_modules" | wc -l)
 
-if [ -s "${BASE_DIR}/package.json" ] && [ ${count} -eq 1 ]; then
+if [ -s "${BASE_DIR}/package.json" ] && [ "${count}" -eq 1 ]; then
   echo "echo"
   echo "echo \"Cleanup ${TARGET}\""
   echo "rm -rf \"${TARGET}\""
