@@ -5,7 +5,7 @@ DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 TARGET_DIR=$1
 
 if [ ! -d "${TARGET_DIR}" ]; then
-  echo -e "Expecting valid dir: ${TARGET_DIR}"
+  echo -e "Expecting valid dir: ${TARGET_DIR}" >&2
   exit 1
 fi
 
@@ -22,15 +22,13 @@ echo "Wrote log: ${LOG_FILE}" >&2
   echo
 } > "${LOG_FILE}"
 
-cd "${TARGET_DIR}"
-
 # Deliberately not cleaned: whole tmp/, out/, dist/, .idea, .wrangler,
 # coverage-report (Maven module), CMake/docker/scripts dirs named build.
 # Tree-specific names live in TARGET_DIR/cleanup_before_backup.dirs.
 
 # Do not walk .git or node_modules. Print the match itself, then prune.
 find_pruned() {
-  find . \( -name .git -o -name node_modules \) -prune -o -type d "$@" -prune -print0
+  find "${TARGET_DIR}" \( -name .git -o -name node_modules \) -prune -o -type d "$@" -prune -print0
 }
 
 run_helper() {
@@ -53,7 +51,7 @@ run_listed_dirs() {
       /*|*..*|*'*'*|*'?'*|*'['*) continue ;;
     esac
     if printf '%s' "${line}" | command grep -q '/'; then
-      find . \( -name .git -o -name node_modules \) -prune \
+      find "${TARGET_DIR}" \( -name .git -o -name node_modules \) -prune \
         -o -type d -path "*/${line}" -prune -print0 | \
         xargs -0 -r -l1 "${DIR}/cleanup_develop_dir_if_listed.sh"
     else
@@ -65,7 +63,7 @@ run_listed_dirs() {
 {
   run_helper cleanup_develop_dir_if_maven_target.sh -name target
 
-  find . -name .git -prune -o -type d -name node_modules -prune -print0 | \
+  find "${TARGET_DIR}" -name .git -prune -o -type d -name node_modules -prune -print0 | \
     xargs -0 -r -l1 "${DIR}/cleanup_develop_dir_if_npm_modules.sh"
 
   # venv and .venv (both match pyvenv.cfg via cleanup_develop_dir_if_venv.sh)
@@ -75,7 +73,7 @@ run_listed_dirs() {
   run_helper cleanup_develop_dir_if_gradle_build.sh -name build
 
   # Skip caches already covered by .venv / venv / node_modules / target.
-  find . \( -name .git -o -name node_modules -o -name .venv -o -name venv -o -name target \) -prune \
+  find "${TARGET_DIR}" \( -name .git -o -name node_modules -o -name .venv -o -name venv -o -name target \) -prune \
     -o -type d \( -name __pycache__ -o -name .pytest_cache -o -name .mypy_cache -o -name .ruff_cache -o -name htmlcov \) \
     -prune -print0 | \
     xargs -0 -r -l1 "${DIR}/cleanup_develop_dir_if_python_cache.sh"
@@ -83,6 +81,8 @@ run_listed_dirs() {
   run_helper cleanup_develop_dir_if_js_cache.sh \
     \( -name .next -o -name .open-next -o -name .nx \
        -o -name .turbo -o -name .parcel-cache \)
+
+  run_helper cleanup_develop_dir_if_claude_logs.sh -name claude-logs
 
   run_listed_dirs
 } | tee -a "${LOG_FILE}"

@@ -24,7 +24,8 @@ C_RED=$'\e[31m'
 C_OFF=$'\e[0m'
 
 ROOT=$(mktemp -d /tmp/cleanup-develop-test-XXXXXX)
-trap 'rm -rf "$ROOT"' EXIT
+DECOY=$(mktemp -d /tmp/cleanup-develop-decoy-XXXXXX)
+trap 'rm -rf "$ROOT" "$DECOY"' EXIT
 
 mkdir_p() { mkdir -p "$ROOT/$1"; }
 touch_p() {
@@ -62,6 +63,8 @@ touch_p gradle-user-cache/.gradle/vcsWorkingDirs/x
 
 mkdir_p repo/tmp/claude-logs/run-1
 touch_p repo/tmp/claude-logs/run-1/build.log
+mkdir_p other/claude-logs/run-1
+touch_p other/claude-logs/run-1/build.log
 
 mkdir_p next-app/.next/cache
 mkdir_p next-app/.open-next/server-functions
@@ -158,7 +161,10 @@ printf '%s\n' \
   'storybook-static' \
   '.vite' \
   'coverage' \
-  'tmp/claude-logs' \
+  'tmp' \
+  'out' \
+  'dist' \
+  'build' \
   > "$ROOT/cleanup_before_backup.dirs"
 
 MUST_DELETE='
@@ -192,8 +198,10 @@ MUST_KEEP='
 ./hex/src/main/java/app/adapters/out
 ./hex/src/main/java/app/domain/build
 ./vendor/jquery/dist
+./site/tmp
 ./site/tmp/photos
 ./site/tmp/exports
+./other/claude-logs
 ./maven-mod/coverage-report
 ./maven-mod/coverage-report/src
 ./cmake-proj/build
@@ -225,7 +233,7 @@ echo "=== dry-run rm paths ==="
 printf '%s\n' "$RM_LIST"
 
 check_delete() {
-  local path="$1"
+  local path="$ROOT/${1#./}"
   if printf '%s\n' "$RM_LIST" | command grep -Fxq "$path"; then
     PASS=$((PASS + 1))
     printf '  %sPASS%s  delete  %s\n' "$C_GREEN" "$C_OFF" "$path"
@@ -236,7 +244,7 @@ check_delete() {
 }
 
 check_keep() {
-  local path="$1"
+  local path="$ROOT/${1#./}"
   if printf '%s\n' "$RM_LIST" | command grep -Fxq "$path"; then
     FAIL=$((FAIL + 1))
     printf '  %sFAIL%s  must keep, but listed for rm  %s\n' "$C_RED" "$C_OFF" "$path"
@@ -298,6 +306,75 @@ else
   FAIL=$((FAIL + 1))
   printf '  %sFAIL%s  stderr missing Wrote log path\n' "$C_RED" "$C_OFF"
   command cat "$STDERR_FILE"
+fi
+
+echo
+echo "=== cwd-safe rm paths ==="
+RELATIVE_RM=$(printf '%s\n' "$RM_LIST" | command grep -v '^/' || true)
+if [ -z "$RELATIVE_RM" ]; then
+  PASS=$((PASS + 1))
+  printf '  %sPASS%s  all rm paths are absolute\n' "$C_GREEN" "$C_OFF"
+else
+  FAIL=$((FAIL + 1))
+  printf '  %sFAIL%s  relative rm paths would delete caller cwd\n' "$C_RED" "$C_OFF"
+  printf '%s\n' "$RELATIVE_RM"
+fi
+
+mkdir -p "$DECOY/maven-mod/target/classes"
+printf 'x\n' > "$DECOY/maven-mod/pom.xml"
+printf 'KEEP-DECOY\n' > "$DECOY/maven-mod/target/classes/x"
+(
+  cd "$DECOY"
+  printf '%s\n' "$OUT" | xargs -ITARGET bash -c "TARGET"
+)
+if [ -d "$DECOY/maven-mod/target" ]; then
+  PASS=$((PASS + 1))
+  printf '  %sPASS%s  decoy cwd tree kept after doit\n' "$C_GREEN" "$C_OFF"
+else
+  FAIL=$((FAIL + 1))
+  printf '  %sFAIL%s  doit deleted decoy cwd tree\n' "$C_RED" "$C_OFF"
+fi
+if [ ! -d "$ROOT/maven-mod/target" ]; then
+  PASS=$((PASS + 1))
+  printf '  %sPASS%s  real target tree deleted from other cwd\n' "$C_GREEN" "$C_OFF"
+else
+  FAIL=$((FAIL + 1))
+  printf '  %sFAIL%s  real target tree still present after doit\n' "$C_RED" "$C_OFF"
+fi
+
+echo
+echo "=== errors on stderr ==="
+HELPER_ERR="$ROOT/helper-err.txt"
+H_OUT=$("$HOME/bin/cleanup_develop_dir_if_python_cache.sh" /no/such 2>"$HELPER_ERR") || true
+if [ -z "$H_OUT" ]; then
+  PASS=$((PASS + 1))
+  printf '  %sPASS%s  helper stdout empty on bad dir\n' "$C_GREEN" "$C_OFF"
+else
+  FAIL=$((FAIL + 1))
+  printf '  %sFAIL%s  helper error leaked to stdout\n' "$C_RED" "$C_OFF"
+fi
+if command grep -q "Expecting valid directory: /no/such" "$HELPER_ERR"; then
+  PASS=$((PASS + 1))
+  printf '  %sPASS%s  helper error on stderr\n' "$C_GREEN" "$C_OFF"
+else
+  FAIL=$((FAIL + 1))
+  printf '  %sFAIL%s  helper stderr missing Expecting valid directory\n' "$C_RED" "$C_OFF"
+fi
+O_ERR="$ROOT/orch-err.txt"
+O_OUT=$("$SCRIPT" /no/such 2>"$O_ERR") || true
+if [ -z "$O_OUT" ]; then
+  PASS=$((PASS + 1))
+  printf '  %sPASS%s  orchestrator stdout empty on bad dir\n' "$C_GREEN" "$C_OFF"
+else
+  FAIL=$((FAIL + 1))
+  printf '  %sFAIL%s  orchestrator error leaked to stdout\n' "$C_RED" "$C_OFF"
+fi
+if command grep -q "Expecting valid dir: /no/such" "$O_ERR"; then
+  PASS=$((PASS + 1))
+  printf '  %sPASS%s  orchestrator error on stderr\n' "$C_GREEN" "$C_OFF"
+else
+  FAIL=$((FAIL + 1))
+  printf '  %sFAIL%s  orchestrator stderr missing Expecting valid dir\n' "$C_RED" "$C_OFF"
 fi
 
 echo

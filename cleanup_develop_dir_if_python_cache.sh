@@ -8,7 +8,7 @@ if [ ! -d "${TARGET}" ]; then
     exit 2
   fi
 
-  echo -e "\nExpecting valid directory: ${TARGET}"
+  echo -e "\nExpecting valid directory: ${TARGET}" >&2
   exit 1
 fi
 

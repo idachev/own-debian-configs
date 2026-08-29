@@ -8,7 +8,7 @@ if [ ! -d "${TARGET}" ]; then
     exit 2
   fi
 
-  echo -e "\nExpecting valid directory: ${TARGET}"
+  echo -e "\nExpecting valid directory: ${TARGET}" >&2
   exit 1
 fi
 
@@ -51,6 +51,8 @@ case "${NAME}" in
     if [ -s "${BASE_DIR}/package.json" ]; then
       emit_cleanup
     fi
+    ;;
+  tmp|out|dist|build|src|data|coverage-report)
     ;;
   *)
     emit_cleanup
