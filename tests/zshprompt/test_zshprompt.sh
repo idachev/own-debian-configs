@@ -1,6 +1,7 @@
 #!/bin/zsh
-# Test the AWS/kube extra row in zshprompt.
-# That row must appear only when there is something to show.
+# Test the AWS/kube extra row in zshprompt, and the Mac U.S. input
+# source hook. The extra row must appear only when there is something
+# to show. The input source tests run only against the osx prompt.
 #
 # Usage:
 #   ~/bin/tests/zshprompt/test_zshprompt.sh
@@ -138,7 +139,7 @@ assert "AWS flag on, AWS_PROFILE=work: extra row has aws" \
   "cloud=$(printf '%q' "$cloud") aws=$(printf '%q' "$aws")"
 
 fake=$(mktemp -d)
-trap 'rm -rf "$fake"' EXIT
+trap 'command rm -rf -- "$fake"' EXIT
 cat > "$fake/kubectl" <<'EOF'
 #!/bin/sh
 if [ "$1" = config ] && [ "$2" = view ]; then
@@ -175,6 +176,60 @@ fi
 assert "AWS and kube both on: one extra row with both" \
   "$ok" \
   "cloud=$(printf '%q' "$cloud")"
+
+run_precmd_input_source() {
+  local interactive="$1"
+  local workdir="$2"
+  local stamp="$workdir/stamp"
+  local bindir="$workdir/bin"
+
+  command mkdir -p "$bindir"
+  cat > "$bindir/macos_input_source" <<EOF
+#!/bin/sh
+printf '%s\n' "\$*" >> "$stamp"
+EOF
+  command chmod +x "$bindir/macos_input_source"
+  : > "$stamp"
+
+  local zsh_args=(-f)
+  if [ "$interactive" = "1" ]; then
+    zsh_args=(-f -i)
+  fi
+
+  env -i \
+    HOME="$HOME" \
+    USER="${USER:-idachev}" \
+    LOGNAME="${LOGNAME:-idachev}" \
+    TERM="${TERM:-xterm-256color}" \
+    PATH="$bindir:$PATH" \
+    PWD="$PWD" \
+    zsh "${zsh_args[@]}" -c 'source "'"$PROMPT_FILE"'"; precmd'
+}
+
+case "$PROMPT_FILE" in
+  *settings/osx/home/zshprompt)
+    isrc_dir=$(mktemp -d)
+    trap 'command rm -rf -- "$fake" "$isrc_dir"' EXIT
+
+    run_precmd_input_source 0 "$isrc_dir/nonint"
+    ok=0
+    if [ ! -s "$isrc_dir/nonint/stamp" ]; then
+      ok=1
+    fi
+    assert "non-interactive darwin precmd does not call macos_input_source" \
+      "$ok" \
+      "stamp=$(printf '%q' "$(command cat "$isrc_dir/nonint/stamp")")"
+
+    run_precmd_input_source 1 "$isrc_dir/int"
+    ok=0
+    if [ "$(command cat "$isrc_dir/int/stamp")" = "us" ]; then
+      ok=1
+    fi
+    assert "interactive darwin precmd calls macos_input_source us" \
+      "$ok" \
+      "stamp=$(printf '%q' "$(command cat "$isrc_dir/int/stamp")")"
+    ;;
+esac
 
 echo
 if [ "$FAIL" -gt 0 ]; then

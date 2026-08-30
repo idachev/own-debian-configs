@@ -20,3 +20,6 @@ __pycache__
 
 /.serena
 
+# Mach-O helper compiled from macos_input_source.c
+/macos_input_source
+

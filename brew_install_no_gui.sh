@@ -300,6 +300,17 @@ else
 fi
 
 ################################################################################
+# macos_input_source — zshprompt switches the keyboard back to U.S.
+
+echo -e "\n==> clang macos_input_source\n"
+if clang -Os -framework Carbon -o "${DIR}/macos_input_source" \
+    "${DIR}/macos_input_source.c"; then
+    chmod +x "${DIR}/macos_input_source"
+else
+    failed+=("macos_input_source")
+fi
+
+################################################################################
 # Summary
 
 echo -e "\n################################################################################"

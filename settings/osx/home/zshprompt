@@ -1,5 +1,10 @@
 
 function precmd {
+	# Back to U.S. when the prompt draws (e.g. after grok/claude).
+	if [[ -o interactive && "$OSTYPE" == darwin* ]]; then
+		command macos_input_source us >/dev/null 2>&1 || true
+	fi
+
 	###
 	# Configure here vcs info
 	vcs_info
