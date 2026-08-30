@@ -49,22 +49,28 @@ function precmd {
 		fi
 	fi
 
+  PR_KUBE_NAMESPACE=''
+  PR_AWS_PROFILE=''
+
   if [ "${PR_SHOW_KUBE}" = "1"  ]; then
     if which kubectl > /dev/null 2>&1; then
       KUBE_NAMESPACE=$(kubectl config view --minify --output 'jsonpath={..namespace}')
       KUBE_CONTEXT=$(kubectl config current-context)
       PR_KUBE_NAMESPACE='${PR_WHITE}[kube ${PR_DIM_YELLOW}${KUBE_CONTEXT} ${PR_YELLOW}${KUBE_NAMESPACE}${PR_WHITE}]'
-    else
-      PR_KUBE_NAMESPACE=''
     fi
   fi
 
   if [ "${PR_SHOW_AWS}" = "1" ]; then
     if [ ! "${AWS_PROFILE}" = "" ]; then
       PR_AWS_PROFILE='${PR_WHITE}[aws ${PR_LIGHT_MAGENTA}${AWS_PROFILE}${PR_WHITE}]'
-    else
-      PR_AWS_PROFILE=''
     fi
+  fi
+
+  # Leading newline lives here, so an empty AWS/kube row does not keep a blank line.
+  if [ -n "${PR_AWS_PROFILE}" -o -n "${PR_KUBE_NAMESPACE}" ]; then
+    PR_CLOUD_LINE=$'\n'"${PR_AWS_PROFILE}${PR_KUBE_NAMESPACE}"
+  else
+    PR_CLOUD_LINE=''
   fi
 }
 
@@ -174,13 +180,7 @@ setprompt () {
 $PR_DIM_YELLOW%D{%H:%M:%S} %D{%Y-%m-%d} \
 $PR_DIM_GREEN%(!.%SROOT%s.%n)$PR_DIM_GREEN@%m:%l$PR_STY \
 $PR_DIM_RED%(?..ERRNO:$PR_RED%?) \
-${(e)PR_APM}'
-
-  if [ "${PR_SHOW_KUBE}" = "1" -o "${PR_SHOW_AWS}" = "1" ]; then
-    PROMPT="${PROMPT}"'
-${(e)PR_AWS_PROFILE}\
-${(e)PR_KUBE_NAMESPACE}'
-  fi
+${(e)PR_APM}${(e)PR_CLOUD_LINE}'
 
   PROMPT="${PROMPT}"'
 $PR_BLUE%$PR_PWDLEN<...<%~%<< \
