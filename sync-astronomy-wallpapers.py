@@ -3,14 +3,15 @@
 
 Dropbox File Provider: st_size is metadata (safe). st_blocks == 0 means
 the bytes are not on disk — opening the file downloads the whole object.
-This script never opens those. Width is read only from JPEG/PNG headers
-of already-local files (a few KB from SSD).
+This script never opens those. Dimensions are read only from JPEG/PNG
+headers of already-local files (a few KB from SSD).
 
 Filters (in order, cheap first):
   1. extension: jpg/jpeg/png
-  2. size from stat() only: 1 MiB .. 10 MiB  (no cloud fetch)
+  2. size from stat() only: 1 MiB .. 64 MiB  (no cloud fetch)
   3. skip unhydrated files (st_blocks == 0) instead of opening them
-  4. pixel width from JPEG/PNG header of already-local files (>= 1600)
+  4. pixel size from JPEG/PNG header of already-local files
+     (width >= 3456 and height >= 2234 — 16-inch Retina, no Fill upscale)
   5. skip portrait (height > width) — laptop wallpaper
 
 Then rsync copies only the survivors. Destination extras are removed so
@@ -27,8 +28,9 @@ import tempfile
 from pathlib import Path
 
 MIN_BYTES = 1 * 1024 * 1024
-MAX_BYTES = 10 * 1024 * 1024
-MIN_WIDTH = 1600
+MAX_BYTES = 64 * 1024 * 1024
+MIN_WIDTH = 3456
+MIN_HEIGHT = 2234
 IMAGE_EXT = {".jpg", ".jpeg", ".png"}
 HEADER_CAP = 2 * 1024 * 1024  # stop parsing if SOF not found by then
 SOF = frozenset(
@@ -146,6 +148,7 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--min-bytes", type=int, default=MIN_BYTES)
     p.add_argument("--max-bytes", type=int, default=MAX_BYTES)
     p.add_argument("--min-width", type=int, default=MIN_WIDTH)
+    p.add_argument("--min-height", type=int, default=MIN_HEIGHT)
     p.add_argument(
         "-n",
         "--dry-run",
@@ -161,8 +164,9 @@ def parse_args() -> argparse.Namespace:
         "--measure-unhydrated",
         action="store_true",
         help=(
-            "read JPEG/PNG headers of 1–10 MiB online-only files so width can "
-            "be filtered. File Provider downloads each whole file when opened."
+            "read JPEG/PNG headers of size-matched online-only files so width "
+            "and height can be filtered. File Provider downloads each whole "
+            "file when opened."
         ),
     )
     return p.parse_args()
@@ -174,6 +178,7 @@ def select(
     max_bytes: int,
     min_width: int,
     measure_unhydrated: bool = False,
+    min_height: int = MIN_HEIGHT,
 ) -> tuple[list[str], dict[str, int]]:
     stats = {
         "seen": 0,
@@ -181,6 +186,7 @@ def select(
         "skip_size": 0,
         "skip_unhydrated": 0,
         "skip_narrow": 0,
+        "skip_short": 0,
         "skip_portrait": 0,
         "skip_header": 0,
         "ok": 0,
@@ -232,6 +238,9 @@ def select(
             width, height = dim
             if width < min_width:
                 stats["skip_narrow"] += 1
+                continue
+            if height < min_height:
+                stats["skip_short"] += 1
                 continue
             if height > width:
                 stats["skip_portrait"] += 1
@@ -320,12 +329,13 @@ def main() -> int:
     print(
         f"filter     {args.min_bytes / (1024 * 1024):.0f}–"
         f"{args.max_bytes / (1024 * 1024):.0f} MiB, "
-        f"width >= {args.min_width}px, landscape jpg/png"
+        f"width >= {args.min_width}px, "
+        f"height >= {args.min_height}px, landscape jpg/png"
     )
     if args.measure_unhydrated:
         print(
-            "cloud      will open 1–10 MiB online-only files to read width "
-            "(each download is the whole file)"
+            "cloud      will open size-matched online-only files to read "
+            "width and height (each download is the whole file)"
         )
     else:
         print("cloud      size from stat; skip st_blocks=0 (online-only), no header read")
@@ -335,11 +345,13 @@ def main() -> int:
         args.max_bytes,
         args.min_width,
         measure_unhydrated=args.measure_unhydrated,
+        min_height=args.min_height,
     )
     print(
         f"scanned    {stats['seen']}  size-skip {stats['skip_size']}  "
         f"unhydrated {stats['skip_unhydrated']}  "
-        f"narrow {stats['skip_narrow']}  portrait {stats['skip_portrait']}  "
+        f"narrow {stats['skip_narrow']}  short {stats['skip_short']}  "
+        f"portrait {stats['skip_portrait']}  "
         f"bad-header {stats['skip_header']}  other-ext {stats['skip_ext']}"
     )
     print(
