@@ -37,6 +37,9 @@ do not symlink into `/etc`.
 
 See `settings/osx/system/README.md`.
 
+LaunchAgent plists (`~/Library/LaunchAgents`) are not in `settings/osx`.
+Restore each job with its installer. See `settings/osx/README.md`.
+
 
 To add specifics only to the local shell config use:
 ```
