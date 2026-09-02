@@ -40,3 +40,6 @@ keybind = ctrl+key_z=text:\x1a
 # Split zoom and cycle. Ghostty actions, not Supacode Settings.
 keybind = ctrl+shift+key_x=toggle_split_zoom
 keybind = ctrl+shift+tab=goto_split:next
+
+# Grok TUI newline. Shift+Enter sends the same ESC+CR as Option+Enter.
+keybind = shift+enter=text:\x1b\r
