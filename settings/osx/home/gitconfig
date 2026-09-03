@@ -84,3 +84,8 @@
   UseHttpPath = true
 [interactive]
 	diffFilter = diff-so-fancy --patch
+
+# Работната идентичност за всичко под ~/develop/mentorano/.
+# Стои НАКРАЯ нарочно: include-ът печели над всичко зададено по-горе.
+[includeIf "gitdir:~/develop/mentorano/"]
+	path = ~/develop/mentorano/.gitconfig
