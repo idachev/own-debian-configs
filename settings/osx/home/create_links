@@ -62,11 +62,35 @@ else
   link $BASEDIR/zshprompt $HOME/.zshprompt
   link $BASEDIR/zshrc $HOME/.zshrc
 
+  # Oh My Zsh custom plugins are loaded via ZSH_CUSTOM in zshrc (this folder in
+  # git). Do not symlink over ~/.oh-my-zsh/custom: omz update cannot autostash
+  # tracked example files that sit behind a symlink.
+  OMZ_CUSTOM="$HOME/.oh-my-zsh/custom"
+  SETTINGS_CUSTOM="$BASEDIR/oh-my-zsh/custom"
   if [ -d "$HOME/.oh-my-zsh" ]; then
-    link $BASEDIR/oh-my-zsh/custom $HOME/.oh-my-zsh/custom
+    if [ -L "$OMZ_CUSTOM" ]; then
+      DSTLINK=$(readlink "$OMZ_CUSTOM")
+      if [ "$DSTLINK" = "$SETTINGS_CUSTOM" ]; then
+        echo "Migrate OMZ custom: drop settings symlink, restore OMZ's own custom/"
+        echo "Plugins load from ZSH_CUSTOM: $SETTINGS_CUSTOM"
+        rm "$OMZ_CUSTOM"
+        if [ -e "$OMZ_CUSTOM" ]; then
+          echo "OMZ custom was not removed; skip restore"
+        else
+          git -C "$HOME/.oh-my-zsh" checkout -- custom/
+          if [ ! -d "$OMZ_CUSTOM" ]; then
+            echo "OMZ custom restore failed; creating empty directory"
+            mkdir -p "$OMZ_CUSTOM"
+          fi
+        fi
+      else
+        echo "Skip OMZ custom migrate: $OMZ_CUSTOM points to $DSTLINK"
+      fi
+    fi
   else
-    echo "Skip OMZ custom: $HOME/.oh-my-zsh is missing (install Oh My Zsh first)"
+    echo "Skip OMZ custom migrate: $HOME/.oh-my-zsh is missing (install Oh My Zsh first)"
   fi
+  unset OMZ_CUSTOM SETTINGS_CUSTOM DSTLINK
 
   # vim
   link $BASEDIR/vim/vimrc $HOME/.vimrc
