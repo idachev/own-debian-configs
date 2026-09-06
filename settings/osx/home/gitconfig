@@ -89,3 +89,5 @@
 # Стои НАКРАЯ нарочно: include-ът печели над всичко зададено по-горе.
 [includeIf "gitdir:~/develop/mentorano/"]
 	path = ~/develop/mentorano/.gitconfig
+[init]
+	defaultBranch = master
