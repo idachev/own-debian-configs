@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=Kitty TeamViewer scroll fix
+Comment=Make kitty accept TeamViewer mouse wheel on X11
+Exec=/home/idachev/bin/kitty-tv-scroll-fix.sh
+Terminal=false
+X-GNOME-Autostart-enabled=true
+Hidden=false
