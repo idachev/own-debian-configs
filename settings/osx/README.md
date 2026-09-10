@@ -21,3 +21,9 @@ On a new Mac, run the installer. Do not copy a plist from git into
 More detail: `readmes/others/sync_laptop_osx.md`,
 `readmes/others/gocryptfs_storage_private_docs_osx.md`,
 `~/develop/personal/nasa-photos/README.md`.
+
+## Claude Code caffeinate stub
+
+Claude Code keeps the Mac awake (`caffeinate -i -t 300`) and has no
+off switch. The macOS `claude` function prepends a no-op `PATH` stub
+so idle sleep works again. See `readmes/others/claude-caffeinate-stub.md`.

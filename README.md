@@ -89,6 +89,16 @@ Docker Desktop and macFUSE may ask for a sudo password. Java 21 / Maven / Gradle
 Rectangle, AltTab, LinearMouse, Karabiner-Elements and AnyDesk need Accessibility
 / Input Monitoring permissions on first launch.
 
+# Claude Code (macOS)
+
+Claude Code spawn()s `caffeinate -i -t 300` for the whole session. There
+is no official setting to disable it, so a live `claude` holds the Mac
+awake (idle sleep and often lid-close). The macOS `claude` function
+prepends `claude-caffeinate-stub/` to `PATH` so Claude hits a no-op;
+`/usr/bin/caffeinate` stays real for other commands.
+
+See `readmes/others/claude-caffeinate-stub.md`.
+
 # Custom Settings
 
 ## Terminal Profiles
