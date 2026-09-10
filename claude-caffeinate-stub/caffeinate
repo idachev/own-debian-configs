@@ -1,0 +1,6 @@
+#!/bin/sh
+# No-op stand-in for /usr/bin/caffeinate.
+# Claude Code spawn()s "caffeinate" via PATH. This directory is prepended
+# only by the `claude` function in settings/osx/home/aliases.
+# Do not put this directory on PATH globally.
+exit 0

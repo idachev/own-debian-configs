@@ -43,6 +43,12 @@ alias sgptsh='sgpt sh'
 alias sgptch='sgpt --chat'
 alias sgptcd='sgpt code'
 
+# Claude Code spawn()s caffeinate via PATH. Prepend a no-op only for this
+# command so /usr/bin/caffeinate stays real for everything else.
+claude() {
+  PATH="$HOME/bin/claude-caffeinate-stub:$PATH" command claude "$@"
+}
+
 alias claudep='claude --model sonnet -p'
 alias claudehr='headroom wrap claude'
 alias claudeds='~/.claude/claude-ds.sh'
