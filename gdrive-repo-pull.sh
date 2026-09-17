@@ -3,9 +3,10 @@
 #
 # Reads `.gdrive-repo.conf` from the repo root (see gdrive-repo-lib.sh).
 # Paths are relative to the repo root and map 1:1 onto the Drive mirror.
-# Only files with a GDRIVE_MEDIA_EXTENSIONS extension are pulled from a
-# directory, so git-tracked sidecars (.srt, .json, ...) are never overwritten
-# by a stale Drive copy. Naming a single file pulls it whatever its extension.
+# Only files with a GDRIVE_MEDIA_EXTENSIONS extension, and outside the push
+# exclude list, are pulled from a directory, so git-tracked sidecars (.srt,
+# .json, ...) are never overwritten by a stale Drive copy. Naming a single
+# file pulls it whatever its extension.
 #
 # Usage:
 #   gdrive-repo-pull.sh sources/lectures/01-key-metrics-analysis-20260518   # one directory
