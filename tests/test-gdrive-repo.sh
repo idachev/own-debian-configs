@@ -21,8 +21,8 @@ case "${cmd}" in
   copy|sync|copyto) exit "${RCLONE_EXIT:-0}" ;;
   lsjson)
     for a in "$@"; do case "$a" in *:*) target="$(remote_of "$a")";; esac; done
-    if [[ -d "${target}" ]]; then echo '{"Path":"x","IsDir":true}'; exit 0; fi
-    if [[ -f "${target}" ]]; then printf '{"Path":"x","Size":%s,"IsDir":false}\n' "$(wc -c < "${target}" | tr -d ' ')"; exit 0; fi
+    if [[ -d "${target}" ]]; then printf '{\n\t"Path": "",\n\t"Size": -1,\n\t"IsDir": true\n}\n'; exit 0; fi
+    if [[ -f "${target}" ]]; then printf '{\n\t"Path": "x",\n\t"Size": %s,\n\t"IsDir": false\n}\n' "$(wc -c < "${target}" | tr -d ' ')"; exit 0; fi
     exit 3 ;;
   lsf)
     for a in "$@"; do case "$a" in *:*) target="$(remote_of "$a")";; esac; done
@@ -108,6 +108,13 @@ check "list: local-only" "[[ "\${out}" == *'local-only  media/b/local.mp4'* ]]" 
 check "list: summary"    "[[ "\${out}" == *'summary: 1 present, 1 differs, 1 drive-only, 1 local-only'* ]]" "${out}"
 out="$(cd "${REPO}" && "${BIN}/gdrive-repo-pull.sh" --list 2>&1)"; rc=$?
 check "list: whole repo without a path" "[[ ${rc} -eq 0 ]] && [[ "\${out}" == *'present     media/a/one.mp4'* ]]" "${out}"
+check "list: whole repo classifies local files (no ./ prefix leak)" "[[ "\${out}" == *'summary: 1 present, 1 differs, 1 drive-only, 1 local-only'* ]]" "${out}"
+printf 'ZZ' > "${REPO}/media/b/xone.mp4"   # suffix of one.mp4 — must not read as present
+out="$(cd "${REPO}" && "${BIN}/gdrive-repo-pull.sh" --list media 2>&1)"
+check "list: suffix name is local-only, not matched to another file" "[[ "\${out}" == *'local-only  media/b/xone.mp4'* ]]" "${out}"
+command rm -f "${REPO}/media/b/xone.mp4"
+out="$(cd "${REPO}" && "${BIN}/gdrive-repo-pull.sh" --list media/nope 2>&1)"; rc=$?
+check "list: unknown directory is exit 2 with a clear message" "[[ ${rc} -eq 2 && "\${out}" == *'no such directory on Drive'* ]]" "${out}"
 
 # ---- prune ----------------------------------------------------------------
 printf 'TRACKED' > "${REPO}/media/a/tracked.mp4"

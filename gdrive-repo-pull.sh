@@ -11,7 +11,7 @@
 #   gdrive-repo-pull.sh sources/lectures/01-key-metrics-analysis-20260518   # one directory
 #   gdrive-repo-pull.sh media/202605/20260527/20260527-1-izhvyrli/20260527-1-izhvyrli.mp4
 #   gdrive-repo-pull.sh --dry-run media/202605
-#   gdrive-repo-pull.sh --list [path]      # what is local, what is only on Drive (one listing)
+#   gdrive-repo-pull.sh --list [dir]       # what is local, what is only on Drive (one listing)
 #
 # A file already present with the same byte size as on Drive is skipped
 # (rclone's own size+modtime check). Exit codes: 0 all handled, 1 at least
@@ -51,12 +51,16 @@ gdrive_media_include_flags
 if [[ ${LIST} -eq 1 ]]; then
   SCOPE=""
   [[ ${#PATHS[@]} -gt 0 ]] && SCOPE="${PATHS[0]}"
+  rc=0
   REMOTE_LIST="$(rclone lsf -R --files-only --format ps --separator '|' \
     "${GDRIVE_DEST}${SCOPE:+/${SCOPE}}" \
     ${GDRIVE_INCLUDE_FLAGS[@]+"${GDRIVE_INCLUDE_FLAGS[@]}"} \
-    ${GDRIVE_RCLONE_COMMON[@]+"${GDRIVE_RCLONE_COMMON[@]}"} 2>/dev/null)" || {
-      gdrive_die "rclone lsf failed for ${GDRIVE_DEST}/${SCOPE} — auth, quota or network"
-    }
+    ${GDRIVE_RCLONE_COMMON[@]+"${GDRIVE_RCLONE_COMMON[@]}"} 2>/dev/null)" || rc=$?
+  if [[ ${rc} -eq 3 ]]; then
+    gdrive_die "no such directory on Drive: ${GDRIVE_DEST}/${SCOPE} (paths are relative to ${GDRIVE_REPO_ROOT})"
+  elif [[ ${rc} -ne 0 ]]; then
+    gdrive_die "rclone lsf exited ${rc} for ${GDRIVE_DEST}/${SCOPE} — auth, quota or network"
+  fi
   TMP_REMOTE="$(command mktemp)"
   trap 'command rm -f "${TMP_REMOTE}"' EXIT
   printf '%s\n' "${REMOTE_LIST}" | command sed '/^$/d' > "${TMP_REMOTE}"
@@ -79,7 +83,7 @@ if [[ ${LIST} -eq 1 ]]; then
   while IFS= read -r lpath; do
     [[ -n "${lpath}" ]] || continue
     rel="${lpath#${SCOPE:+${SCOPE}/}}"
-    if ! command grep -qF -- "${rel}|" "${TMP_REMOTE}"; then
+    if ! command awk -F'|' -v p="${rel}" '$1 == p { found = 1 } END { exit !found }' "${TMP_REMOTE}"; then
       echo "local-only  ${lpath}"; n_local=$((n_local + 1))
     fi
   done < <(gdrive_local_media_under "${SCOPE:-.}")

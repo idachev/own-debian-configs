@@ -111,10 +111,14 @@ gdrive_remote_size() {
   out="$(rclone lsjson --stat --no-modtime "${GDRIVE_DEST}/${rel}" \
     ${GDRIVE_RCLONE_COMMON[@]+"${GDRIVE_RCLONE_COMMON[@]}"} 2>/dev/null)" || rc=$?
   [[ ${rc} -eq 0 ]] || return "${rc}"
-  case "${out}" in
-    *'"IsDir":true'*) return 3 ;;
-  esac
-  printf '%s\n' "${out}" | command sed -n 's/.*"Size":\([0-9-]*\).*/\1/p' | command head -n 1
+  gdrive_json_is_dir "${out}" && return 3
+  # rclone pretty-prints `lsjson --stat` ("Size": 123), so tolerate spaces.
+  printf '%s\n' "${out}" | command sed -n 's/.*"Size": *\([0-9-]*\).*/\1/p' | command head -n 1
+}
+
+# True when an `lsjson --stat` blob describes a directory.
+gdrive_json_is_dir() {
+  printf '%s\n' "$1" | command grep -q '"IsDir": *true'
 }
 
 # True when the remote path is a directory.
@@ -122,10 +126,7 @@ gdrive_remote_is_dir() {
   local rel="$1" out
   out="$(rclone lsjson --stat --no-modtime "${GDRIVE_DEST}/${rel}" \
     ${GDRIVE_RCLONE_COMMON[@]+"${GDRIVE_RCLONE_COMMON[@]}"} 2>/dev/null)" || return 1
-  case "${out}" in
-    *'"IsDir":true'*) return 0 ;;
-  esac
-  return 1
+  gdrive_json_is_dir "${out}"
 }
 
 # Lists local media files under a relative path (a file or a directory),
@@ -142,7 +143,7 @@ gdrive_local_media_under() {
     if [[ ${first} -eq 1 ]]; then first=0; else args+=(-o); fi
     args+=(-name "*.${ext}")
   done
-  command find "${rel}" -type f \( "${args[@]}" \) | command sort
+  command find "${rel}" -type f \( "${args[@]}" \) | command sed 's|^\./||' | command sort
 }
 
 # True when git tracks the file (so it is not a Drive-only asset).
