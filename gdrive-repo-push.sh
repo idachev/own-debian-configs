@@ -34,12 +34,7 @@ source "${SCRIPT_DIR}/gdrive-repo-lib.sh"
 gdrive_require_rclone
 gdrive_load_conf
 
-EXCLUDE_FLAGS=()
-if [[ -n "${GDRIVE_EXCLUDE_FILE}" ]]; then
-  [[ -f "${GDRIVE_EXCLUDE_FILE}" ]] \
-    || gdrive_die "GDRIVE_EXCLUDE_FILE=${GDRIVE_EXCLUDE_FILE} not found under ${GDRIVE_REPO_ROOT}"
-  EXCLUDE_FLAGS=(--exclude-from "${GDRIVE_EXCLUDE_FILE}")
-fi
+gdrive_exclude_flags
 
 LOG_DIR="${GDRIVE_REPO_ROOT}/tmp/claude-logs"
 command mkdir -p "${LOG_DIR}"
@@ -61,7 +56,7 @@ echo "log: ${LOG}"
 
 rc=0
 rclone "${MODE}" . "${GDRIVE_DEST}/" \
-  ${EXCLUDE_FLAGS[@]+"${EXCLUDE_FLAGS[@]}"} \
+  ${GDRIVE_EXCLUDE_FLAGS[@]+"${GDRIVE_EXCLUDE_FLAGS[@]}"} \
   --drive-chunk-size 128M \
   --transfers 8 --checkers 8 \
   ${GDRIVE_RCLONE_COMMON[@]+"${GDRIVE_RCLONE_COMMON[@]}"} \

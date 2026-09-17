@@ -25,7 +25,13 @@ case "${cmd}" in
     if [[ -f "${target}" ]]; then printf '{\n\t"Path": "x",\n\t"Size": %s,\n\t"IsDir": false\n}\n' "$(wc -c < "${target}" | tr -d ' ')"; exit 0; fi
     exit 3 ;;
   lsf)
+    target=""
     for a in "$@"; do case "$a" in *:*) target="$(remote_of "$a")";; esac; done
+    if [[ -z "${target}" ]]; then
+      # local listing: the first non-flag argument after lsf
+      shift; for a in "$@"; do case "$a" in -*) ;; *) target="$a"; break;; esac; done
+      (cd "${target}" && find . -type f -name '*.mp4' | sed 's|^\./||' | sort); exit 0
+    fi
     target="${target%/}"
     [[ -d "${target}" ]] || exit 3
     (cd "${target}" && find . -type f -name '*.mp4' | sed 's|^\./||' | while read -r f; do printf '%s|%s\n' "$f" "$(wc -c < "$f" | tr -d ' ')"; done) ;;
@@ -58,7 +64,7 @@ check() { if eval "$2"; then ok "$1"; else nok "$1" "${3:-}"; fi; }
 out="$(cd "${REPO}/media" && "${BIN}/gdrive-repo-push.sh" --transfers 3 2>&1)"; rc=$?
 check "push: exit 0 in copy mode" "[[ ${rc} -eq 0 ]]" "${out}"
 check "push: runs rclone copy to fake:mirror/" "grep -q '^copy \. fake:mirror/ ' '${RCLONE_LOG}'" "$(command cat "${RCLONE_LOG}")"
-check "push: uses the exclude file" "grep -q -- '--exclude-from .gdrive-repo-exclude.txt' '${RCLONE_LOG}'"
+check "push: uses the exclude file" "grep -q -- '--exclude-from ${REPO}/.gdrive-repo-exclude.txt' '${RCLONE_LOG}'"
 check "push: passes extra flags through" "grep -q -- '--transfers 3' '${RCLONE_LOG}'"
 check "push: works from a subdirectory (log under repo tmp/)" "[[ \"\${out}\" == *\"log: ${REPO}/tmp/claude-logs/gdrive-push-\"* ]]" "${out}"
 
@@ -79,7 +85,11 @@ printf 'BB'   > "${FAKE_REMOTE}/media/a/two.mp4"
 : > "${RCLONE_LOG}"
 out="$(cd "${REPO}" && "${BIN}/gdrive-repo-pull.sh" media/a 2>&1)"; rc=$?
 check "pull dir: exit 0" "[[ ${rc} -eq 0 ]]" "${out}"
-check "pull dir: rclone copy with media includes" "grep -q '^copy fake:mirror/media/a media/a --include \*.mp4 --include \*.m4a' '${RCLONE_LOG}'" "$(command cat "${RCLONE_LOG}")"
+check "pull dir: rclone copy with the media filter file" "grep -q '^copy fake:mirror/media/a media/a --filter-from .*/media.filter' '${RCLONE_LOG}'" "$(command cat "${RCLONE_LOG}")"
+filter_file="$(command sed -n 's/^copy .* --filter-from \([^ ]*\).*/\1/p' "${RCLONE_LOG}" | command head -n 1)"
+# The filter file is deleted on exit; regenerate it via a sourced lib call to inspect the rules.
+rules="$(cd "${REPO}" && bash -c 'source "$0"; gdrive_load_conf; gdrive_media_filter_flags; cat "${GDRIVE_MEDIA_FILTER_FLAGS[1]}"' "${BIN}/gdrive-repo-lib.sh")"
+check "filter file: excludes first, then media includes, then '- *'" "[[ \"\${rules}\" == \$'- tmp/**\\n+ *.mp4\\n+ *.m4a\\n- *' ]]" "${rules}"
 
 : > "${RCLONE_LOG}"
 out="$(cd "${REPO}" && "${BIN}/gdrive-repo-pull.sh" ./media/a/one.mp4 2>&1)"; rc=$?
@@ -106,6 +116,7 @@ check "list: differs"    "[[ "\${out}" == *'differs     media/a/two.mp4'* ]]" "$
 check "list: drive-only" "[[ "\${out}" == *'drive-only  media/b/remote.mp4'* ]]" "${out}"
 check "list: local-only" "[[ "\${out}" == *'local-only  media/b/local.mp4'* ]]" "${out}"
 check "list: summary"    "[[ "\${out}" == *'summary: 1 present, 1 differs, 1 drive-only, 1 local-only'* ]]" "${out}"
+check "list: local listing uses the same media filter file" "grep -q -- '^lsf -R --files-only media --filter-from .*/media.filter' '${RCLONE_LOG}'" "$(command cat "${RCLONE_LOG}")"
 out="$(cd "${REPO}" && "${BIN}/gdrive-repo-pull.sh" --list 2>&1)"; rc=$?
 check "list: whole repo without a path" "[[ ${rc} -eq 0 ]] && [[ "\${out}" == *'present     media/a/one.mp4'* ]]" "${out}"
 check "list: whole repo classifies local files (no ./ prefix leak)" "[[ "\${out}" == *'summary: 1 present, 1 differs, 1 drive-only, 1 local-only'* ]]" "${out}"

@@ -43,26 +43,26 @@ done
 
 gdrive_require_rclone
 gdrive_load_conf
-gdrive_media_include_flags
+gdrive_media_filter_flags
 
 # --list: one recursive listing of the remote (media only), compared against
-# the local tree. States: present (same size), differs (size mismatch),
-# drive-only, local-only.
+# a local listing made with the same filter (media extensions AND the push
+# exclude list), so caches push never uploads do not show up as local-only. States:
+# present (same size), differs (size mismatch), drive-only, local-only.
 if [[ ${LIST} -eq 1 ]]; then
   SCOPE=""
   [[ ${#PATHS[@]} -gt 0 ]] && SCOPE="${PATHS[0]}"
   rc=0
   REMOTE_LIST="$(rclone lsf -R --files-only --format ps --separator '|' \
     "${GDRIVE_DEST}${SCOPE:+/${SCOPE}}" \
-    ${GDRIVE_INCLUDE_FLAGS[@]+"${GDRIVE_INCLUDE_FLAGS[@]}"} \
+    "${GDRIVE_MEDIA_FILTER_FLAGS[@]}" \
     ${GDRIVE_RCLONE_COMMON[@]+"${GDRIVE_RCLONE_COMMON[@]}"} 2>/dev/null)" || rc=$?
   if [[ ${rc} -eq 3 ]]; then
     gdrive_die "no such directory on Drive: ${GDRIVE_DEST}/${SCOPE} (paths are relative to ${GDRIVE_REPO_ROOT})"
   elif [[ ${rc} -ne 0 ]]; then
     gdrive_die "rclone lsf exited ${rc} for ${GDRIVE_DEST}/${SCOPE} — auth, quota or network"
   fi
-  TMP_REMOTE="$(command mktemp)"
-  trap 'command rm -f "${TMP_REMOTE}"' EXIT
+  TMP_REMOTE="${GDRIVE_TMPDIR}/remote.list"
   printf '%s\n' "${REMOTE_LIST}" | command sed '/^$/d' > "${TMP_REMOTE}"
 
   n_present=0 n_differs=0 n_drive=0 n_local=0
@@ -80,13 +80,15 @@ if [[ ${LIST} -eq 1 ]]; then
     fi
   done < "${TMP_REMOTE}"
 
-  while IFS= read -r lpath; do
-    [[ -n "${lpath}" ]] || continue
-    rel="${lpath#${SCOPE:+${SCOPE}/}}"
-    if ! command awk -F'|' -v p="${rel}" '$1 == p { found = 1 } END { exit !found }' "${TMP_REMOTE}"; then
-      echo "local-only  ${lpath}"; n_local=$((n_local + 1))
-    fi
-  done < <(gdrive_local_media_under "${SCOPE:-.}")
+  if [[ -d "${SCOPE:-.}" ]]; then
+    while IFS= read -r rel; do
+      [[ -n "${rel}" ]] || continue
+      if ! command awk -F'|' -v p="${rel}" '$1 == p { found = 1 } END { exit !found }' "${TMP_REMOTE}"; then
+        echo "local-only  ${SCOPE:+${SCOPE}/}${rel}"; n_local=$((n_local + 1))
+      fi
+    done < <(rclone lsf -R --files-only "${SCOPE:-.}" \
+      "${GDRIVE_MEDIA_FILTER_FLAGS[@]}" 2>/dev/null | command sort)
+  fi
 
   echo "summary: ${n_present} present, ${n_differs} differs, ${n_drive} drive-only, ${n_local} local-only"
   exit 0
@@ -102,7 +104,7 @@ for rel in "${PATHS[@]}"; do
   if gdrive_remote_is_dir "${rel}"; then
     echo "pull dir  ${rel}/"
     rclone copy "${GDRIVE_DEST}/${rel}" "${rel}" \
-      ${GDRIVE_INCLUDE_FLAGS[@]+"${GDRIVE_INCLUDE_FLAGS[@]}"} \
+      "${GDRIVE_MEDIA_FILTER_FLAGS[@]}" \
       ${DRY[@]+"${DRY[@]}"} \
       ${GDRIVE_RCLONE_COMMON[@]+"${GDRIVE_RCLONE_COMMON[@]}"} \
       --transfers 4 --drive-chunk-size 128M --progress \

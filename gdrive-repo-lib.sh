@@ -65,14 +65,39 @@ gdrive_load_conf() {
 # this smooths a long listing; it does not coordinate separate processes.
 GDRIVE_RCLONE_COMMON=(--tpslimit 10)
 
-# `--include '*.mp4' --include '*.m4a' ...` from GDRIVE_MEDIA_EXTENSIONS.
-# Multiple --include flags imply "exclude everything else".
-gdrive_media_include_flags() {
-  GDRIVE_INCLUDE_FLAGS=()
-  local ext
+# Scratch dir for generated filter files, removed when the script exits.
+GDRIVE_TMPDIR="$(command mktemp -d)"
+trap 'command rm -rf "${GDRIVE_TMPDIR}"' EXIT
+
+# `--exclude-from <file>` when the conf names one (validated to exist).
+# Used by push, which has no include rules, so plain excludes are safe.
+gdrive_exclude_flags() {
+  GDRIVE_EXCLUDE_FLAGS=()
+  [[ -n "${GDRIVE_EXCLUDE_FILE}" ]] || return 0
+  [[ -f "${GDRIVE_EXCLUDE_FILE}" ]] \
+    || gdrive_die "GDRIVE_EXCLUDE_FILE=${GDRIVE_EXCLUDE_FILE} not found under ${GDRIVE_REPO_ROOT}"
+  GDRIVE_EXCLUDE_FLAGS=(--exclude-from "${GDRIVE_REPO_ROOT}/${GDRIVE_EXCLUDE_FILE}")
+}
+
+# `--filter-from <generated file>` selecting media only: the push exclude
+# list first (as `- pattern` rules), then `+ *.ext` per media extension, then
+# `- *`. rclone applies filter rules in order, first match wins, and it does
+# NOT define the order of mixed --include/--exclude flags, so one ordered
+# filter file is the only reliable way to combine the two.
+gdrive_media_filter_flags() {
+  local f="${GDRIVE_TMPDIR}/media.filter" ext
+  : > "${f}"
+  if [[ -n "${GDRIVE_EXCLUDE_FILE}" ]]; then
+    [[ -f "${GDRIVE_EXCLUDE_FILE}" ]] \
+      || gdrive_die "GDRIVE_EXCLUDE_FILE=${GDRIVE_EXCLUDE_FILE} not found under ${GDRIVE_REPO_ROOT}"
+    command sed -e 's/[[:space:]]*$//' -e '/^#/d' -e '/^$/d' -e 's/^/- /' \
+      "${GDRIVE_REPO_ROOT}/${GDRIVE_EXCLUDE_FILE}" >> "${f}"
+  fi
   for ext in ${GDRIVE_MEDIA_EXTENSIONS}; do
-    GDRIVE_INCLUDE_FLAGS+=(--include "*.${ext}")
+    echo "+ *.${ext}" >> "${f}"
   done
+  echo "- *" >> "${f}"
+  GDRIVE_MEDIA_FILTER_FLAGS=(--filter-from "${f}")
 }
 
 # True when the file name ends in one of the media extensions.
