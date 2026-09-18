@@ -130,7 +130,11 @@ if command -v ionice > /dev/null 2>&1; then
   alias in0='ionice -c2 -n0'
 fi
 
-alias tail='tail -f -n +0'
+if command -v gtail > /dev/null 2>&1; then
+  alias tail='gtail -f -n +0'
+else
+  alias tail='tail -f -n +0'
+fi
 
 alias exit-force='"exit"'
 alias exit='echo "Please confirm with(y/n): ";read ans;if [ "$ans" = "y" ];then exit;fi'
