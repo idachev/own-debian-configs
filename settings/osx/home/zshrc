@@ -237,3 +237,6 @@ export PATH="$HOME/.grok/bin:$PATH"
 fpath=(~/.grok/completions/zsh $fpath)
 autoload -Uz compinit && compinit -C
 # <<< grok installer <<<
+
+# Added by codebase-memory-mcp install
+export PATH="/Users/idachev/.felan/storage/agent/codebase-memory/bin:$PATH"
