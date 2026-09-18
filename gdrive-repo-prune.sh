@@ -3,7 +3,9 @@
 #
 # Reads `.gdrive-repo.conf` from the repo root (see gdrive-repo-lib.sh).
 # Paths are relative to the repo root. A directory expands to every local
-# file with a GDRIVE_MEDIA_EXTENSIONS extension beneath it.
+# file with a GDRIVE_MEDIA_EXTENSIONS extension beneath it that the push
+# exclude list does not drop (a transcription cache is never on Drive, so it
+# is not a candidate either).
 #
 # A file is deleted ONLY when `rclone lsjson --stat` confirms a Drive copy of
 # the same byte size. Absent on Drive, different size, a failed Drive call,
@@ -42,12 +44,19 @@ done
 
 gdrive_require_rclone
 gdrive_load_conf
+gdrive_media_filter_flags
 
 n_pruned=0 n_refused=0
+TMP_LOCAL="${GDRIVE_TMPDIR}/local.paths"
 for rel in "${PATHS[@]}"; do
   if [[ ! -e "${rel}" ]]; then
     echo "absent      ${rel} (nothing local to prune)"
     continue
+  fi
+  rc=0
+  gdrive_local_media_list "${rel}" "${TMP_LOCAL}" || rc=$?
+  if [[ ${rc} -ne 0 ]]; then
+    echo "refused     ${rel} — local listing failed (rclone lsf exit ${rc})"; n_refused=$((n_refused + 1)); continue
   fi
   while IFS= read -r f; do
     [[ -n "${f}" ]] || continue
@@ -56,14 +65,15 @@ for rel in "${PATHS[@]}"; do
     fi
     local_size="$(gdrive_local_size "${f}")"
     rc=0
-    remote_size="$(gdrive_remote_size "${f}")" || rc=$?
-    if [[ ${rc} -eq 3 ]]; then
-      echo "refused     ${f} — not on Drive"; n_refused=$((n_refused + 1)); continue
-    elif [[ ${rc} -ne 0 ]]; then
+    gdrive_remote_stat "${f}" || rc=$?
+    if [[ ${rc} -ne 0 ]]; then
       echo "refused     ${f} — Drive check failed (rclone exit ${rc}: auth/quota/network)"; n_refused=$((n_refused + 1)); continue
     fi
-    if [[ "${remote_size}" != "${local_size}" ]]; then
-      echo "refused     ${f} — Drive has ${remote_size} bytes, local ${local_size}"; n_refused=$((n_refused + 1)); continue
+    if [[ "${GDRIVE_STAT_KIND}" != file ]]; then
+      echo "refused     ${f} — not on Drive"; n_refused=$((n_refused + 1)); continue
+    fi
+    if [[ "${GDRIVE_STAT_SIZE}" != "${local_size}" ]]; then
+      echo "refused     ${f} — Drive has ${GDRIVE_STAT_SIZE} bytes, local ${local_size}"; n_refused=$((n_refused + 1)); continue
     fi
     if [[ ${DRY_RUN} -eq 1 ]]; then
       echo "would-prune ${f} (${local_size} bytes, verified on Drive)"
@@ -72,7 +82,7 @@ for rel in "${PATHS[@]}"; do
       echo "pruned      ${f} (${local_size} bytes, verified on Drive)"
     fi
     n_pruned=$((n_pruned + 1))
-  done < <(gdrive_local_media_under "${rel}")
+  done < "${TMP_LOCAL}"
 done
 
 echo "summary: ${n_pruned} pruned, ${n_refused} refused"

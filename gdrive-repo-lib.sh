@@ -5,7 +5,8 @@
 #
 #   GDRIVE_REMOTE=gdrive-investments          # name from `rclone config`
 #   GDRIVE_ROOT=investments-sources           # Drive folder that mirrors the repo root
-#   GDRIVE_EXCLUDE_FILE=.gdrive-repo-exclude.txt   # rclone --exclude-from, relative to root (push only)
+#   GDRIVE_EXCLUDE_FILE=.gdrive-repo-exclude.txt   # rclone exclude list, relative to root; push applies it
+#                                                    # directly, pull/prune fold it into their media filter
 #   GDRIVE_MEDIA_EXTENSIONS="mp4 m4a mp3"    # what pull/prune/--list treat as "media"
 #   GDRIVE_GIT_BUNDLE=1                       # push also uploads a `git bundle --all` of the repo
 #
@@ -70,13 +71,19 @@ GDRIVE_RCLONE_COMMON=(--tpslimit 10)
 GDRIVE_TMPDIR="$(command mktemp -d)"
 trap 'command rm -rf "${GDRIVE_TMPDIR}"' EXIT
 
-# `--exclude-from <file>` when the conf names one (validated to exist).
-# Used by push, which has no include rules, so plain excludes are safe.
+# Dies unless the conf's exclude file (if any) exists. Callers then use
+# "${GDRIVE_REPO_ROOT}/${GDRIVE_EXCLUDE_FILE}".
+gdrive_check_exclude_file() {
+  [[ -z "${GDRIVE_EXCLUDE_FILE}" || -f "${GDRIVE_REPO_ROOT}/${GDRIVE_EXCLUDE_FILE}" ]] \
+    || gdrive_die "GDRIVE_EXCLUDE_FILE=${GDRIVE_EXCLUDE_FILE} not found under ${GDRIVE_REPO_ROOT}"
+}
+
+# `--exclude-from <file>` when the conf names one. Used by push, which has
+# no include rules, so plain excludes are safe.
 gdrive_exclude_flags() {
   GDRIVE_EXCLUDE_FLAGS=()
+  gdrive_check_exclude_file
   [[ -n "${GDRIVE_EXCLUDE_FILE}" ]] || return 0
-  [[ -f "${GDRIVE_EXCLUDE_FILE}" ]] \
-    || gdrive_die "GDRIVE_EXCLUDE_FILE=${GDRIVE_EXCLUDE_FILE} not found under ${GDRIVE_REPO_ROOT}"
   GDRIVE_EXCLUDE_FLAGS=(--exclude-from "${GDRIVE_REPO_ROOT}/${GDRIVE_EXCLUDE_FILE}")
 }
 
@@ -88,10 +95,9 @@ gdrive_exclude_flags() {
 gdrive_media_filter_flags() {
   local f="${GDRIVE_TMPDIR}/media.filter" ext
   : > "${f}"
+  gdrive_check_exclude_file
   if [[ -n "${GDRIVE_EXCLUDE_FILE}" ]]; then
-    [[ -f "${GDRIVE_EXCLUDE_FILE}" ]] \
-      || gdrive_die "GDRIVE_EXCLUDE_FILE=${GDRIVE_EXCLUDE_FILE} not found under ${GDRIVE_REPO_ROOT}"
-    command sed -e 's/[[:space:]]*$//' -e '/^#/d' -e '/^$/d' -e 's/^/- /' \
+    command sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//' -e '/^#/d' -e '/^$/d' -e 's/^/- /' \
       "${GDRIVE_REPO_ROOT}/${GDRIVE_EXCLUDE_FILE}" >> "${f}"
   fi
   for ext in ${GDRIVE_MEDIA_EXTENSIONS}; do
@@ -99,15 +105,6 @@ gdrive_media_filter_flags() {
   done
   echo "- *" >> "${f}"
   GDRIVE_MEDIA_FILTER_FLAGS=(--filter-from "${f}")
-}
-
-# True when the file name ends in one of the media extensions.
-gdrive_is_media() {
-  local name="$1" ext
-  for ext in ${GDRIVE_MEDIA_EXTENSIONS}; do
-    [[ "${name}" == *".${ext}" ]] && return 0
-  done
-  return 1
 }
 
 # Normalizes a user path: strips ./ and trailing /, refuses absolute or
@@ -129,47 +126,50 @@ gdrive_local_size() {
   command wc -c < "$1" | command tr -d ' '
 }
 
-# `rclone lsjson --stat` for one remote path. Prints the Size on stdout and
-# returns 0; returns 3 when the path is absent; any other code is a failed
-# call (auth, quota, network) and must not be read as "absent".
-gdrive_remote_size() {
+# `rclone lsjson --stat` for one remote path. Sets GDRIVE_STAT_KIND to
+# dir | file | absent and GDRIVE_STAT_SIZE (bytes, for a file) and returns 0.
+# Any other outcome is a FAILED call (auth, quota, network): returns rclone's
+# exit code and callers must not read "absent" out of it. rclone answers
+# exit 3 for a missing path, the only code that means absence.
+gdrive_remote_stat() {
   local rel="$1" out rc=0
+  GDRIVE_STAT_KIND="" GDRIVE_STAT_SIZE=""
   out="$(rclone lsjson --stat --no-modtime "${GDRIVE_DEST}/${rel}" \
     ${GDRIVE_RCLONE_COMMON[@]+"${GDRIVE_RCLONE_COMMON[@]}"} 2>/dev/null)" || rc=$?
+  if [[ ${rc} -eq 3 ]]; then
+    GDRIVE_STAT_KIND=absent
+    return 0
+  fi
   [[ ${rc} -eq 0 ]] || return "${rc}"
-  gdrive_json_is_dir "${out}" && return 3
-  # rclone pretty-prints `lsjson --stat` ("Size": 123), so tolerate spaces.
-  printf '%s\n' "${out}" | command sed -n 's/.*"Size": *\([0-9-]*\).*/\1/p' | command head -n 1
+  # rclone pretty-prints `lsjson --stat` ("IsDir": true), so tolerate spaces.
+  if printf '%s\n' "${out}" | command grep -q '"IsDir": *true'; then
+    GDRIVE_STAT_KIND=dir
+    return 0
+  fi
+  GDRIVE_STAT_KIND=file
+  GDRIVE_STAT_SIZE="$(printf '%s\n' "${out}" \
+    | command sed -n 's/.*"Size": *\([0-9-]*\).*/\1/p' | command head -n 1)"
 }
 
-# True when an `lsjson --stat` blob describes a directory.
-gdrive_json_is_dir() {
-  printf '%s\n' "$1" | command grep -q '"IsDir": *true'
-}
-
-# True when the remote path is a directory.
-gdrive_remote_is_dir() {
-  local rel="$1" out
-  out="$(rclone lsjson --stat --no-modtime "${GDRIVE_DEST}/${rel}" \
-    ${GDRIVE_RCLONE_COMMON[@]+"${GDRIVE_RCLONE_COMMON[@]}"} 2>/dev/null)" || return 1
-  gdrive_json_is_dir "${out}"
-}
-
-# Lists local media files under a relative path (a file or a directory),
-# one per line, relative to the repo root.
-gdrive_local_media_under() {
-  local rel="$1"
+# Writes the local media files under a repo-relative path (a file or a
+# directory) to $2, one repo-relative path per line, sorted. A directory is
+# walked with `rclone lsf` under the same media filter pull uses, so the push
+# exclude list applies (a transcription cache is not "local-only media").
+# Returns rclone's exit code; the caller must check it — an empty file with
+# a non-zero code is a failed walk, not an empty tree.
+gdrive_local_media_list() {
+  local rel="$1" out="$2" rc=0
+  : > "${out}"
   if [[ -f "${rel}" ]]; then
-    printf '%s\n' "${rel}"
+    printf '%s\n' "${rel}" > "${out}"
     return 0
   fi
   [[ -d "${rel}" ]] || return 0
-  local ext args=() first=1
-  for ext in ${GDRIVE_MEDIA_EXTENSIONS}; do
-    if [[ ${first} -eq 1 ]]; then first=0; else args+=(-o); fi
-    args+=(-name "*.${ext}")
-  done
-  command find "${rel}" -type f \( "${args[@]}" \) | command sed 's|^\./||' | command sort
+  local prefix=""
+  [[ "${rel}" == "." ]] || prefix="${rel}/"
+  rclone lsf -R --files-only "${rel}" "${GDRIVE_MEDIA_FILTER_FLAGS[@]}" 2>/dev/null \
+    | command sed "s|^|${prefix}|" | command sort > "${out}" || rc=$?
+  return "${rc}"
 }
 
 # True when git tracks the file (so it is not a Drive-only asset).

@@ -20,6 +20,7 @@ remote_of() { local a="$1"; a="${a#*:}"; a="${a#mirror}"; a="${a#/}"; echo "${FA
 case "${cmd}" in
   copy|sync|copyto) exit "${RCLONE_EXIT:-0}" ;;
   lsjson)
+    [[ -n "${RCLONE_LSJSON_EXIT:-}" ]] && exit "${RCLONE_LSJSON_EXIT}"
     for a in "$@"; do case "$a" in *:*) target="$(remote_of "$a")";; esac; done
     if [[ -d "${target}" ]]; then printf '{\n\t"Path": "",\n\t"Size": -1,\n\t"IsDir": true\n}\n'; exit 0; fi
     if [[ -f "${target}" ]]; then printf '{\n\t"Path": "x",\n\t"Size": %s,\n\t"IsDir": false\n}\n' "$(wc -c < "${target}" | tr -d ' ')"; exit 0; fi
@@ -30,6 +31,7 @@ case "${cmd}" in
     if [[ -z "${target}" ]]; then
       # local listing: the first non-flag argument after lsf
       shift; for a in "$@"; do case "$a" in -*) ;; *) target="$a"; break;; esac; done
+      [[ -n "${RCLONE_LSF_LOCAL_EXIT:-}" ]] && exit "${RCLONE_LSF_LOCAL_EXIT}"
       (cd "${target}" && find . -type f -name '*.mp4' | sed 's|^\./||' | sort); exit 0
     fi
     target="${target%/}"
@@ -90,6 +92,11 @@ check "push: GDRIVE_GIT_BUNDLE=1 uploads <repo>.bundle to .git-backup/ by checks
   "grep -q '^copyto .*/repo\.bundle fake:mirror/\.git-backup/repo\.bundle --checksum .* --dry-run$' '${RCLONE_LOG}'" "$(command cat "${RCLONE_LOG}")"
 check "push: bundle upload happens before the tree copy" "[[ \"\$(head -n 1 '${RCLONE_LOG}')\" == copyto* ]]" "$(command cat "${RCLONE_LOG}")"
 check "push: bundle run exits 0" "[[ ${rc} -eq 0 ]]" "${out}"
+check "push: bundle is packed single-threaded (deterministic)" "grep -q 'pack.threads=1' '${BIN}/gdrive-repo-push.sh'"
+check "push: tree copy excludes .git-backup/** so sync mode cannot delete the bundle" "grep -q '^copy \. fake:mirror/ .*--exclude \.git-backup/\*\*' '${RCLONE_LOG}'" "$(command cat "${RCLONE_LOG}")"
+: > "${RCLONE_LOG}"
+out="$(cd "${REPO}" && "${BIN}/gdrive-repo-push.sh" -n 2>&1)"
+check "push: rclone's short -n reaches the bundle upload too" "grep -q '^copyto .*repo\.bundle .* -n$' '${RCLONE_LOG}'" "$(command cat "${RCLONE_LOG}")"
 bundle_ok="$(cd "${REPO}" && b="$(command mktemp)" && git bundle create "$b" --all >/dev/null 2>&1 && git bundle verify "$b" >/dev/null 2>&1 && echo yes; command rm -f "$b")"
 check "git bundle --all of the test repo verifies" "[[ '${bundle_ok}' == yes ]]"
 command sed -i.bak '/GDRIVE_GIT_BUNDLE/d' "${REPO}/.gdrive-repo.conf" && command rm -f "${REPO}/.gdrive-repo.conf.bak"
@@ -110,8 +117,17 @@ check "filter file: excludes first, then media includes, then '- *'" "[[ \"\${ru
 out="$(cd "${REPO}" && "${BIN}/gdrive-repo-pull.sh" ./media/a/one.mp4 2>&1)"; rc=$?
 check "pull file: copyto by path" "grep -q '^copyto fake:mirror/media/a/one.mp4 media/a/one.mp4' '${RCLONE_LOG}'" "$(command cat "${RCLONE_LOG}")"
 
-out="$(cd "${REPO}" && "${BIN}/gdrive-repo-pull.sh" media/nope.mp4 2>&1)"; rc=$?
-# fake copyto exits 0, so this passes; the absent case is covered by lsjson exit 3 in prune
+: > "${RCLONE_LOG}"
+out="$(cd "${REPO}" && "${BIN}/gdrive-repo-pull.sh" media/nope 2>&1)"; rc=$?
+check "pull: absent path fails with 'not on Drive', no copy attempted" "[[ ${rc} -eq 1 && \"\${out}\" == *'not on Drive'* ]] && ! grep -q '^copy' '${RCLONE_LOG}'" "${out}"
+: > "${RCLONE_LOG}"
+out="$(cd "${REPO}" && RCLONE_LSJSON_EXIT=5 "${BIN}/gdrive-repo-pull.sh" media/a 2>&1)"; rc=$?
+check "pull: failed Drive stat fails the path instead of an unfiltered copyto" "[[ ${rc} -eq 1 && \"\${out}\" == *'Drive check failed'* ]] && ! grep -q '^copy' '${RCLONE_LOG}'" "${out}
+$(command cat "${RCLONE_LOG}")"
+out="$(cd "${REPO}" && "${BIN}/gdrive-repo-pull.sh" --list media/a media/b 2>&1)"; rc=$?
+check "list: more than one path is refused with exit 2" "[[ ${rc} -eq 2 && \"\${out}\" == *'at most one directory'* ]]" "${out}"
+out="$(cd "${REPO}" && RCLONE_LSF_LOCAL_EXIT=6 "${BIN}/gdrive-repo-pull.sh" --list media 2>&1)"; rc=$?
+check "list: failed local listing is exit 2, not '0 local-only'" "[[ ${rc} -eq 2 && \"\${out}\" == *'local listing'* ]]" "${out}"
 out="$(cd "${REPO}" && "${BIN}/gdrive-repo-pull.sh" ../escape 2>&1)"; rc=$?
 check "pull: refuses .. paths with exit 2" "[[ ${rc} -eq 2 ]]" "${out}"
 out="$(cd "${REPO}" && "${BIN}/gdrive-repo-pull.sh" /abs/path 2>&1)"; rc=$?
@@ -146,8 +162,10 @@ check "list: unknown directory is exit 2 with a clear message" "[[ ${rc} -eq 2 &
 printf 'TRACKED' > "${REPO}/media/a/tracked.mp4"
 (cd "${REPO}" && git add -f media/a/tracked.mp4 && git -c user.email=t@t -c user.name=t commit -qm track)
 command cp "${REPO}/media/a/tracked.mp4" "${FAKE_REMOTE}/media/a/tracked.mp4"
+: > "${RCLONE_LOG}"
 out="$(cd "${REPO}" && "${BIN}/gdrive-repo-prune.sh" --dry-run media 2>&1)"; rc=$?
 check "prune dry-run: exit 1 because of refusals" "[[ ${rc} -eq 1 ]]" "${out}"
+check "prune: local walk goes through the media filter (push excludes apply)" "grep -q '^lsf -R --files-only media --filter-from .*/media.filter' '${RCLONE_LOG}'" "$(command cat "${RCLONE_LOG}")"
 check "prune dry-run: would-prune verified file" "[[ "\${out}" == *'would-prune media/a/one.mp4'* ]]" "${out}"
 check "prune: refuses size mismatch"  "[[ "\${out}" == *'refused     media/a/two.mp4 — Drive has 2 bytes, local 1'* ]]" "${out}"
 check "prune: refuses local-only"     "[[ "\${out}" == *'refused     media/b/local.mp4 — not on Drive'* ]]" "${out}"

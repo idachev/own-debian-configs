@@ -26,7 +26,11 @@
 # Git history backup: with GDRIVE_GIT_BUNDLE=1 in the conf, the push first
 # writes `git bundle create --all` (every branch and tag, one consistent
 # file) and uploads it to <root>/.git-backup/<repo-name>.bundle, compared by
-# checksum so an unchanged history costs one hash lookup. Restore with
+# checksum so an unchanged history costs one hash lookup. The bundle is
+# packed with pack.threads=1: multi-threaded packing is not byte-stable, so
+# without it every push re-uploaded the whole file. `.git-backup/` has no
+# local counterpart, so the tree copy below excludes it explicitly — or a
+# sync-mode push would delete the bundle it just uploaded. Restore with
 # `git clone <name>.bundle <dir>`. This replaces mirroring `.git/**`, which
 # is thousands of small files, churns on every gc, and can be copied
 # mid-write.
@@ -69,14 +73,14 @@ if [[ "${GDRIVE_GIT_BUNDLE}" == "1" ]]; then
     BUNDLE="${GDRIVE_TMPDIR}/${BUNDLE_NAME}"
     BUNDLE_DEST="${GDRIVE_DEST}/.git-backup/${BUNDLE_NAME}"
     echo "git bundle: ${BUNDLE_DEST}"
-    if git bundle create "${BUNDLE}" --all >>"${LOG}" 2>&1; then
-      DRY=()
-      for a in "$@"; do [[ "$a" == "--dry-run" ]] && DRY=(--dry-run); done
+    if git -c pack.threads=1 bundle create "${BUNDLE}" --all >>"${LOG}" 2>&1; then
+      # "$@" is passed through here too, so `--dry-run` / `-n` mean the same
+      # for the bundle upload as for the tree copy.
       rclone copyto "${BUNDLE}" "${BUNDLE_DEST}" \
         --checksum --drive-chunk-size 128M \
         ${GDRIVE_RCLONE_COMMON[@]+"${GDRIVE_RCLONE_COMMON[@]}"} \
         --log-file "${LOG}" --log-level INFO \
-        ${DRY[@]+"${DRY[@]}"} || bundle_rc=$?
+        "$@" || bundle_rc=$?
       [[ ${bundle_rc} -eq 0 ]] || >&2 echo "git bundle upload failed (rclone exit ${bundle_rc}) — continuing with the tree"
     else
       bundle_rc=1
@@ -90,6 +94,7 @@ fi
 rc=0
 rclone "${MODE}" . "${GDRIVE_DEST}/" \
   ${GDRIVE_EXCLUDE_FLAGS[@]+"${GDRIVE_EXCLUDE_FLAGS[@]}"} \
+  --exclude '.git-backup/**' \
   --drive-chunk-size 128M \
   --transfers 8 --checkers 8 \
   ${GDRIVE_RCLONE_COMMON[@]+"${GDRIVE_RCLONE_COMMON[@]}"} \
