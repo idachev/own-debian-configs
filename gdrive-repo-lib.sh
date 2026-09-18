@@ -89,44 +89,48 @@ gdrive_exclude_flags() {
   GDRIVE_EXCLUDE_FLAGS=(--exclude-from "${GDRIVE_REPO_ROOT}/${GDRIVE_EXCLUDE_FILE}")
 }
 
-# `--filter-from <generated file>` selecting media only: the push exclude
-# list first (as `- pattern` rules), then `+ *.ext` per media extension, then
-# `- *`. rclone applies filter rules in order, first match wins, and it does
-# NOT define the order of mixed --include/--exclude flags, so one ordered
-# filter file is the only reliable way to combine the two.
+# Appends the conf's exclude list to $1 as `- pattern` rules (comments and
+# blank lines dropped, surrounding whitespace trimmed). The single place the
+# exclude file is turned into filter rules, so media and non-media filters
+# cannot disagree about it.
+gdrive_exclude_rules() {
+  gdrive_check_exclude_file
+  [[ -n "${GDRIVE_EXCLUDE_FILE}" ]] || return 0
+  command sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//' -e '/^#/d' -e '/^$/d' -e 's/^/- /' \
+    "${GDRIVE_REPO_ROOT}/${GDRIVE_EXCLUDE_FILE}" >> "$1"
+}
+
+# `--filter-from <generated file> --ignore-case` selecting media only: the
+# push exclude list first, then `+ *.ext` per media extension, then `- *`.
+# rclone applies filter rules in order, first match wins, and it does NOT
+# define the order of mixed --include/--exclude flags, so one ordered filter
+# file is the only reliable way to combine the two. --ignore-case makes
+# `.MP4` from a camera count as media too.
 gdrive_media_filter_flags() {
   local f="${GDRIVE_TMPDIR}/media.filter" ext
   : > "${f}"
-  gdrive_check_exclude_file
-  if [[ -n "${GDRIVE_EXCLUDE_FILE}" ]]; then
-    command sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//' -e '/^#/d' -e '/^$/d' -e 's/^/- /' \
-      "${GDRIVE_REPO_ROOT}/${GDRIVE_EXCLUDE_FILE}" >> "${f}"
-  fi
+  gdrive_exclude_rules "${f}"
   for ext in ${GDRIVE_MEDIA_EXTENSIONS}; do
     echo "+ *.${ext}" >> "${f}"
   done
   echo "- *" >> "${f}"
-  GDRIVE_MEDIA_FILTER_FLAGS=(--filter-from "${f}")
+  GDRIVE_MEDIA_FILTER_FLAGS=(--filter-from "${f}" --ignore-case)
 }
 
-# `--filter-from <generated file>` selecting everything EXCEPT media and the
-# bundle folder: the push exclude list, `- .git-backup/**`, `- *.ext` per
-# media extension, then `+ **`. This is the set `rclone sync` may delete
+# `--filter-from <generated file> --ignore-case` selecting everything EXCEPT
+# media and the bundle folder: the push exclude list, `- .git-backup/**`,
+# `- *.ext` per media extension, then `+ **`. This is the set push may delete
 # from, so media files pruned locally can never be touched by it.
 gdrive_non_media_filter_flags() {
   local f="${GDRIVE_TMPDIR}/non-media.filter" ext
   : > "${f}"
-  gdrive_check_exclude_file
-  if [[ -n "${GDRIVE_EXCLUDE_FILE}" ]]; then
-    command sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//' -e '/^#/d' -e '/^$/d' -e 's/^/- /' \
-      "${GDRIVE_REPO_ROOT}/${GDRIVE_EXCLUDE_FILE}" >> "${f}"
-  fi
+  gdrive_exclude_rules "${f}"
   echo "- .git-backup/**" >> "${f}"
   for ext in ${GDRIVE_MEDIA_EXTENSIONS}; do
     echo "- *.${ext}" >> "${f}"
   done
   echo "+ **" >> "${f}"
-  GDRIVE_NON_MEDIA_FILTER_FLAGS=(--filter-from "${f}")
+  GDRIVE_NON_MEDIA_FILTER_FLAGS=(--filter-from "${f}" --ignore-case)
 }
 
 # Normalizes a user path: strips ./ and trailing /, refuses absolute or

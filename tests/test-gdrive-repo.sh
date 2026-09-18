@@ -18,22 +18,15 @@ echo "$*" >> "${RCLONE_LOG}"
 cmd="$1"
 remote_of() { local a="$1"; a="${a#*:}"; a="${a#mirror}"; a="${a#/}"; echo "${FAKE_REMOTE}/${a}"; }
 case "${cmd}" in
-  sync)
-    logf=""; dry=0
-    prev=""
-    for a in "$@"; do
-      [[ "${prev}" == "--log-file" ]] && logf="$a"
-      [[ "$a" == "--dry-run" || "$a" == "-n" ]] && dry=1
-      prev="$a"
-    done
-    if [[ ${dry} -eq 1 && -n "${logf}" && -n "${RCLONE_FAKE_DELETES:-}" ]]; then
-      for d in ${RCLONE_FAKE_DELETES}; do
-        echo "2026/09/18 00:00:00 NOTICE: ${d}: Skipped delete as --dry-run is set (size 10)" >> "${logf}"
-      done
-      echo "2026/09/18 00:00:00 NOTICE: Google drive root 'mirror': Skipped delete as --dry-run is set" >> "${logf}"
-    fi
-    exit "${RCLONE_EXIT:-0}" ;;
-  copy|copyto) exit "${RCLONE_EXIT:-0}" ;;
+  check)
+    out=""; prev=""
+    for a in "$@"; do [[ "${prev}" == "--missing-on-src" ]] && out="$a"; prev="$a"; done
+    : > "${out}"
+    n=0
+    for d in ${RCLONE_FAKE_DELETES:-}; do echo "${d//_/ }" >> "${out}"; n=$((n+1)); done
+    [[ ${n} -eq 0 ]] && exit "${RCLONE_CHECK_EXIT:-0}"
+    exit "${RCLONE_CHECK_EXIT:-1}" ;;
+  copy|sync|copyto|delete) exit "${RCLONE_EXIT:-0}" ;;
   lsjson)
     [[ -n "${RCLONE_LSJSON_EXIT:-}" ]] && exit "${RCLONE_LSJSON_EXIT}"
     for a in "$@"; do case "$a" in *:*) target="$(remote_of "$a")";; esac; done
@@ -111,47 +104,82 @@ check "push: bundle is packed single-threaded (deterministic)" "grep -q 'pack.th
 check "push: tree copy excludes .git-backup/** so sync mode cannot delete the bundle" "grep -q '^copy \. fake:mirror/ .*--exclude \.git-backup/\*\*' '${RCLONE_LOG}'" "$(command cat "${RCLONE_LOG}")"
 : > "${RCLONE_LOG}"
 out="$(cd "${REPO}" && "${BIN}/gdrive-repo-push.sh" -n 2>&1)"
-check "push: rclone's short -n reaches the bundle upload too" "grep -q '^copyto .*repo\.bundle .* -n$' '${RCLONE_LOG}'" "$(command cat "${RCLONE_LOG}")"
+check "push: rclone's short -n reaches the bundle upload too (as --dry-run)" "grep -q '^copyto .*repo\.bundle .* --dry-run$' '${RCLONE_LOG}'" "$(command cat "${RCLONE_LOG}")"
 bundle_ok="$(cd "${REPO}" && b="$(command mktemp)" && git bundle create "$b" --all >/dev/null 2>&1 && git bundle verify "$b" >/dev/null 2>&1 && echo yes; command rm -f "$b")"
 check "git bundle --all of the test repo verifies" "[[ '${bundle_ok}' == yes ]]"
 command sed -i.bak '/GDRIVE_GIT_BUNDLE/d' "${REPO}/.gdrive-repo.conf" && command rm -f "${REPO}/.gdrive-repo.conf.bak"
 
 # ---- push: GDRIVE_SYNC_NON_MEDIA ----------------------------------------------
 echo 'GDRIVE_SYNC_NON_MEDIA=1' >> "${REPO}/.gdrive-repo.conf"
+echo 'GDRIVE_GIT_BUNDLE=1' >> "${REPO}/.gdrive-repo.conf"
+PENDING="${REPO}/tmp/claude-logs/gdrive-push-pending-deletes.list"
+command rm -f "${PENDING}"
+
 : > "${RCLONE_LOG}"
 out="$(cd "${REPO}" && "${BIN}/gdrive-repo-push.sh" </dev/null 2>&1)"; rc=$?
-check "sync mode: no deletions -> preview, real sync with --max-delete 0, then media copy" \
-  "[[ ${rc} -eq 0 ]] && [[ \"\$(grep -c '^sync ' '${RCLONE_LOG}')\" == 2 ]] && grep -q '^sync .*--filter-from .*/non-media.filter .*--max-delete 0$' '${RCLONE_LOG}' && grep -q '^copy \. fake:mirror/ --filter-from .*/media.filter' '${RCLONE_LOG}'" "${out}
+check "sync mode: no deletions -> check, non-media copy, media copy, bundle; exit 0" \
+  "[[ ${rc} -eq 0 ]] && [[ \"\$(cut -d' ' -f1 '${RCLONE_LOG}' | tr '\\n' ' ')\" == 'check copy copy copyto ' ]]" "${out}
 $(command cat "${RCLONE_LOG}")"
-check "sync mode: preview is a dry run" "grep -q '^sync .*--dry-run$' '${RCLONE_LOG}'"
+check "sync mode: check lists non-media only, by size, case-insensitively" "grep -q '^check \. fake:mirror/ --size-only --missing-on-src .* --filter-from .*/non-media.filter --ignore-case' '${RCLONE_LOG}'" "$(command cat "${RCLONE_LOG}")"
+check "sync mode: never runs rclone sync" "! grep -q '^sync ' '${RCLONE_LOG}'"
 check "sync mode: says no deletions pending" "[[ \"\${out}\" == *'no Drive-side deletions pending'* ]]" "${out}"
 rules="$(cd "${REPO}" && bash -c 'source "$0"; gdrive_load_conf; gdrive_non_media_filter_flags; cat "${GDRIVE_NON_MEDIA_FILTER_FLAGS[1]}"' "${BIN}/gdrive-repo-lib.sh")"
 check "non-media filter: excludes, .git-backup, media extensions, then '+ **'" "[[ \"\${rules}\" == \$'- tmp/**\\n- .git-backup/**\\n- *.mp4\\n- *.m4a\\n+ **' ]]" "${rules}"
 
+# pending deletions, no tty, no --yes: uploads happen, nothing deleted, exit 1
 : > "${RCLONE_LOG}"
-out="$(cd "${REPO}" && RCLONE_FAKE_DELETES="docs/old.md scripts/gone.sh" "${BIN}/gdrive-repo-push.sh" </dev/null 2>&1)"; rc=$?
-check "sync mode: pending deletions without a tty and without --yes -> exit 1" "[[ ${rc} -eq 1 ]]" "${out}"
-check "sync mode: the deletion list is printed" "[[ \"\${out}\" == *'  - docs/old.md'* && \"\${out}\" == *'  - scripts/gone.sh'* && \"\${out}\" == *'2 non-media file(s)'* ]]" "${out}"
-check "sync mode: nothing real ran after the refused preview" "[[ \"\$(grep -c '^sync ' '${RCLONE_LOG}')\" == 1 ]] && ! grep -q '^copy ' '${RCLONE_LOG}'" "$(command cat "${RCLONE_LOG}")"
-check "sync mode: the Drive root NOTICE line is not counted as a deletion" "[[ \"\${out}\" != *'Google drive root'* ]]" "${out}"
+out="$(cd "${REPO}" && RCLONE_FAKE_DELETES="docs/old.md scripts/gone_dir/x:_y.sh" "${BIN}/gdrive-repo-push.sh" </dev/null 2>&1)"; rc=$?
+check "sync mode: no tty, no --yes -> deletions skipped, exit 1" "[[ ${rc} -eq 1 && \"\${out}\" == *'Deletions SKIPPED'* ]]" "${out}"
+check "sync mode: the list is printed, with spaces and colons intact" "[[ \"\${out}\" == *'  - docs/old.md'* && \"\${out}\" == *'  - scripts/gone dir/x: y.sh'* && \"\${out}\" == *'2 non-media file(s)'* ]]" "${out}"
+check "sync mode: uploads and bundle still ran, delete did not" "grep -q '^copy .*non-media.filter' '${RCLONE_LOG}' && grep -q '^copy .*media.filter' '${RCLONE_LOG}' && grep -q '^copyto ' '${RCLONE_LOG}' && ! grep -q '^delete ' '${RCLONE_LOG}'" "$(command cat "${RCLONE_LOG}")"
 
+# --yes without a prior --dry-run: refused
+: > "${RCLONE_LOG}"
+out="$(cd "${REPO}" && RCLONE_FAKE_DELETES="docs/old.md" "${BIN}/gdrive-repo-push.sh" --yes </dev/null 2>&1)"; rc=$?
+check "sync mode: --yes without a matching --dry-run list is refused, exit 1, no delete" "[[ ${rc} -eq 1 && \"\${out}\" == *'--yes refused'* ]] && ! grep -q '^delete ' '${RCLONE_LOG}'" "${out}"
+
+# --dry-run saves the list; --yes with the same list deletes exactly it
+: > "${RCLONE_LOG}"
+out="$(cd "${REPO}" && RCLONE_FAKE_DELETES="docs/old.md scripts/gone.sh" "${BIN}/gdrive-repo-push.sh" --dry-run </dev/null 2>&1)"; rc=$?
+check "sync mode: --dry-run exit 0, lists deletions, saves the pending list, deletes nothing" \
+  "[[ ${rc} -eq 0 && -f '${PENDING}' && \"\$(cat '${PENDING}' | tr '\\n' ' ')\" == 'docs/old.md scripts/gone.sh ' ]] && ! grep -q '^delete ' '${RCLONE_LOG}' && grep -q '^copy .*--dry-run$' '${RCLONE_LOG}'" "${out}
+$(command cat "${RCLONE_LOG}")"
 : > "${RCLONE_LOG}"
 out="$(cd "${REPO}" && RCLONE_FAKE_DELETES="docs/old.md scripts/gone.sh" "${BIN}/gdrive-repo-push.sh" --yes </dev/null 2>&1)"; rc=$?
-check "sync mode: --yes runs the real sync capped at the previewed count" "[[ ${rc} -eq 0 ]] && grep -q '^sync .*--max-delete 2$' '${RCLONE_LOG}' && grep -q '^copy ' '${RCLONE_LOG}'" "${out}
+check "sync mode: --yes with the unchanged list deletes exactly it via --files-from-raw" \
+  "[[ ${rc} -eq 0 ]] && grep -q '^delete fake:mirror/ --files-from-raw .*/deletes.list' '${RCLONE_LOG}' && [[ \"\${out}\" == *'deleted 2 file(s) on Drive'* ]]" "${out}
 $(command cat "${RCLONE_LOG}")"
+check "sync mode: delete runs after the non-media upload and before the media copy" "[[ \"\$(cut -d' ' -f1 '${RCLONE_LOG}' | tr '\\n' ' ')\" == 'check copy delete copy copyto ' ]]" "$(command cat "${RCLONE_LOG}")"
 check "sync mode: --yes is not passed through to rclone" "! grep -q -- '--yes' '${RCLONE_LOG}'"
+check "sync mode: the pending list is consumed" "[[ ! -f '${PENDING}' ]]"
 
+# --yes when the list changed since the --dry-run: refused
+out="$(cd "${REPO}" && RCLONE_FAKE_DELETES="docs/old.md" "${BIN}/gdrive-repo-push.sh" --dry-run </dev/null 2>&1)"
 : > "${RCLONE_LOG}"
-out="$(cd "${REPO}" && RCLONE_FAKE_DELETES="docs/old.md" "${BIN}/gdrive-repo-push.sh" --dry-run </dev/null 2>&1)"; rc=$?
-check "sync mode: user --dry-run lists deletions, asks nothing, runs no real sync, exit 0" \
-  "[[ ${rc} -eq 0 ]] && [[ \"\${out}\" == *'  - docs/old.md'* ]] && [[ \"\$(grep -c '^sync ' '${RCLONE_LOG}')\" == 1 ]] && grep -q '^copy .*--dry-run$' '${RCLONE_LOG}'" "${out}
+out="$(cd "${REPO}" && RCLONE_FAKE_DELETES="docs/old.md docs/new-victim.md" "${BIN}/gdrive-repo-push.sh" --yes </dev/null 2>&1)"; rc=$?
+check "sync mode: --yes with a changed list is refused" "[[ ${rc} -eq 1 && \"\${out}\" == *'--yes refused'* ]] && ! grep -q '^delete ' '${RCLONE_LOG}'" "${out}"
+command rm -f "${PENDING}"
+
+# duplicates from the listing are collapsed
+out="$(cd "${REPO}" && RCLONE_FAKE_DELETES="docs/old.md docs/old.md" "${BIN}/gdrive-repo-push.sh" --dry-run </dev/null 2>&1)"
+check "sync mode: duplicate listing lines count once" "[[ \"\${out}\" == *'1 non-media file(s)'* ]]" "${out}"
+command rm -f "${PENDING}"
+
+# a failed check stops before any upload
+: > "${RCLONE_LOG}"
+out="$(cd "${REPO}" && RCLONE_CHECK_EXIT=5 RCLONE_FAKE_DELETES="docs/old.md" "${BIN}/gdrive-repo-push.sh" --yes </dev/null 2>&1)"; rc=$?
+check "sync mode: rclone check failure (not 0/1) aborts before any upload" "[[ ${rc} -eq 5 ]] && [[ \"\$(grep -c . '${RCLONE_LOG}')\" == 1 ]]" "${out}
 $(command cat "${RCLONE_LOG}")"
 
-: > "${RCLONE_LOG}"
-out="$(cd "${REPO}" && printf 'y\n' | RCLONE_FAKE_DELETES="docs/old.md" "${BIN}/gdrive-repo-push.sh" 2>&1)"; rc=$?
-# stdin is a pipe, not a tty, so the prompt path is not reachable in tests; assert the non-tty refusal instead
-check "sync mode: piped stdin is not a tty -> still refuses without --yes" "[[ ${rc} -eq 1 && \"\${out}\" == *'no terminal to confirm'* ]]" "${out}"
-command sed -i.bak '/GDRIVE_SYNC_NON_MEDIA/d' "${REPO}/.gdrive-repo.conf" && command rm -f "${REPO}/.gdrive-repo.conf.bak"
+# refused flags
+for f in --delete-excluded --include=x --exclude=x --filter-from=x --files-from=x --max-delete=3 --log-level=ERROR --log-file=x -v -nv; do
+  out="$(cd "${REPO}" && "${BIN}/gdrive-repo-push.sh" "$f" </dev/null 2>&1)"; rc=$?
+  check "sync mode: flag $f is refused with exit 2" "[[ ${rc} -eq 2 ]]" "${out}"
+done
+out="$(cd "${REPO}" && GDRIVE_MAX_DELETE=3 "${BIN}/gdrive-repo-push.sh" </dev/null 2>&1)"; rc=$?
+check "sync mode: GDRIVE_MAX_DELETE is refused, not ignored" "[[ ${rc} -eq 2 && \"\${out}\" == *'GDRIVE_MAX_DELETE has no effect'* ]]" "${out}"
+
+command sed -i.bak '/GDRIVE_SYNC_NON_MEDIA/d; /GDRIVE_GIT_BUNDLE/d' "${REPO}/.gdrive-repo.conf" && command rm -f "${REPO}/.gdrive-repo.conf.bak"
 
 # ---- pull -----------------------------------------------------------------
 printf 'AAAA' > "${FAKE_REMOTE}/media/a/one.mp4"
