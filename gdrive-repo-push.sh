@@ -11,24 +11,32 @@
 #
 # Two modes, chosen by the conf:
 #
-# GDRIVE_SYNC_NON_MEDIA=1 — the local tree is the source of truth.
-#   1. non-media: `rclone check` lists every file on Drive that is not a
-#      media file, not under .git-backup/, and no longer exists locally.
-#      The list is printed. Then `rclone copy` uploads new/changed non-media
-#      files. Then, ONLY IF CONFIRMED, `rclone delete --files-from-raw`
+# GDRIVE_SYNC_NON_MEDIA=1 — the local tree is the source of truth. ONE
+# recursive listing of the Drive mirror (`rclone lsf --fast-list`, path,
+# size, modtime) and one local listing (through the exclude list) are
+# joined here; rclone then only touches the files that differ:
+#   1. non-media: every local non-media file that is missing on Drive or
+#      differs in size or modtime goes up (`rclone copy --files-from-raw
+#      --no-traverse`, so rclone stats just those). Every Drive file that is
+#      not media, not under .git-backup/, and does not exist locally is a
+#      pending deletion — including junk the exclude list would never upload.
+#      The list is printed. ONLY IF CONFIRMED, `rclone delete --files-from-raw`
 #      removes exactly the listed files — never a recomputed set, never a
 #      count-capped "some of them". Confirmation is the y/N prompt on a
 #      terminal, or --yes when the list equals the one the last --dry-run
 #      wrote to tmp/claude-logs/gdrive-push-pending-deletes.list. No
 #      terminal and no --yes, or a --yes whose list changed: the deletions
 #      are SKIPPED, everything else still uploads, exit 1 says so.
-#   2. media: `rclone copy` of files with a GDRIVE_MEDIA_EXTENSIONS extension.
-#      Never deletes — a media file pruned locally to free disk stays on Drive.
+#   2. media: local media files (GDRIVE_MEDIA_EXTENSIONS, case-insensitive)
+#      missing on Drive or differing go up the same way. Never deletes — a
+#      media file pruned locally to free disk stays on Drive.
 #   3. git bundle (below), upload only. Runs after the deletion decision so a
 #      refused run has changed nothing but uploads.
 #   Drive-side deletions are never mirrored back: a file removed on Drive is
 #   simply uploaded again on the next push. GDRIVE_MAX_DELETE is refused in
-#   this mode (exit 2) rather than silently ignored.
+#   this mode (exit 2) rather than silently ignored. Unchanged files are
+#   decided from the listing (same size and modtime to the second), so a
+#   push with nothing new costs one listing and no per-file calls.
 #
 # Default (no GDRIVE_SYNC_NON_MEDIA) — one `rclone copy` of the whole tree,
 # never deletes. GDRIVE_MAX_DELETE=<n> switches that single pass to
@@ -132,29 +140,58 @@ push_bundle() {
 if [[ "${GDRIVE_SYNC_NON_MEDIA}" == "1" ]]; then
   [[ -z "${GDRIVE_MAX_DELETE:-}" ]] \
     || gdrive_die "GDRIVE_MAX_DELETE has no effect with GDRIVE_SYNC_NON_MEDIA=1 — deletions are the previewed list, confirmed with --yes"
-  gdrive_non_media_filter_flags
-  gdrive_media_filter_flags
+  gdrive_exclude_flags
 
   # -------------------------------------------------------------------------
-  # Pass 1a — what would be deleted: non-media files on Drive, absent locally
+  # One listing each side, joined into: uploads (non-media, media), deletions
   # -------------------------------------------------------------------------
   echo "pass 1/3: non-media (upload; delete on Drive what was deleted locally, after confirmation)"
+  REMOTE_LIST="${GDRIVE_TMPDIR}/remote.tsv"
+  LOCAL_LIST="${GDRIVE_TMPDIR}/local.tsv"
+  UP_NON_MEDIA="${GDRIVE_TMPDIR}/upload-non-media.list"
+  UP_MEDIA="${GDRIVE_TMPDIR}/upload-media.list"
   DELETES="${GDRIVE_TMPDIR}/deletes.list"
-  RAW="${GDRIVE_TMPDIR}/deletes.raw"
-  crc=0
-  # `check` exits 0 when both sides match and 1 when they differ; both are
-  # answers. Anything else is a failed call and the push stops here, before
-  # any upload, so a half-listed Drive is never acted on.
-  rclone check . "${GDRIVE_DEST}/" --size-only --missing-on-src "${RAW}" \
-    "${GDRIVE_NON_MEDIA_FILTER_FLAGS[@]}" \
-    ${GDRIVE_RCLONE_COMMON[@]+"${GDRIVE_RCLONE_COMMON[@]}"} \
-    --log-file "${LOG}" --log-level ERROR || crc=$?
-  if [[ ${crc} -ne 0 && ${crc} -ne 1 ]]; then
-    >&2 echo "rclone check exited ${crc} — cannot tell what is on Drive; nothing changed. See ${LOG}"
-    exit "${crc}"
+  TAB="$(printf '\t')"
+  lrc=0
+  # A failed listing stops the push before any upload, so a half-listed
+  # Drive is never acted on (every Drive file missing from the listing
+  # would otherwise read as "upload again" and "not a deletion").
+  rclone lsf -R --files-only --format pst --separator "${TAB}" --fast-list \
+    "${GDRIVE_DEST}/" ${GDRIVE_RCLONE_COMMON[@]+"${GDRIVE_RCLONE_COMMON[@]}"} \
+    --log-file "${LOG}" --log-level ERROR > "${REMOTE_LIST}" || lrc=$?
+  if [[ ${lrc} -ne 0 ]]; then
+    >&2 echo "rclone lsf of ${GDRIVE_DEST}/ exited ${lrc} — cannot tell what is on Drive; nothing changed. See ${LOG}"
+    exit "${lrc}"
   fi
-  command sort -u "${RAW}" | command sed '/^$/d' > "${DELETES}"
+  rclone lsf -R --files-only --format pst --separator "${TAB}" . \
+    ${GDRIVE_EXCLUDE_FLAGS[@]+"${GDRIVE_EXCLUDE_FLAGS[@]}"} --exclude '.git-backup/**' \
+    > "${LOCAL_LIST}" || lrc=$?
+  if [[ ${lrc} -ne 0 ]]; then
+    >&2 echo "local listing exited ${lrc}; nothing changed. See ${LOG}"
+    exit "${lrc}"
+  fi
+  MEDIA_RE="$(printf '%s' "${GDRIVE_MEDIA_EXTENSIONS}" | command tr ' ' '|')"
+  command awk -F"${TAB}" -v media_re="[.](${MEDIA_RE})\$" \
+    -v up_nm="${UP_NON_MEDIA}" -v up_m="${UP_MEDIA}" -v del="${DELETES}" '
+    function is_media(p) { return tolower(p) ~ media_re }
+    NR == FNR { rsize[$1] = $2; rtime[$1] = $3; next }          # remote first
+    {
+      local[$1] = 1
+      if (!($1 in rsize) || rsize[$1] != $2 || rtime[$1] != $3)
+        print $1 > (is_media($1) ? up_m : up_nm)
+    }
+    END {
+      for (p in rsize)
+        if (!(p in local) && !is_media(p) && p !~ /^\.git-backup\//) print p > del
+    }' "${REMOTE_LIST}" "${LOCAL_LIST}"
+  for f in "${UP_NON_MEDIA}" "${UP_MEDIA}" "${DELETES}"; do
+    [[ -f "${f}" ]] || : > "${f}"
+    command sort -u -o "${f}" "${f}"
+  done
   n_del="$(command grep -c . "${DELETES}" || true)"
+  n_up_nm="$(command grep -c . "${UP_NON_MEDIA}" || true)"
+  n_up_m="$(command grep -c . "${UP_MEDIA}" || true)"
+  echo "listing: $(command grep -c . "${REMOTE_LIST}" || true) file(s) on Drive, $(command grep -c . "${LOCAL_LIST}" || true) local; ${n_up_nm} non-media + ${n_up_m} media to upload, ${n_del} to delete"
 
   DO_DELETE=0
   deletes_skipped=0
@@ -189,13 +226,15 @@ if [[ "${GDRIVE_SYNC_NON_MEDIA}" == "1" ]]; then
     [[ ${USER_DRY} -eq 1 ]] && : > "${PENDING}"
   fi
 
-  # -------------------------------------------------------------------------
-  # Pass 1b — upload non-media; 1c — delete exactly the confirmed list
-  # -------------------------------------------------------------------------
-  urc=0
-  rclone copy . "${GDRIVE_DEST}/" "${GDRIVE_NON_MEDIA_FILTER_FLAGS[@]}" \
-    "${RCLONE_BASE[@]}" ${PASS[@]+"${PASS[@]}"} || urc=$?
-  [[ ${urc} -eq 0 ]] || { >&2 echo "non-media upload exited ${urc} — see ${LOG}"; note_rc "${urc}"; }
+  # Uploads of the changed non-media files, then the confirmed deletions.
+  # --files-from-raw + --no-traverse: rclone stats only the listed files and
+  # still applies its own size+modtime check before transferring.
+  if [[ "${n_up_nm}" -gt 0 ]]; then
+    urc=0
+    rclone copy . "${GDRIVE_DEST}/" --files-from-raw "${UP_NON_MEDIA}" --no-traverse \
+      "${RCLONE_BASE[@]}" ${PASS[@]+"${PASS[@]}"} || urc=$?
+    [[ ${urc} -eq 0 ]] || { >&2 echo "non-media upload exited ${urc} — see ${LOG}"; note_rc "${urc}"; }
+  fi
 
   if [[ ${DO_DELETE} -eq 1 ]]; then
     drc=0
@@ -213,10 +252,14 @@ if [[ "${GDRIVE_SYNC_NON_MEDIA}" == "1" ]]; then
   # Pass 2 — media: copy only, never deletes
   # -------------------------------------------------------------------------
   echo "pass 2/3: media copy (never deletes on Drive)"
-  mrc=0
-  rclone copy . "${GDRIVE_DEST}/" "${GDRIVE_MEDIA_FILTER_FLAGS[@]}" \
-    "${RCLONE_BASE[@]}" ${PASS[@]+"${PASS[@]}"} || mrc=$?
-  [[ ${mrc} -eq 0 ]] || { >&2 echo "media copy exited ${mrc} — see ${LOG}"; note_rc "${mrc}"; }
+  if [[ "${n_up_m}" -gt 0 ]]; then
+    mrc=0
+    rclone copy . "${GDRIVE_DEST}/" --files-from-raw "${UP_MEDIA}" --no-traverse \
+      "${RCLONE_BASE[@]}" ${PASS[@]+"${PASS[@]}"} || mrc=$?
+    [[ ${mrc} -eq 0 ]] || { >&2 echo "media copy exited ${mrc} — see ${LOG}"; note_rc "${mrc}"; }
+  else
+    echo "no media to upload"
+  fi
 
   echo "pass 3/3: git bundle"
   push_bundle

@@ -117,22 +117,6 @@ gdrive_media_filter_flags() {
   GDRIVE_MEDIA_FILTER_FLAGS=(--filter-from "${f}" --ignore-case)
 }
 
-# `--filter-from <generated file> --ignore-case` selecting everything EXCEPT
-# media and the bundle folder: the push exclude list, `- .git-backup/**`,
-# `- *.ext` per media extension, then `+ **`. This is the set push may delete
-# from, so media files pruned locally can never be touched by it.
-gdrive_non_media_filter_flags() {
-  local f="${GDRIVE_TMPDIR}/non-media.filter" ext
-  : > "${f}"
-  gdrive_exclude_rules "${f}"
-  echo "- .git-backup/**" >> "${f}"
-  for ext in ${GDRIVE_MEDIA_EXTENSIONS}; do
-    echo "- *.${ext}" >> "${f}"
-  done
-  echo "+ **" >> "${f}"
-  GDRIVE_NON_MEDIA_FILTER_FLAGS=(--filter-from "${f}" --ignore-case)
-}
-
 # Normalizes a user path: strips ./ and trailing /, refuses absolute or
 # parent-escaping paths. Prints the clean path.
 gdrive_clean_rel_path() {
