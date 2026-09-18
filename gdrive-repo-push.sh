@@ -23,6 +23,14 @@
 # "--max-delete threshold reached" per refusal, and exits 7. NOT
 # `--max-delete-size`: measured on rclone v1.74 it did not fire at all.
 #
+# Git history backup: with GDRIVE_GIT_BUNDLE=1 in the conf, the push first
+# writes `git bundle create --all` (every branch and tag, one consistent
+# file) and uploads it to <root>/.git-backup/<repo-name>.bundle, compared by
+# checksum so an unchanged history costs one hash lookup. Restore with
+# `git clone <name>.bundle <dir>`. This replaces mirroring `.git/**`, which
+# is thousands of small files, churns on every gc, and can be copied
+# mid-write.
+#
 # Logs to <repo>/tmp/claude-logs/gdrive-push-<ts>.log. Resume is automatic —
 # files already on Drive with matching size + modtime are skipped.
 set -euo pipefail
@@ -54,6 +62,31 @@ fi
 echo "${MODE}ing ${GDRIVE_REPO_ROOT} -> ${GDRIVE_DEST}/"
 echo "log: ${LOG}"
 
+bundle_rc=0
+if [[ "${GDRIVE_GIT_BUNDLE}" == "1" ]]; then
+  if git rev-parse --git-dir >/dev/null 2>&1; then
+    BUNDLE_NAME="$(command basename "${GDRIVE_REPO_ROOT}").bundle"
+    BUNDLE="${GDRIVE_TMPDIR}/${BUNDLE_NAME}"
+    BUNDLE_DEST="${GDRIVE_DEST}/.git-backup/${BUNDLE_NAME}"
+    echo "git bundle: ${BUNDLE_DEST}"
+    if git bundle create "${BUNDLE}" --all >>"${LOG}" 2>&1; then
+      DRY=()
+      for a in "$@"; do [[ "$a" == "--dry-run" ]] && DRY=(--dry-run); done
+      rclone copyto "${BUNDLE}" "${BUNDLE_DEST}" \
+        --checksum --drive-chunk-size 128M \
+        ${GDRIVE_RCLONE_COMMON[@]+"${GDRIVE_RCLONE_COMMON[@]}"} \
+        --log-file "${LOG}" --log-level INFO \
+        ${DRY[@]+"${DRY[@]}"} || bundle_rc=$?
+      [[ ${bundle_rc} -eq 0 ]] || >&2 echo "git bundle upload failed (rclone exit ${bundle_rc}) — continuing with the tree"
+    else
+      bundle_rc=1
+      >&2 echo "git bundle create failed — see ${LOG}; continuing with the tree"
+    fi
+  else
+    >&2 echo "GDRIVE_GIT_BUNDLE=1 but ${GDRIVE_REPO_ROOT} is not a git repository — skipping the bundle"
+  fi
+fi
+
 rc=0
 rclone "${MODE}" . "${GDRIVE_DEST}/" \
   ${GDRIVE_EXCLUDE_FLAGS[@]+"${GDRIVE_EXCLUDE_FLAGS[@]}"} \
@@ -76,4 +109,5 @@ if [[ "${rc}" -ne 0 ]]; then
   fi
 fi
 
+[[ ${rc} -ne 0 ]] || rc=${bundle_rc}
 exit "${rc}"

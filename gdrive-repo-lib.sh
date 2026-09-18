@@ -7,6 +7,7 @@
 #   GDRIVE_ROOT=investments-sources           # Drive folder that mirrors the repo root
 #   GDRIVE_EXCLUDE_FILE=.gdrive-repo-exclude.txt   # rclone --exclude-from, relative to root (push only)
 #   GDRIVE_MEDIA_EXTENSIONS="mp4 m4a mp3"    # what pull/prune/--list treat as "media"
+#   GDRIVE_GIT_BUNDLE=1                       # push also uploads a `git bundle --all` of the repo
 #
 # Every script walks up from $PWD to find that file, so it works from any
 # subdirectory. Paths on the command line are relative to the repo root and
@@ -50,7 +51,7 @@ gdrive_find_root() {
 # GDRIVE_REPO_ROOT so relative paths resolve against it.
 gdrive_load_conf() {
   gdrive_find_root
-  GDRIVE_REMOTE="" GDRIVE_ROOT="" GDRIVE_EXCLUDE_FILE="" GDRIVE_MEDIA_EXTENSIONS=""
+  GDRIVE_REMOTE="" GDRIVE_ROOT="" GDRIVE_EXCLUDE_FILE="" GDRIVE_MEDIA_EXTENSIONS="" GDRIVE_GIT_BUNDLE=""
   # shellcheck disable=SC1090
   source "${GDRIVE_REPO_ROOT}/${GDRIVE_CONF_NAME}"
   [[ -n "${GDRIVE_REMOTE}" ]] || gdrive_die "${GDRIVE_CONF_NAME}: GDRIVE_REMOTE is not set"

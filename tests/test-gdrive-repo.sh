@@ -79,6 +79,21 @@ check "push: propagates rclone's exit code" "[[ ${rc} -eq 7 ]]"
 out="$(cd "${WORK}" && "${BIN}/gdrive-repo-push.sh" 2>&1)"; rc=$?
 check "push: exit 2 without a conf" "[[ ${rc} -eq 2 ]] && [[ "\${out}" == *'no .gdrive-repo.conf'* ]]" "${out}"
 
+: > "${RCLONE_LOG}"
+out="$(cd "${REPO}" && "${BIN}/gdrive-repo-push.sh" 2>&1)"
+check "push: no git bundle without GDRIVE_GIT_BUNDLE" "! grep -q '^copyto .*\.bundle' '${RCLONE_LOG}'" "$(command cat "${RCLONE_LOG}")"
+
+echo 'GDRIVE_GIT_BUNDLE=1' >> "${REPO}/.gdrive-repo.conf"
+: > "${RCLONE_LOG}"
+out="$(cd "${REPO}" && "${BIN}/gdrive-repo-push.sh" --dry-run 2>&1)"; rc=$?
+check "push: GDRIVE_GIT_BUNDLE=1 uploads <repo>.bundle to .git-backup/ by checksum" \
+  "grep -q '^copyto .*/repo\.bundle fake:mirror/\.git-backup/repo\.bundle --checksum .* --dry-run$' '${RCLONE_LOG}'" "$(command cat "${RCLONE_LOG}")"
+check "push: bundle upload happens before the tree copy" "[[ \"\$(head -n 1 '${RCLONE_LOG}')\" == copyto* ]]" "$(command cat "${RCLONE_LOG}")"
+check "push: bundle run exits 0" "[[ ${rc} -eq 0 ]]" "${out}"
+bundle_ok="$(cd "${REPO}" && b="$(command mktemp)" && git bundle create "$b" --all >/dev/null 2>&1 && git bundle verify "$b" >/dev/null 2>&1 && echo yes; command rm -f "$b")"
+check "git bundle --all of the test repo verifies" "[[ '${bundle_ok}' == yes ]]"
+command sed -i.bak '/GDRIVE_GIT_BUNDLE/d' "${REPO}/.gdrive-repo.conf" && command rm -f "${REPO}/.gdrive-repo.conf.bak"
+
 # ---- pull -----------------------------------------------------------------
 printf 'AAAA' > "${FAKE_REMOTE}/media/a/one.mp4"
 printf 'BB'   > "${FAKE_REMOTE}/media/a/two.mp4"
