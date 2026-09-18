@@ -55,6 +55,9 @@ alias claudeds='~/.claude/claude-ds.sh'
 
 alias claude-mntr="CLAUDE_CONFIG_DIR=$HOME/.claude-mentorano claude"
 
+# Route command approvals through Codex automatic review (workspace-write sandbox).
+alias codex='codex --approve-for-me'
+
 # ls: eza when present. In zsh without eza, OMZ sets ls -G / l / ll / la.
 if command -v eza > /dev/null 2>&1; then
   alias ls='eza -hF --group-directories-first --hyperlink=auto'

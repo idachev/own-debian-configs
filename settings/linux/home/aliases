@@ -58,6 +58,9 @@ alias claudeds='~/.claude/claude-ds.sh'
 
 alias claude-mntr="CLAUDE_CONFIG_DIR=$HOME/.claude-mentorano claude"
 
+# Route command approvals through Codex automatic review (workspace-write sandbox).
+alias codex='codex --approve-for-me'
+
 # Different directory listings
 alias ls='ls -v -hF --color=tty --group-directories-first'
 alias ll='ls -l'
