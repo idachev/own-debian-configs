@@ -46,3 +46,44 @@ resolvectl status <zerotier-interface>
 ```
 
 Should show the network's DNS servers and `~<domain>` under that link.
+
+## ZeroTier watchdog
+
+`zerotier-watchdog.sh` pings the OPNsense ZeroTier address `172.22.172.2`
+through the local `172.22.172.0/24` interface. The ping is bound to that
+interface so office LAN cannot look like overlay success.
+
+A systemd timer runs it every 15 minutes. If two probes 20 seconds apart
+both fail, and `zerotier-one` is enabled, has a network membership, has
+been up at least 2 minutes, and was not restarted in the last 15 minutes,
+the script restarts `zerotier-one` and then starts `zerotier-dns-fix.service`
+so managed DNS is reapplied.
+
+### Install
+
+Run from this directory:
+
+```
+sudo cp zerotier-watchdog.sh /usr/local/bin/zerotier-watchdog.sh
+sudo chmod +x /usr/local/bin/zerotier-watchdog.sh
+
+sudo cp zerotier-watchdog.service /etc/systemd/system/zerotier-watchdog.service
+sudo cp zerotier-watchdog.timer /etc/systemd/system/zerotier-watchdog.timer
+
+sudo systemctl daemon-reload
+sudo systemctl enable --now zerotier-watchdog.timer
+sudo systemctl start zerotier-watchdog.service
+```
+
+The last line runs one probe now instead of waiting for the next 15-minute
+tick.
+
+### Verify
+
+```
+systemctl status zerotier-watchdog.timer
+systemctl status zerotier-watchdog.service
+journalctl -u zerotier-watchdog -n 50 --no-pager
+```
+
+A healthy run logs `probe ok via <iface> -> 172.22.172.2`.

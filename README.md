@@ -57,7 +57,9 @@ source create_links
 ```
 
 See `settings/linux/root/README.md` for additional root setup, e.g. the
-ZeroTier DNS fix for new machines joined to a ZeroTier network with managed DNS.
+ZeroTier DNS fix for new machines joined to a ZeroTier network with managed DNS,
+and the ZeroTier watchdog that restarts `zerotier-one` when the OPNsense overlay
+probe fails.
 
 # Install all goodies
 To install all useful programs on debian/ubuntu/mint call
