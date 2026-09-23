@@ -119,7 +119,12 @@ open_attach_tab() {
     root="$(git -C "$cwd" rev-parse --show-toplevel 2>/dev/null || printf '%s' "$cwd")"
     printf 'adding %s to Supacode\n' "$root"
     supacode repo open "$root" >/dev/null
-    wt="$(worktree_for_dir "$cwd")" || die "Supacode did not add '$root' as a repository"
+    # `repo open` returns before the worktree is listed, so poll for it.
+    local tries=0
+    until wt="$(worktree_for_dir "$cwd")"; do
+      (( ++tries <= 40 )) || die "Supacode did not list a worktree for '$root' after 20s"
+      sleep 0.5
+    done
   fi
   supacode open >/dev/null
   supacode worktree focus -w "$wt" >/dev/null
