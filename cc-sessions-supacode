@@ -1,0 +1,181 @@
+#!/usr/bin/env bash
+# List running Claude Code sessions and focus the Supacode pane that hosts one.
+#
+#   cc-sessions-supacode             interactive picker (fzf); Enter focuses the pane
+#   cc-sessions-supacode list        table of sessions
+#   cc-sessions-supacode focus <q>   focus by pid, session id prefix, bg id or name substring
+#
+# PANE column:  supacode = focus the existing pane
+#               new-tab  = background session; opens `claude attach` in a new
+#                          Supacode tab of its repo (adds the repo if missing)
+#               -        = no pane (e.g. a Claude Desktop session)
+#
+# A pane counts only when the process runs in a Supacode terminal
+# (TERM_PROGRAM=supacode) and that surface still exists. Background sessions
+# inherit the env of the shell that spawned them, so the env alone is not proof.
+
+set -euo pipefail
+
+die() { printf 'cc-sessions-supacode: %s\n' "$*" >&2; exit 1; }
+
+command -v jq >/dev/null || die "jq is required"
+command -v claude >/dev/null || die "claude is not on PATH"
+
+# Env of another process, one VAR=value per line. macOS `ps eww` prints it after argv.
+proc_env_dump() {
+  ps eww -p "$1" -o command= 2>/dev/null | tr ' ' '\n' || true
+}
+
+env_value() {
+  local dump="$1" name="$2"
+  command grep -m1 "^${name}=" <<<"$dump" | cut -d= -f2- || true
+}
+
+surface_alive() {
+  local sock="$1" wt="$2" tab="$3" surf="$4"
+  command -v supacode >/dev/null || return 1
+  SUPACODE_SOCKET_PATH="$sock" supacode surface list -w "$wt" -t "$tab" 2>/dev/null \
+    | command grep -qix "$surf"
+}
+
+# Prints "wt<TAB>tab<TAB>surf<TAB>sock" when the process lives in a live Supacode pane.
+pane_of() {
+  local dump wt tab surf sock
+  dump="$(proc_env_dump "$1")"
+  [[ "$(env_value "$dump" TERM_PROGRAM)" == supacode ]] || return 1
+  wt="$(env_value "$dump" SUPACODE_WORKTREE_ID)"
+  tab="$(env_value "$dump" SUPACODE_TAB_ID)"
+  surf="$(env_value "$dump" SUPACODE_SURFACE_ID)"
+  sock="$(env_value "$dump" SUPACODE_SOCKET_PATH)"
+  [[ -n "$surf" ]] && surface_alive "$sock" "$wt" "$tab" "$surf" || return 1
+  printf '%s\t%s\t%s\t%s\n' "$wt" "$tab" "$surf" "$sock"
+}
+
+# A background session shown in a pane runs as a separate `claude attach <id>` process.
+attached_pane() {
+  local bgid="$1" apid
+  [[ "$bgid" != - ]] || return 1
+  for apid in $(pgrep -f "claude attach ${bgid}( |$)" || true); do
+    pane_of "$apid" && return 0
+  done
+  return 1
+}
+
+# TSV: pid kind status pane name cwd sessionId bgId wt tab surf sock
+collect() {
+  local json
+  json="$(claude agents --json 2>&1)" || die "'claude agents --json' failed: $json"
+  # Every field gets a "-" default: tab is IFS whitespace, so `read` and
+  # `column` would collapse an empty field and shift the columns after it.
+  jq -r '.[] | [.pid, .kind, .status, .name, .cwd, .sessionId, .id]
+         | map(if . == null or . == "" then "-" else tostring end) | @tsv' <<<"$json" \
+    | while IFS=$'\t' read -r pid kind status name cwd sid bgid; do
+        local loc pane="-"
+        if loc="$(pane_of "$pid")" || { [[ "$kind" == background ]] && loc="$(attached_pane "$bgid")"; }; then
+          pane="supacode"
+        elif [[ "$kind" == background ]]; then
+          pane="new-tab"; loc=$'-\t-\t-\t-'
+        else
+          loc=$'-\t-\t-\t-'
+        fi
+        printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' \
+          "$pid" "$kind" "$status" "$pane" "$name" "${cwd/#"$HOME"/\~}" "$sid" "$bgid" "$loc"
+      done
+}
+
+# Human columns only: pid kind status pane name cwd sessionId
+render() {
+  { printf 'PID\tKIND\tSTATUS\tPANE\tNAME\tCWD\tSESSION\n'
+    cut -f1-7 | awk -F'\t' -v OFS='\t' '{ $7 = substr($7, 1, 8); print }'
+  } | column -t -s $'\t'
+}
+
+url_decode() {
+  local s="${1//+/ }"
+  printf '%b' "${s//%/\\x}"
+}
+
+# Supacode worktree ID whose path is the longest prefix of the given directory.
+worktree_for_dir() {
+  local dir="${1%/}/" id path best="" best_len=0
+  while IFS= read -r id; do
+    [[ -n "$id" ]] || continue
+    path="$(url_decode "$id")"
+    [[ "$path" == */ ]] || path="$path/"
+    if [[ "$dir" == "$path"* ]] && (( ${#path} > best_len )); then
+      best="$id"; best_len=${#path}
+    fi
+  done < <(supacode worktree list --not-archived)
+  [[ -n "$best" ]] && printf '%s\n' "$best"
+}
+
+open_attach_tab() {
+  local name="$1" bgid="$2" cwd="$3" wt root tab
+  command -v supacode >/dev/null || die "supacode CLI is not on PATH"
+  # The id is typed into a shell by `tab new -i`, so allow only an id's characters.
+  [[ "$bgid" =~ ^[A-Za-z0-9_-]+$ ]] || die "unexpected background id '$bgid'"
+  [[ -d "$cwd" ]] || die "session directory '$cwd' no longer exists"
+  if ! wt="$(worktree_for_dir "$cwd")"; then
+    root="$(git -C "$cwd" rev-parse --show-toplevel 2>/dev/null || printf '%s' "$cwd")"
+    printf 'adding %s to Supacode\n' "$root"
+    supacode repo open "$root" >/dev/null
+    wt="$(worktree_for_dir "$cwd")" || die "Supacode did not add '$root' as a repository"
+  fi
+  supacode open >/dev/null
+  supacode worktree focus -w "$wt" >/dev/null
+  tab="$(supacode tab new -w "$wt" --title "$name" -i "claude attach $bgid")"
+  supacode tab focus -w "$wt" -t "$tab" >/dev/null
+  printf 'attached: %s in a new tab of %s\n' "$name" "$(url_decode "$wt")"
+}
+
+focus_row() {
+  local row="$1" pid kind name cwd bgid wt tab surf sock pane
+  IFS=$'\t' read -r pid kind _ pane name cwd _ bgid wt tab surf sock <<<"$row"
+  case "$pane" in
+    supacode) ;;
+    new-tab) open_attach_tab "$name" "$bgid" "${cwd/#\~/$HOME}"; return ;;
+    *) die "'$name' (pid $pid) is not in a Supacode pane" ;;
+  esac
+  export SUPACODE_SOCKET_PATH="$sock"
+  supacode open >/dev/null
+  supacode worktree focus -w "$wt" >/dev/null
+  supacode tab focus -w "$wt" -t "$tab" >/dev/null
+  supacode surface focus -w "$wt" -t "$tab" -s "$surf" >/dev/null
+  printf 'focused: %s (pid %s)\n' "$name" "$pid"
+}
+
+find_row() {
+  local q="$1" rows match
+  rows="$(collect)"
+  # Exact pid / bg id first, then session id prefix, then name substring.
+  # Each stage keeps all its matches, so a short prefix is reported as ambiguous.
+  match="$(awk -F'\t' -v q="$q" '$1 == q || $8 == q' <<<"$rows")"
+  [[ -n "$match" ]] || match="$(awk -F'\t' -v q="$q" 'index($7, q) == 1' <<<"$rows")"
+  [[ -n "$match" ]] || match="$(awk -F'\t' -v q="$q" 'index(tolower($5), tolower(q))' <<<"$rows")"
+  [[ -n "$match" ]] || die "no session matches '$q'"
+  (( $(wc -l <<<"$match") == 1 )) || { render <<<"$match" >&2; die "'$q' matches several sessions"; }
+  printf '%s\n' "$match"
+}
+
+pick() {
+  command -v fzf >/dev/null || die "fzf is required for the picker; use 'list' / 'focus'"
+  local rows table choice
+  rows="$(collect)"
+  [[ -n "$rows" ]] || die "no running sessions"
+  table="$(render <<<"$rows")"
+  # Keep the raw row joined to its rendered line so the choice maps back exactly.
+  choice="$(paste -d $'\x1f' <(tail -n +2 <<<"$table") <(printf '%s\n' "$rows") \
+    | fzf --delimiter=$'\x1f' --with-nth=1 --header="$(head -n 1 <<<"$table")" \
+          --prompt='session> ' --reverse --height=~50% \
+    | cut -d $'\x1f' -f2)"
+  [[ -n "$choice" ]] || exit 0
+  focus_row "$choice"
+}
+
+case "${1:-pick}" in
+  pick) pick ;;
+  list|ls) collect | render ;;
+  focus|f) [[ -n "${2:-}" ]] || die "usage: cc-sessions-supacode focus <pid|session-id|name>"; row="$(find_row "$2")"; focus_row "$row" ;;
+  -h|--help|help) command sed -n '2,15p' "$0" | cut -c3- ;;
+  *) die "unknown command '$1' (try --help)" ;;
+esac

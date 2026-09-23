@@ -101,6 +101,12 @@ prepends `claude-caffeinate-stub/` to `PATH` so Claude hits a no-op;
 
 See `readmes/others/claude-caffeinate-stub.md`.
 
+`cc-sessions-supacode` lists the running Claude Code sessions and
+focuses the Supacode pane of the chosen one; a background session gets
+a new Supacode tab with `claude attach`.
+
+See `readmes/others/cc-sessions-supacode.md`.
+
 # Custom Settings
 
 ## Terminal Profiles
