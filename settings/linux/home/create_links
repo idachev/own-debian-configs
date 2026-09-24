@@ -104,6 +104,7 @@ else
   mkdir -p $HOME/.config/autostart
   link $BASEDIR/config/autostart/lid-blank-panel.desktop $HOME/.config/autostart/lid-blank-panel.desktop
   link $BASEDIR/config/autostart/kitty-tv-scroll-fix.desktop $HOME/.config/autostart/kitty-tv-scroll-fix.desktop
+  link $BASEDIR/config/autostart/nomachine-che-tilde.desktop $HOME/.config/autostart/nomachine-che-tilde.desktop
 
 
   # misc

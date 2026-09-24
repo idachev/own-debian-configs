@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=NoMachine che tilde key
+Comment=Map the NoMachine ISO key to Cyrillic che and tilde
+Exec=/home/idachev/bin/nomachine-che-tilde.sh
+Terminal=false
+X-GNOME-Autostart-enabled=true
+Hidden=false

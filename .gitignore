@@ -23,3 +23,6 @@ __pycache__
 # Mach-O helper compiled from macos_input_source.c
 /macos_input_source
 
+# Compiled from nomachine-che-tilde.c
+/nomachine-che-tilde
+
