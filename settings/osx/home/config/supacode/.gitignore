@@ -1,0 +1,7 @@
+# Only portable preferences and terminal keybindings belong in git.
+# Keep local routes, repository settings, installed agents, migration markers,
+# corrupt backups, and any future runtime files on this machine.
+/*
+!/.gitignore
+!/config.json
+!/config.ghostty

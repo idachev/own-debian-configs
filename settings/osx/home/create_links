@@ -108,6 +108,7 @@ else
   link $BASEDIR/config/htop $HOME/.config/htop
   link $BASEDIR/config/mc $HOME/.config/mc
   link $BASEDIR/config/ghostty $HOME/.config/ghostty
+  link $BASEDIR/config/supacode $HOME/.config/supacode
 
   # tmux
   link $BASEDIR/tmux $HOME/.tmux

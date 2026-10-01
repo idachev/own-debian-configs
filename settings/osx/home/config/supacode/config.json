@@ -1,0 +1,55 @@
+{
+  "agentPresenceBadgesEnabled" : true,
+  "analyticsEnabled" : true,
+  "appVisibility" : "dockAndMenuBar",
+  "appearanceMode" : "dark",
+  "automatedActionPolicy" : "cliOnly",
+  "automaticRepositoryRefreshEnabled" : true,
+  "chromeTextSize" : "standard",
+  "confirmCloseSurface" : true,
+  "confirmCloseTab" : "busy",
+  "confirmQuitMode" : "auto",
+  "copyIgnoredOnWorktreeCreate" : false,
+  "copyUntrackedOnWorktreeCreate" : false,
+  "crashReportsEnabled" : true,
+  "defaultEditorID" : "auto",
+  "deleteBranchOnDeleteWorktree" : false,
+  "fetchOriginBeforeWorktreeCreation" : true,
+  "forgeEnabledByID" : {
+
+  },
+  "ghosttyUserConfigMode" : "mergeAfterDefault",
+  "githubIntegrationEnabled" : true,
+  "globalScripts" : [
+
+  ],
+  "hoverFocusMode" : "never",
+  "inAppNotificationsEnabled" : true,
+  "mergedWorktreeAction" : "ignore",
+  "moveNotifiedWorktreeToTop" : true,
+  "muteNotificationsForActiveSurface" : false,
+  "notificationRetentionLimit" : 100,
+  "notificationScope" : "all",
+  "notificationSound" : "hero",
+  "notificationsGroupedByWorktree" : false,
+  "notificationsUnreadOnly" : false,
+  "openFileScript" : "",
+  "promptForWorktreeCreation" : true,
+  "pullRequestMergeStrategy" : "merge",
+  "remoteSessionPersistenceEnabled" : true,
+  "richAgentNotificationsEnabled" : true,
+  "shortcutOverrides" : {
+    "toggleSplitZoom" : {
+      "isEnabled" : true,
+      "keyCode" : 7,
+      "modifiers" : 12
+    }
+  },
+  "systemNotificationsEnabled" : true,
+  "terminalHibernationEnabled" : true,
+  "terminalThemeSyncEnabled" : true,
+  "terminateSessionsOnQuit" : false,
+  "updateChannel" : "stable",
+  "updatesAutomaticallyCheckForUpdates" : false,
+  "updatesAutomaticallyDownloadUpdates" : false
+}
