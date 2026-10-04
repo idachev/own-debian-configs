@@ -240,3 +240,13 @@ autoload -Uz compinit && compinit -C
 
 # Added by codebase-memory-mcp install
 export PATH="/Users/idachev/.felan/storage/agent/codebase-memory/bin:$PATH"
+
+# Under sudo the TERMINFO env var of the terminal app is dropped, so root cannot find xterm-ghostty;
+# fall back to xterm-256color for sudo only
+sudo() {
+  if [[ "$TERM" == "xterm-ghostty" ]]; then
+    TERM=xterm-256color command sudo "$@"
+  else
+    command sudo "$@"
+  fi
+}
