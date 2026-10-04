@@ -22,7 +22,6 @@
       "Bash(find:*)",
       "Bash(gh api:*)",
       "Bash(gh pr:*)",
-      "Bash(git -C * status)",
       "Bash(git add:*)",
       "Bash(git diff:*)",
       "Bash(git fetch:*)",
