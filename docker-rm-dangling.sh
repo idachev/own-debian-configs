@@ -2,17 +2,33 @@
 
 echo -e "\nStarted at `date`"
 
-DOCKER_LIB=/var/lib/docker
-
 ONE_MB=1024
 ONE_GB=1048576
 
-function getAvailableSize() {
-  local result=$(df /var/lib/docker --output=avail | sed 1d | tr -d '[:space:]')
-  echo "${result}"
+# Linux keeps Docker data on the host. Docker Desktop on macOS keeps it in a VM disk under the user Library.
+function dockerDataPath() {
+  if [ -d /var/lib/docker ]; then
+    echo /var/lib/docker
+    return
+  fi
+
+  local desktop="${HOME}/Library/Containers/com.docker.docker/Data"
+  if [ -d "${desktop}" ]; then
+    echo "${desktop}"
+    return
+  fi
+
+  echo /
 }
 
-SIZE_BEFORE=$(getAvailableSize)
+# 1K-blocks. df -kP is the POSIX form: GNU df and macOS df both print Available in column 4.
+function getAvailableSize() {
+  local path="$1"
+  df -kP "${path}" | awk 'NR==2 {print $4}'
+}
+
+DATA_PATH=$(dockerDataPath)
+SIZE_BEFORE=$(getAvailableSize "${DATA_PATH}")
 
 echo -e "\nCleanup..."
 
@@ -22,15 +38,22 @@ docker volume ls -qf dangling=true | xargs -r docker volume rm
 
 docker images --no-trunc | grep '<none>' | awk '{ print $3 }' | xargs -r docker rmi
 
-echo -e "\nAvailable size before:"
-echo `expr ${SIZE_BEFORE} / ${ONE_GB}`G
+SIZE_AFTER=$(getAvailableSize "${DATA_PATH}")
 
-SIZE_AFTER=$(getAvailableSize)
+echo -e "\nMeasured path: ${DATA_PATH}"
+
+if [ -z "${SIZE_BEFORE}" ] || [ -z "${SIZE_AFTER}" ]; then
+  echo "Available size: unknown"
+  exit 1
+fi
+
+echo -e "\nAvailable size before:"
+echo "$((SIZE_BEFORE / ONE_GB))G"
 
 echo -e "\nAvailable size after:"
-echo `expr ${SIZE_AFTER} / ${ONE_GB}`G
+echo "$((SIZE_AFTER / ONE_GB))G"
 
-FREED=`expr ${SIZE_AFTER} - ${SIZE_BEFORE}`
+FREED=$((SIZE_AFTER - SIZE_BEFORE))
 
 echo -e "\nFreed:"
-echo `expr ${FREED} / ${ONE_MB}`MB / `expr ${FREED} / ${ONE_GB}`G
+echo "$((FREED / ONE_MB))MB / $((FREED / ONE_GB))G"
