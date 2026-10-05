@@ -199,6 +199,11 @@ unset _mac_ssh_key
 ###########################################################
 # Toolchains (guarded; skip if missing)
 
+# soffice — Darwin only, and only when the LibreOffice app bundle is installed
+if [ "$(uname -s)" = Darwin ] && [ -d /Applications/LibreOffice.app/Contents/MacOS ]; then
+  export PATH="/Applications/LibreOffice.app/Contents/MacOS:$PATH"
+fi
+
 [ -f ~/bin/aws-vault ] && eval "$(aws-vault --completion-script-zsh)"
 
 if command -v temporal > /dev/null 2>&1; then
