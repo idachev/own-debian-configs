@@ -5,6 +5,10 @@ background-blur = false
 
 font-size = 14
 
+# Select copies to the system pasteboard (Cmd+V).
+# `true` writes only Ghostty's internal selection pasteboard.
+copy-on-select = clipboard
+
 # theme = Ultra Dark
 # theme = Kitty Default
 # theme = Molokai
