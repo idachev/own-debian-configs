@@ -34,6 +34,7 @@
   "notificationsGroupedByWorktree" : false,
   "notificationsUnreadOnly" : false,
   "openFileScript" : "",
+  "openTerminalOnWorktreeSelect" : false,
   "pinWorktreeWhenAgentSessionEnds" : true,
   "promptForWorktreeCreation" : true,
   "pullRequestMergeStrategy" : "merge",
