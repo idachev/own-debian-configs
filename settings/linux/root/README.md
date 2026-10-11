@@ -150,6 +150,7 @@ Set them with `sudo systemctl edit wifi-watchdog.service` as
 | `WIFI_WATCHDOG_WAIT_SECS` | `40` | wait for a connection after each step |
 | `WIFI_WATCHDOG_COOLDOWN_SECS` | `900` | minimum time between steps 3/4 |
 | `WIFI_WATCHDOG_DRIVER_RELOAD` | `1` | `0` skips step 4 |
+| `WIFI_WATCHDOG_FIRST_STEP` | `1` | start at this step, for testing steps 2-4 |
 
 ### Install
 
@@ -190,6 +191,20 @@ journalctl -u wifi-watchdog -n 30 --no-pager
 ```
 
 Expected: `wifi connected via device connect`.
+
+To test a later step, start there. Stop the timer first so a timer run does
+not fix WiFi with step 1 in the middle of the test. Example for step 3
+(`NetworkManager` restart):
+
+```
+sudo systemctl stop wifi-watchdog.timer
+nmcli device disconnect wlp147s0
+sudo WIFI_WATCHDOG_FIRST_STEP=3 /usr/local/bin/wifi-watchdog.sh
+sudo systemctl start wifi-watchdog.timer
+```
+
+Expected: `wifi connected via NetworkManager restart`. Steps 3 and 4 then
+stay in cooldown for 15 minutes; `sudo rm /run/wifi-watchdog.heavy` clears it.
 
 ### Log messages
 

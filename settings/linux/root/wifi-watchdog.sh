@@ -8,6 +8,11 @@ RETRY_SECS="${WIFI_WATCHDOG_RETRY_SECS:-20}"
 WAIT_SECS="${WIFI_WATCHDOG_WAIT_SECS:-40}"
 COOLDOWN_SECS="${WIFI_WATCHDOG_COOLDOWN_SECS:-900}"
 DRIVER_RELOAD="${WIFI_WATCHDOG_DRIVER_RELOAD:-1}"
+FIRST_STEP="${WIFI_WATCHDOG_FIRST_STEP:-1}"
+case "${FIRST_STEP}" in
+    [1-4]) ;;
+    *) FIRST_STEP=1 ;;
+esac
 LOCK_FILE=/run/wifi-watchdog.lock
 COOLDOWN_FILE=/run/wifi-watchdog.heavy
 RADIO_PENDING_FILE=/run/wifi-watchdog.radio-off
@@ -307,13 +312,13 @@ main() {
         log "no known network in range, skip"
         exit 0
     fi
-    log "known network '${ssid}' in range, start recovery"
+    log "known network '${ssid}' in range, start recovery at step ${FIRST_STEP}"
 
-    if step_device_connect "${iface}"; then
+    if [ "${FIRST_STEP}" -le 1 ] && step_device_connect "${iface}"; then
         recovered "device connect"
     fi
     still_eligible "${iface}" || exit 0
-    if step_radio_cycle "${iface}"; then
+    if [ "${FIRST_STEP}" -le 2 ] && step_radio_cycle "${iface}"; then
         recovered "radio off/on"
     fi
 
@@ -323,7 +328,7 @@ main() {
     fi
 
     still_eligible "${iface}" || exit 0
-    if step_nm_restart; then
+    if [ "${FIRST_STEP}" -le 3 ] && step_nm_restart; then
         recovered "${NM_SERVICE} restart"
     fi
     iface=$(find_wifi_iface)
