@@ -1,0 +1,10 @@
+[Unit]
+Description=Run WiFi watchdog every 2 minutes
+
+[Timer]
+OnBootSec=3min
+OnCalendar=*:0/2
+AccuracySec=15s
+
+[Install]
+WantedBy=timers.target
