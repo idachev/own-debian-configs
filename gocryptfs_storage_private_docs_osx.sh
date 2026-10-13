@@ -172,8 +172,13 @@ do_mount() {
   fi
   command mkdir -p "${MOUNT_DIR}"
   clear_finder_junk
+  # noappledouble blocks Finder ._ files.
+  # noapplexattr is omitted on purpose. It makes setxattr of
+  # com.apple.quarantine return EPERM. macOS cp then aborts in
+  # fcopyfile and leaves a 0-byte file. Without that flag, cp
+  # stores the Apple xattrs and writes the bytes.
   "${bin}" \
-    -ko noappledouble,noapplexattr \
+    -ko noappledouble \
     -extpass "${SECURITY}" \
     -extpass find-generic-password \
     -extpass=-w \

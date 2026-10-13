@@ -133,12 +133,20 @@ else
   echo "PASS  wait_for_keychain polls find-generic-password -w"
 fi
 
-if ! command grep -F -- '-ko noappledouble,noapplexattr' "$OSX" >/dev/null; then
+if ! command grep -F -- '-ko noappledouble' "$OSX" >/dev/null; then
   FAIL=$((FAIL + 1))
-  echo "FAIL  mount passes -ko noappledouble,noapplexattr"
+  echo "FAIL  mount passes -ko noappledouble"
 else
   PASS=$((PASS + 1))
-  echo "PASS  mount passes -ko noappledouble,noapplexattr"
+  echo "PASS  mount passes -ko noappledouble"
+fi
+
+if command grep -E -- '-ko[[:space:]]+[^\\]*noapplexattr' "$OSX" >/dev/null; then
+  FAIL=$((FAIL + 1))
+  echo "FAIL  mount does not pass noapplexattr (cp fcopyfile leaves 0-byte files)"
+else
+  PASS=$((PASS + 1))
+  echo "PASS  mount does not pass noapplexattr"
 fi
 
 if command grep -E -- '-ko local|,local' "$OSX" >/dev/null; then
