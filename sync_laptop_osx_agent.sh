@@ -141,6 +141,13 @@ bootout_if_loaded() {
     echo "WARNING: bootout ${target} failed (exit ${rc})." >&2
     return "${rc}"
   fi
+  # bootout returns before the job is gone; bootstrap then fails with exit 5.
+  local i
+  for i in $(seq 1 20); do
+    job_loaded "${target}" || return 0
+    sleep 0.5
+  done
+  echo "WARNING: ${target} still loaded after bootout." >&2
 }
 
 plist_has_doit() {
