@@ -17,10 +17,16 @@ On a new Mac, run the installer. Do not copy a plist from git into
 | `com.idachev.sync-laptop-osx` | `~/bin/sync_laptop_osx_agent.sh install` |
 | `com.idachev.gocryptfs-storage-private-docs` | `~/bin/gocryptfs_storage_private_docs_osx.sh agent-install` |
 | `com.idachev.nasa-photos` | `~/develop/personal/nasa-photos/agent_osx.sh install` |
+| `com.idachev.worca-ui` | `~/bin/worca_ui_agent.sh install` |
 
 More detail: `readmes/others/sync_laptop_osx.md`,
 `readmes/others/gocryptfs_storage_private_docs_osx.md`,
 `~/develop/personal/nasa-photos/README.md`.
+
+`com.idachev.worca-ui` keeps the worca web UI on `http://localhost:4317`
+from login and restarts it after a crash. `worca ui stop` stops it only for
+about 10 seconds. Use `worca_ui_agent.sh uninstall` to stop it for good and
+`worca_ui_agent.sh restart` instead of `worca ui restart`.
 
 ## Claude Code caffeinate stub
 
