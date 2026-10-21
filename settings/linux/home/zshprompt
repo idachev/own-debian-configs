@@ -49,6 +49,17 @@ function precmd {
 		fi
 	fi
 
+	# Green above 50%, orange from 10% to 50%, red below 10%.
+	if [[ -z "$PR_APM_LEVEL" ]]; then
+		PR_APM_COLOUR=""
+	elif (( PR_APM_LEVEL > 50 )); then
+		PR_APM_COLOUR=$PR_DIM_GREEN
+	elif (( PR_APM_LEVEL >= 10 )); then
+		PR_APM_COLOUR=$PR_ORANGE
+	else
+		PR_APM_COLOUR=$PR_RED
+	fi
+
   PR_KUBE_NAMESPACE=''
   PR_AWS_PROFILE=''
 
@@ -167,10 +178,16 @@ setprompt () {
 	fi
 	
 	###
-	# Battery level (computed in precmd); shows e.g. "95% " in red,
-	# and nothing at all when there is no system battery.
+	# Battery level (computed in precmd); shows e.g. "🔋95% " in the
+	# colour of its level, and nothing at all when there is no system battery.
+	# Orange needs 256 colours; fall back to yellow otherwise.
 
-	PR_APM='${PR_APM_LEVEL:+$PR_RED${PR_APM_LEVEL}%% }'
+	if [[ "$terminfo[colors]" -ge 256 ]]; then
+		PR_ORANGE="%{$terminfo[sgr0]"$'\e[38;5;208m'"%}"
+	else
+		PR_ORANGE=$PR_LIGHT_YELLOW
+	fi
+	PR_APM='${PR_APM_LEVEL:+$PR_APM_COLOUR🔋${PR_APM_LEVEL}%% }'
 
 	###
 	# Finally, the prompt.
@@ -179,7 +196,7 @@ setprompt () {
 	PROMPT='$PR_STITLE${(e)PR_TITLEBAR}\
 $PR_DIM_YELLOW%D{%H:%M:%S} %D{%Y-%m-%d} \
 $PR_DIM_GREEN%(!.%SROOT%s.%n)$PR_DIM_GREEN@%m:%l$PR_STY \
-$PR_DIM_RED%(?..ERRNO:$PR_RED%?) \
+$PR_DIM_RED%(?..E:$PR_RED%? )\
 ${(e)PR_APM}${(e)PR_CLOUD_LINE}'
 
   PROMPT="${PROMPT}"'
