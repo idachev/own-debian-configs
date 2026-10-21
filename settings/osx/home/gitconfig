@@ -89,5 +89,9 @@
 # Стои НАКРАЯ нарочно: include-ът печели над всичко зададено по-горе.
 [includeIf "gitdir:~/develop/mentorano/"]
 	path = ~/develop/mentorano/.gitconfig
+
+# Работната идентичност за всичко под ~/develop/erida-ai/.
+[includeIf "gitdir:~/develop/erida-ai/"]
+	path = ~/develop/erida-ai/.gitconfig
 [init]
 	defaultBranch = master
