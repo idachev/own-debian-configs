@@ -26,7 +26,7 @@
   "hoverFocusMode" : "never",
   "inAppNotificationsEnabled" : true,
   "mergedWorktreeAction" : "ignore",
-  "moveNotifiedWorktreeToTop" : true,
+  "moveNotifiedWorktreeToTop" : false,
   "muteNotificationsForActiveSurface" : false,
   "notificationRetentionLimit" : 100,
   "notificationScope" : "all",
