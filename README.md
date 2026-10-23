@@ -108,6 +108,14 @@ a new Supacode tab with `claude attach`.
 
 See `readmes/others/cc-sessions-supacode.md`.
 
+# rsync_from
+
+`rsync_from.sh` pulls `~/develop/personal/` from another machine over SSH.
+Without `doit` it is a dry-run. An exclude file is optional and is not
+shipped with the script.
+
+See `readmes/others/rsync_from.md`.
+
 # Custom Settings
 
 ## Terminal Profiles
