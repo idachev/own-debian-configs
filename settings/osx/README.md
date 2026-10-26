@@ -56,6 +56,48 @@ Supacode also reads the shared `~/.config/ghostty` config. Its own
 Application changes to tracked preferences appear as ordinary git changes.
 Review script fields and paths in `config.json` before committing future edits.
 
+### The Fork
+
+The app is built from the fork `git@github-idachev:idachev/supacode.git`,
+branch `idachev-supacode`, not from the Homebrew cask. The cask is the upstream
+release: it does not have the fork's changes, and from 0.11.0 a release build
+asks for a license after five local worktrees. Do not install the `supacode`
+cask; `brew upgrade` would replace the fork with the upstream app. The fork's
+own notes are in `docs/fork.md` in that repo.
+
+First build on a Mac with Xcode:
+
+1. Clone with submodules into `~/develop/github/supabitapp/supacode`:
+   `git clone --recursive -b idachev-supacode git@github-idachev:idachev/supacode.git`.
+   Add upstream for later merges:
+   `git remote add upstream https://github.com/supabitapp/supacode.git`.
+2. Finish the Xcode setup once:
+   `sudo xcodebuild -license accept`, `sudo xcodebuild -runFirstLaunch`,
+   `sudo xcodebuild -downloadComponent MetalToolchain`.
+3. `mise install`, then `make doctor`. It prints the fix for each missing
+   prerequisite.
+4. Optional, but keeps macOS permissions across rebuilds: create a
+   self-signed Code Signing certificate and a gitignored `Local.mk` with its
+   SHA-1. See "Stable Code Signing For Dev Builds" in `docs/fork.md`.
+5. `make install-dev-build`. It builds the Debug app (no license check) and
+   copies it to `/Applications/supacode.app`. Restart Supacode.
+
+Rebuild after new commits: `git pull`, `git submodule update --init --recursive`,
+`make install-dev-build`, then restart Supacode. Terminal sessions run in zmx
+and survive the restart. Log every build to a file under `tmp/claude-logs/`.
+
+A Mac without Xcode (Command Line Tools are not enough) gets the app built on
+another Mac. On the Mac with the build, after `make build-app`:
+
+```bash
+rsync -a --delete .build/DerivedData/Build/Products/Debug/supacode.app/ <host>:supacode-new/Supacode.app/
+```
+
+On the target: quit Supacode, move `/Applications/Supacode.app` to a backup,
+move `~/supacode-new/Supacode.app` to `/Applications`, open it. A build signed
+with the `Local.mk` certificate stays valid on the other Mac, and `rsync`
+adds no quarantine flag.
+
 ## Karabiner And fix-cyr
 
 Caps Lock switches between `ABC` and `Bulgarian - Phonetic` in a few
