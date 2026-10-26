@@ -39,6 +39,7 @@
   "promptForWorktreeCreation" : true,
   "pullRequestMergeStrategy" : "merge",
   "remoteSessionPersistenceEnabled" : true,
+  "resumeAgentSessionsAfterRestart" : true,
   "richAgentNotificationsEnabled" : true,
   "shortcutOverrides" : {
     "toggleSplitZoom" : {
@@ -49,6 +50,7 @@
   },
   "systemNotificationsEnabled" : true,
   "terminalHibernationEnabled" : true,
+  "terminalLayoutMode" : "splitPerTab",
   "terminalThemeSyncEnabled" : true,
   "terminateSessionsOnQuit" : false,
   "updateChannel" : "stable",
