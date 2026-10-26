@@ -132,5 +132,13 @@ On a new Mac:
 8. Check `tail -n 5 /tmp/fix-cyr.log`: the `started` line shows
    `access=true`, and each key press adds a `toggle -> ...` line.
 
+The `` ` `` key as Hyper does nothing by itself. Raycast holds the
+Hyper+key hotkeys that open Supacode and the other apps. Raycast keeps its
+settings in encrypted databases keyed to the Mac's keychain, so copying
+`~/Library/Application Support/com.raycast.macos` does not work. Move them
+with Raycast Settings -> Advanced -> Export, then Import on the new Mac.
+Keep the `.rayconfig` file out of git: it can hold snippets, quicklinks and
+extension preferences.
+
 `~/bin/fix-cyr` is a copy of `~/develop/mentorano/fix-cyr`. Remove it with
 `~/bin/fix-cyr/uninstall.sh`, not by hand. See `fix-cyr/README.md`.

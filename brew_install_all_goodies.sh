@@ -38,6 +38,7 @@ casks=(
     linearmouse         # per-device scroll direction/speed; modifier-key
                         # deceleration for the trackpad, tuned for AnyDesk
     karabiner-elements  # key remapping, Hyper Key, fast input source switcher
+    raycast             # launcher; Hyper+key hotkeys open apps, settings via Export/Import
     # supacode is not a cask here: the app is built from the fork,
     # see settings/osx/README.md "The Fork"
     ente-auth           # 2FA (TOTP) manager, GUI part; CLI = ente-cli formula
