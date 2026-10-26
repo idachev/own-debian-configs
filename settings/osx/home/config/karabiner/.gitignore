@@ -1,0 +1,5 @@
+# Only the Karabiner-Elements rules belong in git.
+# Keep automatic_backups, fix-cyr backups, assets and any future runtime files local.
+/*
+!/.gitignore
+!/karabiner.json

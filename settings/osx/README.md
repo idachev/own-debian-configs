@@ -18,6 +18,7 @@ On a new Mac, run the installer. Do not copy a plist from git into
 | `com.idachev.gocryptfs-storage-private-docs` | `~/bin/gocryptfs_storage_private_docs_osx.sh agent-install` |
 | `com.idachev.nasa-photos` | `~/develop/personal/nasa-photos/agent_osx.sh install` |
 | `com.idachev.worca-ui` | `~/bin/worca_ui_agent.sh install` |
+| `com.mony.fixcyr` | `~/bin/fix-cyr/install.sh --capslock` |
 
 More detail: `readmes/others/sync_laptop_osx.md`,
 `readmes/others/gocryptfs_storage_private_docs_osx.md`,
@@ -54,3 +55,40 @@ Supacode also reads the shared `~/.config/ghostty` config. Its own
 `config.ghostty` loads afterward with the current `mergeAfterDefault` setting.
 Application changes to tracked preferences appear as ordinary git changes.
 Review script fields and paths in `config.json` before committing future edits.
+
+## Karabiner And fix-cyr
+
+Caps Lock switches between `ABC` and `Bulgarian - Phonetic` in a few
+milliseconds. Karabiner-Elements maps Caps Lock to F18, and `fix-cyr` (a small
+LaunchAgent in `~/bin/fix-cyr`) switches the input source on F18. The macOS
+switch waits for the key release and is slow.
+
+`home/create_links` links `~/.config/karabiner` to
+`~/bin/settings/osx/home/config/karabiner`. Karabiner supports a symlinked
+directory, not a symlinked `karabiner.json`. Only `karabiner.json` is in git;
+`automatic_backups`, the `fix-cyr` backups and `assets` stay local.
+`karabiner.json` holds `caps_lock -> f18`, the `` ` `` key as Hyper, and
+`keyboard_type_v2 = iso`. Change the keyboard type on a Mac with an ANSI
+keyboard.
+
+On a new Mac:
+
+1. Install Karabiner-Elements (`brew_install_all_goodies.sh` has it). It asks
+   for the `sudo` password.
+2. Run `source ~/bin/settings/osx/home/create_links` before Karabiner first
+   starts, or back up and remove its own `~/.config/karabiner` first.
+3. Open Karabiner-Elements and allow the driver extension and Input Monitoring.
+4. Check that both layouts are enabled:
+   `defaults read com.apple.HIToolbox AppleEnabledInputSources`. For `U.S.`
+   instead of `ABC`, add `--layout-a com.apple.keylayout.US` to the install.
+5. Run `~/bin/fix-cyr/install.sh --capslock`. It builds `fix-cyr/bin/fix-cyr`
+   with `swiftc` (Command Line Tools are enough). It rewrites the
+   `caps_lock -> f18` rule and leaves an ignored backup next to
+   `karabiner.json`.
+6. Privacy & Security -> Input Monitoring -> enable `~/bin/fix-cyr/bin/fix-cyr`.
+7. Keyboard -> Input Sources -> turn off "Use Caps Lock to switch...".
+8. Check `tail -n 5 /tmp/fix-cyr.log`: the `started` line shows
+   `access=true`, and each key press adds a `toggle -> ...` line.
+
+`~/bin/fix-cyr` is a copy of `~/develop/mentorano/fix-cyr`. Remove it with
+`~/bin/fix-cyr/uninstall.sh`, not by hand. See `fix-cyr/README.md`.

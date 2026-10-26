@@ -109,6 +109,8 @@ else
   link $BASEDIR/config/mc $HOME/.config/mc
   link $BASEDIR/config/ghostty $HOME/.config/ghostty
   link $BASEDIR/config/supacode $HOME/.config/supacode
+  # Karabiner supports a symlinked directory, not a symlinked karabiner.json
+  link $BASEDIR/config/karabiner $HOME/.config/karabiner
 
   # tmux
   link $BASEDIR/tmux $HOME/.tmux
