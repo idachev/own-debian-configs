@@ -76,4 +76,8 @@ EOF
 
 launchctl bootout gui/$(id -u)/$LABEL 2>/dev/null || true
 launchctl bootstrap gui/$(id -u) "$PLIST"
-echo "Installed. If the key does nothing: Privacy & Security -> Input Monitoring -> enable $BIN"
+if (( CAPSLOCK )); then
+  echo "Installed. If the key does nothing: Privacy & Security -> Input Monitoring and Accessibility -> enable $BIN"
+else
+  echo "Installed. If the key does nothing: Privacy & Security -> Input Monitoring -> enable $BIN"
+fi

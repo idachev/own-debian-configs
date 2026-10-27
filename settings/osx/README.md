@@ -127,10 +127,12 @@ On a new Mac:
    with `swiftc` (Command Line Tools are enough). It rewrites the
    `caps_lock -> f18` rule and leaves an ignored backup next to
    `karabiner.json`.
-6. Privacy & Security -> Input Monitoring -> enable `~/bin/fix-cyr/bin/fix-cyr`.
+6. Privacy & Security -> Input Monitoring and Privacy & Security -> Accessibility ->
+   enable `~/bin/fix-cyr/bin/fix-cyr` in both. Accessibility lets `fix-cyr` swallow
+   F18, so a terminal does not get `ESC[32~` and zsh does not insert `~`.
 7. Keyboard -> Input Sources -> turn off "Use Caps Lock to switch...".
 8. Check `tail -n 5 /tmp/fix-cyr.log`: the `started` line shows
-   `access=true`, and each key press adds a `toggle -> ...` line.
+   `access=true accessibility=true`, and each key press adds a `toggle -> ...` line.
 
 The `` ` `` key as Hyper does nothing by itself. Raycast holds the
 Hyper+key hotkeys that open Supacode and the other apps. Raycast keeps its

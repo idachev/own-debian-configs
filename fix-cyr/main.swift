@@ -2,6 +2,7 @@
 // --key fn (default): Globe pressed and released with no other key in between -> switch layout.
 //                     Globe + any other key (F-keys, arrows, Globe+E...) -> ignored.
 // --key f18:          switch on F18 key down (Caps Lock remapped to F18 by Karabiner or hidutil).
+//                     F18 is swallowed, so no app sees it (needs Accessibility besides Input Monitoring).
 // --layout-a / --layout-b: input source IDs to toggle between.
 // --hidutil-capslock: remap Caps Lock -> F18 with hidutil at start (machines without Karabiner).
 
@@ -80,11 +81,12 @@ let callback: CGEventTapCallBack = { _, type, event, _ in
     switch type {
     case .tapDisabledByTimeout, .tapDisabledByUserInput:
         if let tap { CGEvent.tapEnable(tap: tap, enable: true) }
-    case .keyDown where key == "f18":
-        if event.getIntegerValueField(.keyboardEventKeycode) == f18KeyCode
-            && event.getIntegerValueField(.keyboardEventAutorepeat) == 0 {
+    case .keyDown where key == "f18", .keyUp where key == "f18":
+        guard event.getIntegerValueField(.keyboardEventKeycode) == f18KeyCode else { break }
+        if type == .keyDown && event.getIntegerValueField(.keyboardEventAutorepeat) == 0 {
             toggle(eventTime: event.timestamp)
         }
+        return nil  // swallow F18: a terminal sends it as ESC[32~ and zsh inserts "~"
     case .flagsChanged where key == "fn":
         let code = event.getIntegerValueField(.keyboardEventKeycode)
         log("flagsChanged code=\(code) flags=\(event.flags.rawValue)")
@@ -125,18 +127,27 @@ if CommandLine.arguments.contains("--hidutil-capslock") {
     }
 }
 
-let mask: CGEventMask = [CGEventType.flagsChanged, .keyDown, .leftMouseDown, .rightMouseDown, .otherMouseDown]
+// F18 mode filters events (to swallow F18), which needs Accessibility; Globe mode only listens
+let filtering = key == "f18"
+let mask: CGEventMask = [CGEventType.flagsChanged, .keyDown, .keyUp, .leftMouseDown, .rightMouseDown, .otherMouseDown]
     .reduce(0) { $0 | (1 << $1.rawValue) }
 
-guard let t = CGEvent.tapCreate(tap: .cgSessionEventTap, place: .headInsertEventTap, options: .listenOnly,
+if !CGPreflightListenEventAccess() { CGRequestListenEventAccess() }  // adds fix-cyr to Input Monitoring list
+if filtering && !CGPreflightPostEventAccess() { CGRequestPostEventAccess() }  // adds fix-cyr to Accessibility list
+func accessGranted() -> Bool { CGPreflightListenEventAccess() && (!filtering || CGPreflightPostEventAccess()) }
+
+guard let t = CGEvent.tapCreate(tap: .cgSessionEventTap, place: .headInsertEventTap,
+                                options: filtering ? .defaultTap : .listenOnly,
                                 eventsOfInterest: mask, callback: callback, userInfo: nil) else {
-    FileHandle.standardError.write("fix-cyr: no event tap - grant Input Monitoring in Privacy & Security\n".data(using: .utf8)!)
-    exit(1)
+    let needed = filtering ? "Input Monitoring and Accessibility" : "Input Monitoring"
+    FileHandle.standardError.write("fix-cyr: no event tap - grant \(needed) in Privacy & Security\n".data(using: .utf8)!)
+    sleep(5)
+    exit(1)  // launchd restarts us until access is granted
 }
 tap = t
-if !CGPreflightListenEventAccess() { CGRequestListenEventAccess() }  // adds fix-cyr to Input Monitoring list
-log("started key=\(key) layouts=\(layoutA),\(layoutB) listen access=\(CGPreflightListenEventAccess())")
-if !CGPreflightListenEventAccess() { sleep(5); exit(1) }  // launchd restarts us until access is granted
+log("started key=\(key) layouts=\(layoutA),\(layoutB) listen access=\(CGPreflightListenEventAccess())"
+    + (filtering ? " accessibility=\(CGPreflightPostEventAccess())" : ""))
+if !accessGranted() { sleep(5); exit(1) }  // launchd restarts us until access is granted
 CFRunLoopAddSource(CFRunLoopGetCurrent(), CFMachPortCreateRunLoopSource(nil, t, 0), .commonModes)
 CGEvent.tapEnable(tap: t, enable: true)
 CFRunLoopRun()
