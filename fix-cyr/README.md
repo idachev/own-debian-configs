@@ -20,7 +20,7 @@
 ```
 
 Скриптът:
-1. компилира `bin/fix-cyr` (`swiftc`, ad-hoc подпис);
+1. компилира `bin/fix-cyr` (`swiftc`) и го подписва. Ако в keychain-а има сертификат за подпис с име, което завършва на `Local Signing`, ползва него. Иначе подписът е ad-hoc;
 2. слага Globe на „Do Nothing“ (`AppleFnUsageType = 0`);
 3. записва `~/Library/LaunchAgents/com.mony.fixcyr.plist` и стартира агента.
 
@@ -88,7 +88,7 @@ Setup с Caps Lock за смяна, U.S. вместо ABC и вече инста
 | Езикът „мига“ и се връща / пак е бавно с popup | Системата също сменя с Globe → двойна смяна. Сложи ръчно Keyboard → „Press 🌐 key to: Do Nothing“. |
 | Caps Lock не прави нищо | Няма Input Monitoring или Accessibility. В лога: `listen access=false` или `accessibility=false`. Включи `fix-cyr` и в двата списъка (или off → on). |
 | В терминала Caps Lock пише `~` | Работи стар бинарник, който само слуша F18 и не го поглъща. Пусни отново `./install.sh --capslock …`. |
-| Спря да работи след rebuild | Новият бинарник има нов подпис → macOS губи разрешенията. Input Monitoring (и Accessibility в режим Caps Lock): off → on. |
+| Спря да работи след rebuild | Подписът е ad-hoc: новият бинарник има нов hash и macOS губи разрешенията. Махни и добави `fix-cyr` в Input Monitoring (и в Accessibility в режим Caps Lock). Със сертификат `… Local Signing` разрешенията остават. |
 
 Лог: `/tmp/fix-cyr.log`. Статус: `launchctl print gui/$(id -u)/com.mony.fixcyr | grep state`.
 

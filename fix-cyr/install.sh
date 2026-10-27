@@ -34,7 +34,11 @@ fi
 
 mkdir -p bin
 swiftc -O main.swift -o "$BIN"
-codesign -s - -f -i "$LABEL" "$BIN"
+# A certificate whose name ends with "Local Signing" keeps the permissions across rebuilds:
+# macOS then knows fix-cyr by identifier + certificate. Ad-hoc gives a new cdhash on every build.
+IDENTITY=$(security find-identity -v -p codesigning | awk 'index($0, "Local Signing\"") { print $2; exit }')
+codesign -s "${IDENTITY:--}" -f -i "$LABEL" "$BIN"
+[[ -n $IDENTITY ]] && echo "Signed with $IDENTITY" || echo "Signed ad-hoc: grant the permissions again after every rebuild"
 
 if (( CAPSLOCK )); then
   ARGS+=(--key f18)
