@@ -28,23 +28,62 @@
                 "type": "basic"
               }
             ]
+          },
+          {
+            "description": "Caps Lock toggles U.S. and Bulgarian-Phonetic (works under Secure Input).",
+            "manipulators": [
+              {
+                "conditions": [
+                  {
+                    "input_sources": [
+                      {
+                        "input_source_id": "^com\\.apple\\.keylayout\\.US$"
+                      }
+                    ],
+                    "type": "input_source_if"
+                  }
+                ],
+                "from": {
+                  "key_code": "caps_lock",
+                  "modifiers": {
+                    "optional": [
+                      "any"
+                    ]
+                  }
+                },
+                "to": [
+                  {
+                    "select_input_source": {
+                      "input_source_id": "^com\\.apple\\.keylayout\\.Bulgarian-Phonetic$"
+                    }
+                  }
+                ],
+                "type": "basic"
+              },
+              {
+                "from": {
+                  "key_code": "caps_lock",
+                  "modifiers": {
+                    "optional": [
+                      "any"
+                    ]
+                  }
+                },
+                "to": [
+                  {
+                    "select_input_source": {
+                      "input_source_id": "^com\\.apple\\.keylayout\\.US$"
+                    }
+                  }
+                ],
+                "type": "basic"
+              }
+            ]
           }
         ]
       },
       "name": "Default profile",
       "selected": true,
-      "simple_modifications": [
-        {
-          "from": {
-            "key_code": "caps_lock"
-          },
-          "to": [
-            {
-              "key_code": "f18"
-            }
-          ]
-        }
-      ],
       "virtual_hid_keyboard": {
         "keyboard_type_v2": "iso"
       }

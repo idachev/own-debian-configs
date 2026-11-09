@@ -32,6 +32,24 @@
    defaults write kCFPreferencesAnyApplication TSMLanguageIndicatorEnabled 0
    ```
 
+## Текущ начин: Caps Lock през Karabiner
+
+На тази машина Caps Lock вече не минава през `fix-cyr`. Смяната U.S. ↔ Bulgarian-Phonetic е правило в Karabiner (`settings/osx/home/config/karabiner/karabiner.json`), с `input_source_if` и `select_input_source`.
+
+**Защо.** `fix-cyr` хваща F18 през event tap. Докато някое приложение държи Secure Input, macOS не дава клавишите на event tap-ове и Caps Lock спира да сменя езика. Случи се с полето за парола на LastPass в Chrome. Karabiner хваща клавиатурата на по-ниско ниво.
+
+Кой държи Secure Input (ако няма ред, никой):
+
+```
+ioreg -l -w 0 | command grep -o '"kCGSSessionSecureInputPID"=[0-9]*'
+```
+
+Агентът `com.mony.fixcyr` е спрян и изключен с `launchctl disable`. Не пускай `./install.sh --capslock`, докато правилото е в Karabiner: скриптът добавя `caps_lock → f18` и пуска агента. Логове за всяка смяна вече няма.
+
+Проверено: без правилото Caps Lock става обикновен Caps Lock, с правилото сменя езика. Смяната по време на Secure Input още не е проверена. Възможно е macOS да ограничава езика в самото поле за парола.
+
+Режимът по-долу остава описан за машини без Karabiner.
+
 ## Режим Caps Lock
 
 ```
@@ -87,6 +105,7 @@ Setup с Caps Lock за смяна, U.S. вместо ABC и вече инста
 | Globe не прави нищо | Няма Input Monitoring разрешение. В лога: `listen access=false`. Включи `fix-cyr` (или off → on). |
 | Езикът „мига“ и се връща / пак е бавно с popup | Системата също сменя с Globe → двойна смяна. Сложи ръчно Keyboard → „Press 🌐 key to: Do Nothing“. |
 | Caps Lock не прави нищо | Няма Input Monitoring или Accessibility. В лога: `listen access=false` или `accessibility=false`. Включи `fix-cyr` и в двата списъка (или off → on). |
+| Caps Lock спира за малко, логът няма `toggle` | Приложение държи Secure Input, например поле за парола или LastPass. Излез от полето или мини на правилото в Karabiner. Виж „Текущ начин“. |
 | В терминала Caps Lock пише `~` | Работи стар бинарник, който само слуша F18 и не го поглъща. Пусни отново `./install.sh --capslock …`. |
 | Спря да работи след rebuild | Подписът е ad-hoc: новият бинарник има нов hash и macOS губи разрешенията. Махни и добави `fix-cyr` в Input Monitoring (и в Accessibility в режим Caps Lock). Със сертификат `… Local Signing` разрешенията остават. |
 
