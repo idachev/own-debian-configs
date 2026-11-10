@@ -18,7 +18,7 @@ On a new Mac, run the installer. Do not copy a plist from git into
 | `com.idachev.gocryptfs-storage-private-docs` | `~/bin/gocryptfs_storage_private_docs_osx.sh agent-install` |
 | `com.idachev.nasa-photos` | `~/develop/personal/nasa-photos/agent_osx.sh install` |
 | `com.idachev.worca-ui` | `~/bin/worca_ui_agent.sh install` |
-| `com.mony.fixcyr` | `~/bin/fix-cyr/install.sh --capslock` |
+| `com.mony.fixcyr` | Not used: disabled since Karabiner switches the layout (see below) |
 
 More detail: `readmes/others/sync_laptop_osx.md`,
 `readmes/others/gocryptfs_storage_private_docs_osx.md`,
@@ -98,20 +98,29 @@ move `~/supacode-new/Supacode.app` to `/Applications`, open it. A build signed
 with the `Local.mk` certificate stays valid on the other Mac, and `rsync`
 adds no quarantine flag.
 
-## Karabiner And fix-cyr
+## Karabiner: Caps Lock Switches The Layout
 
-Caps Lock switches between `ABC` and `Bulgarian - Phonetic` in a few
-milliseconds. Karabiner-Elements maps Caps Lock to F18, and `fix-cyr` (a small
-LaunchAgent in `~/bin/fix-cyr`) switches the input source on F18. The macOS
-switch waits for the key release and is slow.
+Caps Lock switches between `U.S.` and `Bulgarian - Phonetic` at once. The
+macOS switch waits for the key release and is slow. A Karabiner-Elements rule
+does the switch itself, with no helper process:
+
+- current layout `com.apple.keylayout.US` -> select
+  `com.apple.keylayout.Bulgarian-Phonetic` (`input_source_if` +
+  `select_input_source`);
+- any other layout -> select `com.apple.keylayout.US`.
+
+This replaced `fix-cyr` on 2026-11-09. `fix-cyr` reads F18 through an event
+tap, and macOS sends no keys to event taps while an app holds Secure Input
+(for example the LastPass password field in Chrome). Karabiner grabs the
+keyboard at a lower level, so the rule keeps working there.
 
 `home/create_links` links `~/.config/karabiner` to
 `~/bin/settings/osx/home/config/karabiner`. Karabiner supports a symlinked
 directory, not a symlinked `karabiner.json`. Only `karabiner.json` is in git;
-`automatic_backups`, the `fix-cyr` backups and `assets` stay local.
-`karabiner.json` holds `caps_lock -> f18`, the `` ` `` key as Hyper, and
+`automatic_backups`, the old `fix-cyr` backups and `assets` stay local.
+`karabiner.json` holds the Caps Lock rule, the `` ` `` key as Hyper, and
 `keyboard_type_v2 = iso`. Change the keyboard type on a Mac with an ANSI
-keyboard.
+keyboard. Karabiner reloads the file by itself after `git pull`; no restart.
 
 On a new Mac:
 
@@ -120,19 +129,21 @@ On a new Mac:
 2. Run `source ~/bin/settings/osx/home/create_links` before Karabiner first
    starts, or back up and remove its own `~/.config/karabiner` first.
 3. Open Karabiner-Elements and allow the driver extension and Input Monitoring.
-4. Check that both layouts are enabled:
-   `defaults read com.apple.HIToolbox AppleEnabledInputSources`. For `U.S.`
-   instead of `ABC`, add `--layout-a com.apple.keylayout.US` to the install.
-5. Run `~/bin/fix-cyr/install.sh --capslock`. It builds `fix-cyr/bin/fix-cyr`
-   with `swiftc` (Command Line Tools are enough). It rewrites the
-   `caps_lock -> f18` rule and leaves an ignored backup next to
-   `karabiner.json`.
-6. Privacy & Security -> Input Monitoring and Privacy & Security -> Accessibility ->
-   enable `~/bin/fix-cyr/bin/fix-cyr` in both. Accessibility lets `fix-cyr` swallow
-   F18, so a terminal does not get `ESC[32~` and zsh does not insert `~`.
-7. Keyboard -> Input Sources -> turn off "Use Caps Lock to switch...".
-8. Check `tail -n 5 /tmp/fix-cyr.log`: the `started` line shows
-   `access=true accessibility=true`, and each key press adds a `toggle -> ...` line.
+4. Enable `U.S.` (not `ABC`) and `Bulgarian - Phonetic` in Keyboard -> Input
+   Sources. The rule matches the input source IDs exactly. Check with
+   `defaults read com.apple.HIToolbox AppleEnabledInputSources`.
+5. Keyboard -> Input Sources -> turn off "Use Caps Lock to switch...".
+6. Do not run `~/bin/fix-cyr/install.sh --capslock`: it puts
+   `caps_lock -> f18` back into `karabiner.json` and starts the agent.
+7. If an older setup left the agent running, stop it and keep it off at login:
+   `launchctl bootout gui/$(id -u)/com.mony.fixcyr` and
+   `launchctl disable gui/$(id -u)/com.mony.fixcyr`. Check that
+   `launchctl print-disabled gui/$(id -u)` shows `"com.mony.fixcyr" => disabled`.
+8. Press Caps Lock: the menu bar flag changes. `hidutil property --get UserKeyMapping`
+   should print `(null)`; a value there is an old remap.
+
+Who holds Secure Input right now (no output means nobody):
+`ioreg -l -w 0 | command grep -o '"kCGSSessionSecureInputPID"=[0-9]*'`.
 
 The `` ` `` key as Hyper does nothing by itself. Raycast holds the
 Hyper+key hotkeys that open Supacode and the other apps. Raycast keeps its
@@ -142,5 +153,6 @@ with Raycast Settings -> Advanced -> Export, then Import on the new Mac.
 Keep the `.rayconfig` file out of git: it can hold snippets, quicklinks and
 extension preferences.
 
-`~/bin/fix-cyr` is a copy of `~/develop/mentorano/fix-cyr`. Remove it with
+`~/bin/fix-cyr` is a copy of `~/develop/mentorano/fix-cyr`. It stays for Macs
+without Karabiner (it also has a Globe-key mode). Remove it with
 `~/bin/fix-cyr/uninstall.sh`, not by hand. See `fix-cyr/README.md`.
