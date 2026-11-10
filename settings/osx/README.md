@@ -18,6 +18,7 @@ On a new Mac, run the installer. Do not copy a plist from git into
 | `com.idachev.gocryptfs-storage-private-docs` | `~/bin/gocryptfs_storage_private_docs_osx.sh agent-install` |
 | `com.idachev.nasa-photos` | `~/develop/personal/nasa-photos/agent_osx.sh install` |
 | `com.idachev.worca-ui` | `~/bin/worca_ui_agent.sh install` |
+| `com.idachev.zerotier-watchdog` (LaunchDaemon, root) | `sudo ~/bin/zerotier_watchdog_osx.sh install` |
 | `com.mony.fixcyr` | Not used: disabled since Karabiner switches the layout (see below) |
 
 More detail: `readmes/others/sync_laptop_osx.md`,
@@ -28,6 +29,19 @@ More detail: `readmes/others/sync_laptop_osx.md`,
 from login and restarts it after a crash. `worca ui stop` stops it only for
 about 10 seconds. Use `worca_ui_agent.sh uninstall` to stop it for good and
 `worca_ui_agent.sh restart` instead of `worca ui restart`.
+
+## ZeroTier watchdog
+
+`com.idachev.zerotier-watchdog` is a root LaunchDaemon, so it is not a
+LaunchAgent. It reads `zerotier-cli info` every 30 s. When the state is not
+`ONLINE` (`TCP_FALLBACK` counts as online) for 60 s, it runs
+`launchctl kickstart -k system/com.zerotier.one`. It waits twice as long
+before each next restart, up to 5 min, and stops when ZeroTier is `ONLINE`.
+It does not restart while the Mac has no default route. Log:
+`/var/log/zerotier-watchdog.log`. Check with `zerotier_watchdog_osx.sh status`.
+The installer copies the script to `/usr/local/bin`, because launchd must not
+run a user-writable file as root. Linux has its own version in
+`settings/linux/root/zerotier-watchdog.sh`.
 
 ## Claude Code caffeinate stub
 
