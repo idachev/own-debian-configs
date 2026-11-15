@@ -26,3 +26,6 @@ __pycache__
 # Compiled from nomachine-che-tilde.c
 /nomachine-che-tilde
 
+# Compiled from mac_lid_lock.c by mac_lid_lock.sh install
+/mac_lid_lock
+

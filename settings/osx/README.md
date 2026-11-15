@@ -19,6 +19,7 @@ On a new Mac, run the installer. Do not copy a plist from git into
 | `com.idachev.nasa-photos` | `~/develop/personal/nasa-photos/agent_osx.sh install` |
 | `com.idachev.worca-ui` | `~/bin/worca_ui_agent.sh install` |
 | `com.idachev.zerotier-watchdog` (LaunchDaemon, root) | `sudo ~/bin/zerotier_watchdog_osx.sh install` |
+| `com.idachev.mac-lid-lock` | `~/bin/mac_lid_lock.sh install` |
 | `com.mony.fixcyr` | Not used: disabled since Karabiner switches the layout (see below) |
 
 More detail: `readmes/others/sync_laptop_osx.md`,
@@ -29,6 +30,22 @@ More detail: `readmes/others/sync_laptop_osx.md`,
 from login and restarts it after a crash. `worca ui stop` stops it only for
 about 10 seconds. Use `worca_ui_agent.sh uninstall` to stop it for good and
 `worca_ui_agent.sh restart` instead of `worca ui restart`.
+
+## Lock on lid close
+
+With `pmset -a disablesleep 1` (see `mac_force_unsleep.sh`) a lid close does
+not sleep the Mac, so macOS does not lock it. `com.idachev.mac-lid-lock` runs
+`mac_lid_lock`, built from `mac_lid_lock.c` by the installer. It listens for
+the IOKit lid event (`kIOPMMessageClamshellStateChange`) and also reads
+`AppleClamshellState` every 5 s as a backup. On an open-to-closed change it
+runs `pmset displaysleepnow`. This locks only when System Settings > Lock
+Screen asks for the password immediately; `mac_lid_lock.sh status` checks it.
+The Mac keeps running. Log: `~/Library/Logs/mac-lid-lock.log`.
+`displaysleepnow` turns off every display, an external one too. When you work
+with the lid closed on an external display, run `mac_lid_lock.sh pause`, and
+`mac_lid_lock.sh resume` after. The pause stays after a reboot.
+The log keeps the last 180 days: at start and on every lid change the program
+cuts the older lines.
 
 ## ZeroTier watchdog
 
