@@ -47,6 +47,18 @@ with the lid closed on an external display, run `mac_lid_lock.sh pause`, and
 The log keeps the last 180 days: at start and on every lid change the program
 cuts the older lines.
 
+On a new Mac:
+
+1. Turn off sleep, lid close included: `sudo ~/bin/mac_force_unsleep.sh`
+   (it sets `sleep 0` and `disablesleep 1`). `mac_force_sleep.sh` sleeps the
+   Mac once with a lid close when you need it.
+2. System Settings > Lock Screen > Require password after screen saver
+   begins or display is turned off > Immediately.
+3. `~/bin/mac_lid_lock.sh install` (needs the Xcode Command Line Tools for
+   `clang`).
+4. `~/bin/mac_lid_lock.sh status` must exit 0, then close the lid once and
+   check for `lid closed, lock` in the log.
+
 ## ZeroTier watchdog
 
 `com.idachev.zerotier-watchdog` is a root LaunchDaemon, so it is not a

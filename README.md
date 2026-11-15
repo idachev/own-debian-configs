@@ -39,6 +39,8 @@ See `settings/osx/system/README.md`.
 
 LaunchAgent plists (`~/Library/LaunchAgents`) are not in `settings/osx`.
 Restore each job with its installer. See `settings/osx/README.md`.
+That file also has the steps to keep the Mac awake with the lid closed and
+still lock the screen on lid close (`mac_lid_lock.sh`).
 
 
 To add specifics only to the local shell config use:
