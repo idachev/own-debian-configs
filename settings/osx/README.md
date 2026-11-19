@@ -31,7 +31,7 @@ from login and restarts it after a crash. `worca ui stop` stops it only for
 about 10 seconds. Use `worca_ui_agent.sh uninstall` to stop it for good and
 `worca_ui_agent.sh restart` instead of `worca ui restart`.
 
-## Lock on lid close
+## Lock on lid close and on idle
 
 With `pmset -a disablesleep 1` (see `mac_force_unsleep.sh`) a lid close does
 not sleep the Mac, so macOS does not lock it. `com.idachev.mac-lid-lock` runs
@@ -46,6 +46,15 @@ with the lid closed on an external display, run `mac_lid_lock.sh pause`, and
 `mac_lid_lock.sh resume` after. The pause stays after a reboot.
 The log keeps the last 180 days: at start and on every lid change the program
 cuts the older lines.
+
+The same program also locks after 5 minutes without keyboard, mouse or
+trackpad input. It checks on the same 5 s poll and locks once per idle period
+(`idle for 5 minutes, lock` in the log). It does not lock while an output
+audio device is running or while an app prevents idle display sleep (video
+players do). If a check fails with an error, it counts as active media, so the
+program does not lock. `mac_lid_lock.sh pause` stops the lock on lid close
+only; the idle lock stays on. After you change `mac_lid_lock.c`, run
+`mac_lid_lock.sh install` again to rebuild it.
 
 On a new Mac:
 
