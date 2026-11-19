@@ -55,9 +55,8 @@ alias claudep='claude --model sonnet -p'
 alias claudehr='headroom wrap claude'
 alias claudeds='~/.claude/claude-ds.sh'
 
-alias claude-mntr="CLAUDE_CONFIG_DIR=$HOME/.claude-mentorano claude"
 alias claude-cl="CLAUDE_CONFIG_DIR=$HOME/.claude-clean claude"
-alias claude-mentorno="CLAUDE_CONFIG_DIR=$HOME/.claude-mentorano claude"
+alias claude-mentorano="CLAUDE_CONFIG_DIR=$HOME/.claude-mentorano claude"
 
 # Route command approvals through Codex automatic review (workspace-write sandbox).
 alias codex='codex --approve-for-me'
