@@ -16,6 +16,10 @@
 # locks only when System Settings > Lock Screen asks for the password
 # immediately after the display turns off; status checks it.
 #
+# After 5 minutes without input, the agent locks if no audio output is
+# running and no app prevents idle display sleep (for example, video).
+# pause affects lid close only; idle locking remains enabled.
+#
 # pause stops the lock on lid close until resume, also after a reboot. Use it
 # when you work with the lid closed on an external display: displaysleepnow
 # turns off every display, the external one too.
@@ -48,6 +52,7 @@ Usage:
 install builds ${BIN} from ${SRC} and loads a user LaunchAgent
 (Aqua, RunAtLoad, KeepAlive) that runs it.
 status exits 0 only when the agent is loaded and the lock delay is immediate.
+After 5 minutes without input, the agent locks unless media is playing.
 pause stops the lock on lid close until resume (for a closed lid on an
 external display). It stays paused after a reboot.
 EOF
@@ -72,7 +77,7 @@ job_loaded() {
 }
 
 build() {
-  clang -Os -Wall -Wextra -framework IOKit -framework CoreFoundation \
+  clang -Os -Wall -Wextra -framework IOKit -framework CoreFoundation -framework CoreGraphics -framework CoreAudio \
     -o "${BIN}.tmp" "${SRC}"
   command mv "${BIN}.tmp" "${BIN}"
 }

@@ -23,9 +23,12 @@
  */
 
 #include <CoreFoundation/CoreFoundation.h>
+#include <CoreGraphics/CoreGraphics.h>
+#include <CoreAudio/CoreAudio.h>
 #include <IOKit/IOKitLib.h>
 #include <IOKit/IOMessage.h>
 #include <IOKit/pwr_mgt/IOPM.h>
+#include <IOKit/pwr_mgt/IOPMLib.h>
 #include <fcntl.h>
 #include <spawn.h>
 #include <stdio.h>
@@ -41,6 +44,8 @@ extern char **environ;
 enum { LID_UNKNOWN = -1, LID_OPEN = 0, LID_CLOSED = 1 };
 
 static const double kPollSeconds = 5.0;
+static const double kIdleSeconds = 300.0;
+static int g_idle_locked;
 static const time_t kKeepSeconds = 180 * 24 * 60 * 60;
 /* A larger log is left alone instead of read into memory. */
 static const off_t kMaxPruneBytes = 64 * 1024 * 1024;
@@ -262,11 +267,84 @@ static void on_message(void *refcon, io_service_t service,
                "event");
 }
 
+/* Treat errors as active media: never lock when playback is uncertain. */
+static int audio_playing(void)
+{
+    AudioObjectPropertyAddress devices_addr = {
+        kAudioHardwarePropertyDevices, kAudioObjectPropertyScopeGlobal,
+        kAudioObjectPropertyElementMain
+    };
+    AudioObjectPropertyAddress streams_addr = {
+        kAudioDevicePropertyStreams, kAudioDevicePropertyScopeOutput,
+        kAudioObjectPropertyElementMain
+    };
+    AudioObjectPropertyAddress running_addr = {
+        kAudioDevicePropertyDeviceIsRunningSomewhere, kAudioObjectPropertyScopeGlobal,
+        kAudioObjectPropertyElementMain
+    };
+    UInt32 size = 0, count, i, running, streams_size;
+    AudioDeviceID *devices;
+    int active = 0;
+
+    if (AudioObjectGetPropertyDataSize(kAudioObjectSystemObject, &devices_addr,
+            0, NULL, &size) != noErr || !size) return 1;
+    devices = malloc(size);
+    if (!devices) return 1;
+    if (AudioObjectGetPropertyData(kAudioObjectSystemObject, &devices_addr,
+            0, NULL, &size, devices) != noErr) {
+        free(devices);
+        return 1;
+    }
+    count = size / sizeof *devices;
+    for (i = 0; i < count; i++) {
+        streams_size = 0;
+        if (AudioObjectGetPropertyDataSize(devices[i], &streams_addr, 0, NULL,
+                &streams_size) != noErr) { active = 1; break; }
+        if (!streams_size) continue;
+        size = sizeof running;
+        if (AudioObjectGetPropertyData(devices[i], &running_addr, 0, NULL,
+                &size, &running) != noErr || running) { active = 1; break; }
+    }
+    free(devices);
+    return active;
+}
+
+static int display_sleep_prevented(void)
+{
+    CFDictionaryRef assertions = NULL;
+    CFNumberRef value;
+    int level = 0;
+    if (IOPMCopyAssertionsStatus(&assertions) != kIOReturnSuccess || !assertions)
+        return 1;
+    value = CFDictionaryGetValue(assertions,
+        kIOPMAssertionTypePreventUserIdleDisplaySleep);
+    if (!value || CFGetTypeID(value) != CFNumberGetTypeID() ||
+        !CFNumberGetValue(value, kCFNumberIntType, &level)) level = 1;
+    CFRelease(assertions);
+    return level != 0;
+}
+
+static void check_idle(void)
+{
+    double idle = CGEventSourceSecondsSinceLastEventType(
+        kCGEventSourceStateCombinedSessionState, kCGAnyInputEventType);
+    if (idle < kIdleSeconds) {
+        g_idle_locked = 0;
+        return;
+    }
+    if (!g_idle_locked && !audio_playing() && !display_sleep_prevented()) {
+        logf_line("idle for 5 minutes, lock", "idle");
+        lock_screen();
+        g_idle_locked = 1;
+    }
+}
+
 static void on_poll(CFRunLoopTimerRef timer, void *info)
 {
     (void)timer;
     (void)info;
     update_lid(read_lid(), "poll");
+    check_idle();
 }
 
 /* Writes after a prune must go to the new end, not the old offset. */
