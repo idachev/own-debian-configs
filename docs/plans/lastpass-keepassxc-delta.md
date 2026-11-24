@@ -10,8 +10,9 @@
 
 ## Compare snapshots
 
-- Parse both CSVs completely before producing output. Require the columns used for identity and core data. Accept a UTF-8 BOM, multiline fields, and exports with optional columns omitted. Fail on malformed records and characters that cannot be stored in KDBX. Treat a missing `totp` column as unknown and an explicitly blank value as empty. Ignore `fav`, since the existing converter does not import it. Diagnostics in both modes identify rows without displaying their values.
+- Parse both CSVs completely before producing output. Require the columns used for identity and core data. Accept a UTF-8 BOM, multiline fields, and exports with optional columns omitted. Fail on malformed CSV structure. Treat a missing `totp` column as unknown and an explicitly blank value as empty. Ignore `fav`, since the existing converter does not import it. Diagnostics in both modes identify rows without displaying their values.
 - Use the converter's representation of titles, URLs, usernames, notes and LastPass paths. Cancel unchanged rows with multiplicity. Compare unique records with the same group path, title, URL and username. Detect password, notes and TOTP edits. Never print field values in delta diagnostics.
+- Apply the original migration's cleanup when matching old values to KeePassXC. An unchanged field in the new CSV can carry the same unstorable characters as the old CSV. Preserve its value in KeePassXC when applying other changes to the entry. Send new or edited values containing unstorable characters for review and continue with other entries.
 - A CSV row has no stable LastPass ID. Send ambiguous identity buckets for manual review. A remaining old-only record is report-only. When both old-only and new-only identities remain, report the unmatched new rows for review as well. A pair may be a rename, move, or several edits on one entry. When there are only new-only identities and each is unique, treat them as additions.
 
 ## Reconcile with the current database

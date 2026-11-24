@@ -209,6 +209,45 @@ class LastPassDeltaTest(unittest.TestCase):
         self.assertIn("ambiguous group path", result.stderr)
         self.assertFalse(self.delta.exists())
 
+    def test_matches_old_rows_using_original_migration_cleanup(self):
+        changed = record(" \0 Changed \0 ", "old\x01password",
+                         extra="multiple\nlines with \ufffeN and \x01")
+        unchanged = record("Unchanged", extra="unchanged\0note")
+        blank = dict.fromkeys(COLUMNS, "") | {"extra": "\0"}
+        db = self.base_from([changed, unchanged, blank])
+        original = db.find_entries(title="Changed", first=True)
+        self.assertEqual(original.password, "oldpassword")
+        self.csv(self.new, [unchanged, changed | {"password": "new-password"},
+                            record("Added", "new-entry")])
+
+        result = self.compare()
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("1 added, 1 updated", result.stdout)
+        delta = self.open_delta()
+        self.assertEqual({entry.title for entry in delta.entries}, {"Added", "Changed"})
+        updated = delta.find_entries(title="Changed", first=True)
+        self.assertEqual(updated.uuid, original.uuid)
+        self.assertEqual(updated.password, "new-password")
+        self.assertEqual(updated.notes, "multiple\nlines with N and ")
+        self.assertEqual(updated.notes, original.notes)
+
+    def test_new_unstorable_values_are_reviewed_without_blocking_other_updates(self):
+        change = record("Unstorable edit", "pass")
+        safe = record("Safe edit", "old")
+        self.base_from([change, safe])
+        self.csv(self.new, [change | {"password": "pa\x01ss"}, safe | {"password": "new"},
+                            record("Unstorable addition", "synthetic\0secret")])
+        result = self.compare()
+        self.assertEqual(result.returncode, 2, result.stderr)
+        self.assertIn("new CSV line(s) 2 (characters KDBX cannot store in password)",
+                      result.stderr)
+        self.assertIn("new CSV line(s) 4 (characters KDBX cannot store in password)",
+                      result.stderr)
+        self.assertNotIn("synthetic", result.stderr)
+        [entry] = self.open_delta().entries
+        self.assertEqual(entry.title, "Safe edit")
+        self.assertEqual(entry.password, "new")
+
     def test_unknown_totp_conflicts_and_blank_totp_clears(self):
         original = record("TOTP")
         db = self.base_from([original], has_otp=False)
@@ -301,7 +340,7 @@ class LastPassDeltaTest(unittest.TestCase):
         self.assertIn("Output already exists", result.stderr)
         self.csv(self.new, [original | {"password": "sensitive\x01invalid"}])
         result = self.compare("--force")
-        self.assertEqual(result.returncode, 1, result.stderr)
+        self.assertEqual(result.returncode, 2, result.stderr)
         self.assertIn("characters KDBX cannot store", result.stderr)
         self.assertNotIn("sensitive", result.stderr)
         self.assertEqual(self.delta.read_bytes(), b"existing output")

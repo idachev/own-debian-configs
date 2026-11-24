@@ -137,6 +137,20 @@ def sanitize(value):
     return XML_INVALID_RE.sub("", value)
 
 
+def lastpass_fields(row):
+    """Return the core fields in the form used by the original migration."""
+    fields = (
+        (row.get("name") or "").strip() or "Untitled Entry",
+        (row.get("url") or "").strip(),
+        row.get("username") or "",
+        row.get("password") or "",
+        row.get("extra") or "",
+        (row.get("grouping") or "").strip(),
+    )
+    cleaned = tuple(sanitize(value) for value in fields)
+    return cleaned, cleaned != fields
+
+
 def build_otp_uri(totp_secret, title):
     """Turn a LastPass TOTP seed into a KeePassXC-readable otpauth URI, or None."""
     secret = (totp_secret or "").strip()
@@ -179,21 +193,10 @@ def convert(args):
                 skipped += 1
                 continue
 
-            title = (row.get("name") or "").strip() or "Untitled Entry"
-            url = (row.get("url") or "").strip()
-            username = row.get("username") or ""
-            entry_password = row.get("password") or ""
-            notes = row.get("extra") or ""
-            grouping = (row.get("grouping") or "").strip()
-            totp = row.get("totp") or ""
-
-            # Real exports may contain control characters (e.g. NULL bytes in
-            # notes) that the KDBX XML format cannot store; strip them.
-            fields = [title, url, username, entry_password, notes, grouping]
-            cleaned = [sanitize(value) for value in fields]
-            if cleaned != fields:
+            fields, sanitized = lastpass_fields(row)
+            title, url, username, entry_password, notes, grouping = fields
+            if sanitized:
                 sanitized_rows.append(reader.line_num)
-                title, url, username, entry_password, notes, grouping = cleaned
 
             # Secure notes carry no real URL; drop the sentinel.
             if url == SECURE_NOTE_URL:
@@ -208,7 +211,7 @@ def convert(args):
                     password=entry_password,
                     url=url,
                     notes=notes,
-                    otp=build_otp_uri(totp, title),
+                    otp=build_otp_uri(row.get("totp"), title),
                     # Real LastPass exports often repeat titles in a folder.
                     force_creation=True)
                 count += 1
@@ -254,13 +257,17 @@ class LastPassRow:
     password: str
     notes: str
     otp: str | None
+    unstorable: tuple
 
     @property
     def identity(self):
         return self.path, self.title, self.url, self.username
 
     def values(self, compare_otp):
-        return self.password, self.notes, (self.otp or "") if compare_otp else ""
+        if compare_otp:
+            return self.password, self.notes, self.otp or "", self.unstorable
+        unstorable = tuple(item for item in self.unstorable if item[0] != "totp")
+        return self.password, self.notes, "", unstorable
 
 
 @dataclass(frozen=True)
@@ -288,12 +295,18 @@ class DeltaEntry:
 
 def read_snapshot(filename, label):
     required = {"url", "username", "password", "extra", "name", "grouping"}
-    used_columns = required | {"totp"}
+    used_columns = sorted(required | {"totp"})
     rows = defaultdict(list)
     line = 1
     try:
         with open(filename, encoding="utf-8-sig", newline="") as source:
-            reader = csv.reader(source, strict=True)
+            # Older csv readers reject NUL. Escape it and the marker reversibly
+            # so we can tell whether a new value introduced an unstorable byte.
+            reader = csv.reader(
+                (line.replace("\ufffe", "\ufffeE").replace("\0", "\ufffeN")
+                 for line in source),
+                strict=True,
+            )
             header = next(reader, [])
             if not required.issubset(header) or len(header) != len(set(header)):
                 raise DeltaError(f"{label} has missing or duplicate CSV headers")
@@ -303,21 +316,29 @@ def read_snapshot(filename, label):
                 fields = next(reader, None)
                 if fields is None:
                     break
-                if not fields or (len(fields) == len(header) and not any(
-                        value.strip() for value in fields)):
+                if not fields:
                     continue
                 if len(fields) != len(header):
                     raise DeltaError(f"{label} line {line} has the wrong number of columns")
-                values = dict(zip(header, fields))
-                if any(XML_INVALID_RE.search(values.get(key, "")) for key in used_columns):
-                    raise DeltaError(f"{label} line {line} has characters KDBX cannot store")
-                title = values["name"].strip() or "Untitled Entry"
-                url = values["url"].strip()
+                values = {key: value.replace("\ufffeN", "\0").replace("\ufffeE", "\ufffe")
+                          for key, value in zip(header, fields)}
+                # The original migration discarded NUL before trimming fields.
+                without_nul = {key: value.replace("\0", "") for key, value in values.items()}
+                if not any(value.strip() for value in without_nul.values()):
+                    continue
+                unstorable = tuple((key, values[key]) for key in used_columns
+                                   if key in values and XML_INVALID_RE.search(values[key]))
+                cleaned, _ = lastpass_fields(without_nul)
+                title, url, username, password, notes, grouping = cleaned
+                totp = without_nul.get("totp", "").strip()
+                # A legacy migration could not have written an invalid OTP value.
+                otp = None
+                if has_otp and sanitize(totp) == totp:
+                    otp = build_otp_uri(totp, title) or ""
                 row = LastPassRow(
-                    line, (MIGRATION_GROUP, *group_parts(values["grouping"].strip())), title,
-                    "" if url == SECURE_NOTE_URL else url, values["username"],
-                    values["password"], values["extra"],
-                    (build_otp_uri(values["totp"], title) or "") if has_otp else None,
+                    line, (MIGRATION_GROUP, *group_parts(grouping)), title,
+                    "" if url == SECURE_NOTE_URL else url, username,
+                    password, notes, otp, unstorable,
                 )
                 rows[row.identity].append(row)
     except (OSError, UnicodeError, csv.Error):
@@ -410,6 +431,11 @@ def plan_delta(base, candidates, reviews):
     already_applied = 0
     for old, row in candidates:
         try:
+            if row.unstorable:
+                old_unstorable = dict(old.unstorable) if old else {}
+                fields = [key for key, value in row.unstorable if old_unstorable.get(key) != value]
+                if fields:
+                    raise DeltaError("characters KDBX cannot store in " + ", ".join(fields))
             groups = base_groups(base.root_group, row.path)
             destination = groups[-1]
             related = entries_by_identity[row.identity[1:]]
