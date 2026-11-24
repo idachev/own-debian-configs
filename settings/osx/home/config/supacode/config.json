@@ -1,4 +1,6 @@
 {
+  "agentInputReminderMinutes" : 3,
+  "agentInputRemindersEnabled" : true,
   "agentPresenceBadgesEnabled" : true,
   "analyticsEnabled" : true,
   "appVisibility" : "dockAndMenuBar",
