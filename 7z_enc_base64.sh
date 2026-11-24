@@ -1,20 +1,36 @@
 #!/bin/bash
 
-INPUT=$1
-OUTPUT=$1_enc
-TMP=$(mktemp "/tmp/7z_enc_base64.XXXXXXXXXX")
-
-rm $TMP
-7z_enc.sh $TMP $INPUT
-
-LSTATUS=$?
-if [ $LSTATUS -ne 0 ]; then
-  exit $LSTATUS
+if [ "$#" -ne 1 ]; then
+    printf 'Usage: %s INPUT\n' "${0##*/}" >&2
+    exit 2
 fi
 
-base64 $TMP > $OUTPUT
+output=${1}_enc
+if [ -d "$output" ]; then
+    printf 'Output is a directory: %s\n' "$output" >&2
+    exit 1
+fi
 
-rm $TMP
+scratch=$(mktemp -d "${TMPDIR:-/tmp}/7z_enc_base64.XXXXXXXXXX") || exit
+archive=$scratch/archive.7z
+encoded=
+cleanup() {
+    if [ -n "$encoded" ]; then
+        rm -f -- "$encoded"
+    fi
+    rm -f -- "$archive"
+    rmdir -- "$scratch"
+}
+trap cleanup EXIT
 
-echo "Generated: $OUTPUT"
+7z_enc.sh "$archive" -spd -- "$1" || exit
 
+output_dir=.
+if [[ $output == */* ]]; then
+    output_dir=${output%/*}
+fi
+encoded=$(mktemp -- "$output_dir/.7z_enc_base64.XXXXXXXXXX") || exit
+base64 < "$archive" > "$encoded" || exit
+mv -f -- "$encoded" "$output" || exit
+
+printf 'Generated: %s\n' "$output"

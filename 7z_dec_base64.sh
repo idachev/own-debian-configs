@@ -1,12 +1,12 @@
 #!/bin/bash
 
-INPUT=$1
-TMP=$(mktemp "/tmp/7z_dec_base64.XXXXXXXXXX")
+if [ "$#" -ne 1 ]; then
+    printf 'Usage: %s INPUT\n' "${0##*/}" >&2
+    exit 2
+fi
 
-rm $TMP
-base64 -d "$INPUT" > $TMP
+archive=$(mktemp "${TMPDIR:-/tmp}/7z_dec_base64.XXXXXXXXXX") || exit
+trap 'rm -f -- "$archive"' EXIT
 
-7z x -bb1 $TMP
-
-rm $TMP
-
+base64 -d < "$1" > "$archive" || exit
+7z x -bb1 "$archive"
